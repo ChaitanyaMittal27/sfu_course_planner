@@ -1,0 +1,394 @@
+@import "tailwindcss";
+
+@custom-variant dark (&:where(.dark, .dark *));
+
+@layer base {
+  html {
+    scroll-behavior: smooth;
+  }
+
+  body {
+    @apply transition-colors duration-300;
+  }
+
+  /* LIGHT THEME - Warm Academic Cream */
+  :root:not(.dark) body {
+    background: linear-gradient(135deg, #fef3e2 0%, #fdecd1 25%, #fce4c0 50%, #fdecd1 75%, #fef3e2 100%) !important;
+    min-height: 100vh;
+  }
+
+  :root:not(.dark) body::before {
+    content: "";
+    position: fixed;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    background: radial-gradient(circle at 20% 80%, rgba(216, 67, 21, 0.06) 0%, transparent 50%),
+      radial-gradient(circle at 80% 20%, rgba(251, 146, 60, 0.08) 0%, transparent 50%),
+      radial-gradient(circle at 40% 40%, rgba(245, 158, 11, 0.05) 0%, transparent 50%);
+    pointer-events: none;
+    z-index: -1;
+  }
+
+  /* DARK THEME - Deep Academic Blue */
+  .dark body {
+    background: linear-gradient(135deg, #0f172a 0%, #1e293b 25%, #334155 50%, #1e293b 75%, #0f172a 100%) !important;
+    min-height: 100vh;
+    position: relative;
+    overflow-x: hidden;
+  }
+
+  .dark body::before {
+    content: "";
+    position: fixed;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    background-image: radial-gradient(circle at 20% 80%, rgba(216, 67, 21, 0.1) 0%, transparent 50%),
+      radial-gradient(circle at 80% 20%, rgba(251, 146, 60, 0.08) 0%, transparent 50%),
+      radial-gradient(circle at 40% 40%, rgba(59, 130, 246, 0.06) 0%, transparent 50%);
+    pointer-events: none;
+    z-index: -1;
+    animation: subtle-glow 8s ease-in-out infinite;
+  }
+}
+
+/* SFU Color Palette (Warmer) */
+:root {
+  --sfu-red-warm: #d84315;
+  --sfu-red-deep: #bf360c;
+  --sfu-orange: #fb923c;
+  --sfu-amber: #f59e0b;
+  --sfu-cream: #fef3e2;
+}
+
+@keyframes subtle-glow {
+  0%,
+  100% {
+    opacity: 1;
+    transform: scale(1);
+  }
+  50% {
+    opacity: 0.85;
+    transform: scale(1.02);
+  }
+}
+
+/* Splash Screen Animations */
+@keyframes float {
+  0%,
+  100% {
+    transform: translateY(0) rotate(12deg);
+  }
+  50% {
+    transform: translateY(-20px) rotate(-12deg);
+  }
+}
+
+@keyframes pulse-slow {
+  0%,
+  100% {
+    opacity: 0.3;
+    transform: scale(1);
+  }
+  50% {
+    opacity: 0.5;
+    transform: scale(1.1);
+  }
+}
+
+@keyframes spin-slow {
+  from {
+    transform: rotate(0deg);
+  }
+  to {
+    transform: rotate(360deg);
+  }
+}
+
+@keyframes spin-reverse {
+  from {
+    transform: rotate(360deg);
+  }
+  to {
+    transform: rotate(0deg);
+  }
+}
+
+@keyframes scale-in {
+  from {
+    opacity: 0;
+    transform: scale(0.8);
+  }
+  to {
+    opacity: 1;
+    transform: scale(1);
+  }
+}
+
+@keyframes fade-in {
+  from {
+    opacity: 0;
+    transform: translateY(10px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+@keyframes fade-in-delay {
+  from {
+    opacity: 0;
+    transform: translateY(10px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+@keyframes slide-up {
+  from {
+    opacity: 0;
+    transform: translateY(30px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+@keyframes width-expand {
+  from {
+    width: 0;
+  }
+  to {
+    width: 8rem;
+  }
+}
+
+@keyframes shimmer {
+  0% {
+    transform: translateX(-100%);
+  }
+  100% {
+    transform: translateX(100%);
+  }
+}
+
+@keyframes fade-in-stagger {
+  from {
+    opacity: 0;
+    transform: translateY(10px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+/* Apply animations */
+.animate-float {
+  animation: float 3s ease-in-out infinite;
+}
+
+.animate-pulse-slow {
+  animation: pulse-slow 4s ease-in-out infinite;
+}
+
+.animate-spin-slow {
+  animation: spin-slow 8s linear infinite;
+}
+
+.animate-spin-reverse {
+  animation: spin-reverse 6s linear infinite;
+}
+
+.animate-scale-in {
+  animation: scale-in 0.6s ease-out;
+}
+
+.animate-fade-in {
+  animation: fade-in 0.8s ease-out;
+}
+
+.animate-fade-in-delay {
+  animation: fade-in-delay 1s ease-out 0.3s both;
+}
+
+.animate-slide-up {
+  animation: slide-up 0.6s ease-out 0.5s both;
+}
+
+.animate-width-expand {
+  animation: width-expand 0.8s ease-out 0.5s both;
+}
+
+.animate-shimmer {
+  animation: shimmer 2s infinite;
+}
+
+.animate-fade-in-stagger-1 {
+  animation: fade-in-stagger 0.6s ease-out 0.8s both;
+}
+
+.animate-fade-in-stagger-2 {
+  animation: fade-in-stagger 0.6s ease-out 1s both;
+}
+
+.animate-fade-in-stagger-3 {
+  animation: fade-in-stagger 0.6s ease-out 1.2s both;
+}
+
+/* Glow effect for progress bar */
+.shadow-glow {
+  box-shadow: 0 0 20px rgba(251, 146, 60, 0.6), 0 0 40px rgba(251, 146, 60, 0.4), 0 0 60px rgba(251, 146, 60, 0.2);
+}
+
+@layer utilities {
+  /* Card styles - Warm Academic Theme */
+  .light-card {
+    @apply bg-white/95 backdrop-blur-sm border-orange-200/50;
+    box-shadow: 0 4px 12px rgba(216, 67, 21, 0.08), 0 2px 6px rgba(0, 0, 0, 0.04);
+  }
+
+  .light-card:hover {
+    @apply border-orange-300/70;
+    box-shadow: 0 8px 20px rgba(216, 67, 21, 0.12), 0 4px 10px rgba(0, 0, 0, 0.06);
+  }
+
+  .dark-card {
+    @apply bg-slate-800/70 border-slate-700/60 backdrop-blur-sm;
+    background: linear-gradient(135deg, rgba(51, 65, 85, 0.9) 0%, rgba(30, 41, 59, 0.7) 100%);
+    box-shadow: 0 8px 25px rgba(0, 0, 0, 0.3), 0 3px 10px rgba(0, 0, 0, 0.2), 0 0 0 1px rgba(216, 67, 21, 0.1);
+  }
+
+  .dark-card:hover {
+    @apply border-orange-600/50;
+    box-shadow: 0 12px 35px rgba(0, 0, 0, 0.4), 0 5px 15px rgba(216, 67, 21, 0.2), 0 0 0 1px rgba(216, 67, 21, 0.3);
+  }
+
+  /* Button styles - SFU Warm */
+  .btn-primary {
+    @apply bg-gradient-to-r from-red-600 to-orange-600 hover:from-red-700 hover:to-orange-700 
+           text-white px-6 py-2.5 rounded-lg font-medium transition-all duration-300
+           shadow-md hover:shadow-lg;
+    background: linear-gradient(135deg, #d84315 0%, #fb923c 100%);
+  }
+
+  .btn-primary:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 8px 20px rgba(216, 67, 21, 0.3);
+  }
+
+  .btn-secondary {
+    @apply bg-slate-200 dark:bg-slate-700 hover:bg-slate-300 dark:hover:bg-slate-600 
+           text-gray-800 dark:text-gray-200 px-6 py-2.5 rounded-lg font-medium
+           transition-all duration-300;
+  }
+
+  /* Input fields */
+  .input-field {
+    @apply w-full px-4 py-2.5 border border-gray-300 dark:border-gray-600 rounded-lg 
+           bg-white dark:bg-gray-800 text-gray-900 dark:text-gray-100 
+           focus:outline-none focus:ring-2 focus:ring-orange-500 dark:focus:ring-orange-600
+           transition-all duration-200;
+  }
+
+  /* Section backgrounds */
+  .light-section-bg {
+    @apply bg-gradient-to-b from-orange-50/40 to-amber-50/30;
+  }
+
+  .dark-section-bg {
+    background: linear-gradient(
+      180deg,
+      rgba(15, 23, 42, 0.5) 0%,
+      rgba(30, 41, 59, 0.4) 50%,
+      rgba(51, 65, 85, 0.3) 100%
+    );
+  }
+
+  /* Table styles */
+  .table-header {
+    @apply bg-orange-100 dark:bg-slate-700 text-gray-800 dark:text-gray-200 
+           font-semibold px-4 py-3 border-b-2 border-orange-200 dark:border-slate-600;
+  }
+
+  .table-row {
+    @apply bg-white dark:bg-slate-800 hover:bg-orange-50 dark:hover:bg-slate-700/50 
+           transition-colors duration-200 cursor-pointer;
+  }
+
+  .table-cell {
+    @apply px-4 py-3 border-b border-gray-200 dark:border-slate-700;
+  }
+}
+
+/* Custom scrollbar */
+::-webkit-scrollbar {
+  width: 10px;
+}
+
+::-webkit-scrollbar-track {
+  @apply bg-gray-100 dark:bg-slate-800;
+}
+
+::-webkit-scrollbar-thumb {
+  @apply bg-orange-400 dark:bg-orange-600 rounded-full;
+  transition: background-color 0.2s ease;
+}
+
+::-webkit-scrollbar-thumb:hover {
+  @apply bg-orange-500 dark:bg-orange-500;
+}
+
+/* Focus styles */
+*:focus {
+  @apply outline-none;
+}
+
+.light *:focus-visible {
+  @apply ring-2 ring-orange-500 ring-offset-2;
+}
+
+.dark *:focus-visible {
+  @apply ring-2 ring-orange-400 ring-offset-2 ring-offset-slate-900;
+}
+
+/* Accessibility */
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+  }
+}
+
+/* Text improvements */
+.dark h1,
+.dark h2,
+.dark h3,
+.dark h4,
+.dark h5,
+.dark h6 {
+  @apply text-slate-50;
+}
+
+.dark .text-muted {
+  @apply text-slate-400;
+}
+
+/* Selection colors */
+::selection {
+  @apply bg-orange-200 text-orange-900;
+}
+
+.dark ::selection {
+  @apply bg-orange-900 text-orange-100;
+}
