@@ -15,5 +15,18 @@ repositories {
 dependencies {
     implementation 'org.springframework.boot:spring-boot-starter-web'
     implementation 'org.springframework.boot:spring-boot-starter-jdbc'
+    implementation 'org.springframework.boot:spring-boot-starter-data-jpa'
+    implementation 'org.postgresql:postgresql'
+    testImplementation 'org.springframework.boot:spring-boot-starter-test'
     runtimeOnly 'org.postgresql:postgresql'
+}
+
+// Ensure bootJar is enabled
+tasks.named('bootJar') {
+    enabled = true
+}
+
+// Make sure main class is specified
+bootJar {
+    mainClass = 'com.example.courseplanner.Application'
 }
