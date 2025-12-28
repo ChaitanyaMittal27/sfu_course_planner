@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect } from "react";
+import { useState, useEffect, Suspense } from "react";
 import { useQueryState } from "nuqs";
 import PageContainer from "@/components/PageContainer";
 import LoadingSpinner from "@/components/LoadingSpinner";
@@ -8,7 +8,7 @@ import ErrorMessage from "@/components/ErrorMessage";
 import GradeHistogram from "@/components/GradeHistogram";
 import { api, Department, Course, GradeDistribution } from "@/lib/api";
 
-export default function GradeDistributionPage() {
+function GradeDistributionPageContent() {
   // ============================================
   // URL STATE (nuqs)
   // ============================================
@@ -335,5 +335,13 @@ export default function GradeDistributionPage() {
         </div>
       )}
     </PageContainer>
+  );
+}
+
+export default function GradeDistributionPage() {
+  return (
+    <Suspense fallback={<LoadingSpinner />}>
+      <GradeDistributionPageContent />
+    </Suspense>
   );
 }

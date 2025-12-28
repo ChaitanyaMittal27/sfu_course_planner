@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect } from "react";
+import { useState, useEffect, Suspense } from "react";
 import { useQueryState } from "nuqs";
 import PageContainer from "@/components/PageContainer";
 import LoadingSpinner from "@/components/LoadingSpinner";
@@ -8,7 +8,7 @@ import ErrorMessage from "@/components/ErrorMessage";
 import { api, Department, Course, EnrollmentDataPoint } from "@/lib/api";
 import { LineChart, Line, XAxis, YAxis, Tooltip, ResponsiveContainer, CartesianGrid, Legend } from "recharts";
 
-export default function EnrollmentVsCapacityPage() {
+function EnrollmentVsCapacityPageContent() {
   // ============================================
   // URL STATE (nuqs)
   // ============================================
@@ -334,5 +334,13 @@ export default function EnrollmentVsCapacityPage() {
         </div>
       )}
     </PageContainer>
+  );
+}
+
+export default function EnrollmentVsCapacityPage() {
+  return (
+    <Suspense fallback={<LoadingSpinner />}>
+      <EnrollmentVsCapacityPageContent />
+    </Suspense>
   );
 }

@@ -112,27 +112,34 @@ function SectionComparisonContent() {
   // Generate last 3 years of semesters (9 total)
   const generateSemesters = async () => {
     try {
-      const enrolling = await api.getEnrollingTerm(); // { year: 2026, term: "spring", semesterCode: 1267 }
+      // Fetch enrolling term from backend
+      const enrolling = await api.getEnrollingTerm();
 
       const sems: { code: number; label: string }[] = [];
       let year = enrolling.year;
       let term = enrolling.term;
 
+      // Generate 9 semesters (3 years) backwards from enrolling
       for (let i = 0; i < 9; i++) {
         const termCode = term === "spring" ? 1 : term === "summer" ? 4 : 7;
         const code = (year - 1900) * 10 + termCode;
         const label = `${term.charAt(0).toUpperCase() + term.slice(1)} ${year}`;
+
         sems.push({ code, label });
 
-        // Previous semester logic (reuse SemesterUtil pattern)
+        // Move to previous semester
         const prev = getPreviousSemester(year, term);
         year = prev.year;
         term = prev.term;
       }
 
       setSemesters(sems);
-    } catch {
+
+      // Auto-select enrolling semester as default
+      setSelectedSemester(enrolling.semesterCode);
+    } catch (err) {
       setError("Failed to load semesters");
+      console.error(err);
     }
   };
 

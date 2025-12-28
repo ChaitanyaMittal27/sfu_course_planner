@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect } from "react";
+import { useState, useEffect, Suspense } from "react";
 import { useQueryState } from "nuqs";
 import PageContainer from "@/components/PageContainer";
 import LoadingSpinner from "@/components/LoadingSpinner";
@@ -18,7 +18,7 @@ import {
   Dot,
 } from "recharts";
 
-export default function LoadOverTimePage() {
+function LoadOverTimePageContent() {
   // ============================================
   // URL STATE (nuqs)
   // ============================================
@@ -365,5 +365,13 @@ export default function LoadOverTimePage() {
         </div>
       )}
     </PageContainer>
+  );
+}
+
+export default function LoadOverTimePage() {
+  return (
+    <Suspense fallback={<LoadingSpinner />}>
+      <LoadOverTimePageContent />
+    </Suspense>
   );
 }
