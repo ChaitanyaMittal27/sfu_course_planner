@@ -126,79 +126,88 @@ function AboutPageContent() {
           </div>
 
           {/* Key Features */}
+
           <div className="grid md:grid-cols-2 gap-6">
-            <div className="p-4 bg-orange-50 dark:bg-orange-900/20 rounded-lg border border-orange-200 dark:border-orange-800">
-              <div className="flex items-center mb-2">
-                <svg
-                  className="w-6 h-6 text-orange-600 dark:text-orange-400 mr-2"
-                  fill="currentColor"
-                  viewBox="0 0 20 20"
-                >
-                  <path d="M9 4.804A7.968 7.968 0 005.5 4c-1.255 0-2.443.29-3.5.804v10A7.969 7.969 0 015.5 14c1.669 0 3.218.51 4.5 1.385A7.962 7.962 0 0114.5 14c1.255 0 2.443.29 3.5.804v-10A7.968 7.968 0 0014.5 4c-1.255 0-2.443.29-3.5.804V12a1 1 0 11-2 0V4.804z" />
-                </svg>
-                <h3 className="text-lg font-semibold text-gray-900 dark:text-white">Browse Courses</h3>
+            <a href="/browse" className="no-underline">
+              <div className="p-4 bg-orange-50 dark:bg-orange-900/20 rounded-lg border border-orange-200 dark:border-orange-800">
+                <div className="flex items-center mb-2">
+                  <svg
+                    className="w-6 h-6 text-orange-600 dark:text-orange-400 mr-2"
+                    fill="currentColor"
+                    viewBox="0 0 20 20"
+                  >
+                    <path d="M9 4.804A7.968 7.968 0 005.5 4c-1.255 0-2.443.29-3.5.804v10A7.969 7.969 0 015.5 14c1.669 0 3.218.51 4.5 1.385A7.962 7.962 0 0114.5 14c1.255 0 2.443.29 3.5.804v-10A7.968 7.968 0 0014.5 4c-1.255 0-2.443.29-3.5.804V12a1 1 0 11-2 0V4.804z" />
+                  </svg>
+                  <h3 className="text-lg font-semibold text-gray-900 dark:text-white">Browse Courses</h3>
+                </div>
+                <p className="text-sm text-gray-600 dark:text-gray-300">
+                  Explore 500+ courses across 50+ departments with real-time enrollment data
+                </p>
               </div>
-              <p className="text-sm text-gray-600 dark:text-gray-300">
-                Explore 500+ courses across 50+ departments with real-time enrollment data
-              </p>
-            </div>
+            </a>
 
-            <div className="p-4 bg-orange-50 dark:bg-orange-900/20 rounded-lg border border-orange-200 dark:border-orange-800">
-              <div className="flex items-center mb-2">
-                <svg
-                  className="w-6 h-6 text-orange-600 dark:text-orange-400 mr-2"
-                  fill="currentColor"
-                  viewBox="0 0 20 20"
-                >
-                  <path
-                    fillRule="evenodd"
-                    d="M3 3a1 1 0 000 2v8a2 2 0 002 2h2.586l-1.293 1.293a1 1 0 101.414 1.414L10 15.414l2.293 2.293a1 1 0 001.414-1.414L12.414 15H15a2 2 0 002-2V5a1 1 0 100-2H3zm11.707 4.707a1 1 0 00-1.414-1.414L10 9.586 8.707 8.293a1 1 0 00-1.414 0l-2 2a1 1 0 101.414 1.414L8 10.414l1.293 1.293a1 1 0 001.414 0l4-4z"
-                    clipRule="evenodd"
-                  />
-                </svg>
-                <h3 className="text-lg font-semibold text-gray-900 dark:text-white">Analyze Trends</h3>
+            <a href="/graph" className="no-underline">
+              <div className="p-4 bg-orange-50 dark:bg-orange-900/20 rounded-lg border border-orange-200 dark:border-orange-800">
+                <div className="flex items-center mb-2">
+                  <svg
+                    className="w-6 h-6 text-orange-600 dark:text-orange-400 mr-2"
+                    fill="currentColor"
+                    viewBox="0 0 20 20"
+                  >
+                    <path
+                      fillRule="evenodd"
+                      d="M3 3a1 1 0 000 2v8a2 2 0 002 2h2.586l-1.293 1.293a1 1 0 101.414 1.414L10 15.414l2.293 2.293a1 1 0 001.414-1.414L12.414 15H15a2 2 0 002-2V5a1 1 0 100-2H3zm11.707 4.707a1 1 0 00-1.414-1.414L10 9.586 8.707 8.293a1 1 0 00-1.414 0l-2 2a1 1 0 101.414 1.414L8 10.414l1.293 1.293a1 1 0 001.414 0l4-4z"
+                      clipRule="evenodd"
+                    />
+                  </svg>
+                  <h3 className="text-lg font-semibold text-gray-900 dark:text-white">Analyze Trends</h3>
+                </div>
+                <p className="text-sm text-gray-600 dark:text-gray-300">
+                  Visualize historical enrollment patterns and grade distributions
+                </p>
               </div>
-              <p className="text-sm text-gray-600 dark:text-gray-300">
-                Visualize historical enrollment patterns and grade distributions
-              </p>
-            </div>
+            </a>
 
-            <div className="p-4 bg-orange-50 dark:bg-orange-900/20 rounded-lg border border-orange-200 dark:border-orange-800">
-              <div className="flex items-center mb-2">
-                <svg
-                  className="w-6 h-6 text-orange-600 dark:text-orange-400 mr-2"
-                  fill="currentColor"
-                  viewBox="0 0 20 20"
-                >
-                  <path d="M10 12a2 2 0 100-4 2 2 0 000 4z" />
-                  <path
-                    fillRule="evenodd"
-                    d="M.458 10C1.732 5.943 5.522 3 10 3s8.268 2.943 9.542 7c-1.274 4.057-5.064 7-9.542 7S1.732 14.057.458 10zM14 10a4 4 0 11-8 0 4 4 0 018 0z"
-                    clipRule="evenodd"
-                  />
-                </svg>
-                <h3 className="text-lg font-semibold text-gray-900 dark:text-white">Track Availability</h3>
+            <a href="/watchers" className="no-underline">
+              <div className="p-4 bg-orange-50 dark:bg-orange-900/20 rounded-lg border border-orange-200 dark:border-orange-800">
+                <div className="flex items-center mb-2">
+                  <svg
+                    className="w-6 h-6 text-orange-600 dark:text-orange-400 mr-2"
+                    fill="currentColor"
+                    viewBox="0 0 20 20"
+                  >
+                    <path d="M10 12a2 2 0 100-4 2 2 0 000 4z" />
+                    <path
+                      fillRule="evenodd"
+                      d="M.458 10C1.732 5.943 5.522 3 10 3s8.268 2.943 9.542 7c-1.274 4.057-5.064 7-9.542 7S1.732 14.057.458 10zM14 10a4 4 0 11-8 0 4 4 0 018 0z"
+                      clipRule="evenodd"
+                    />
+                  </svg>
+                  <h3 className="text-lg font-semibold text-gray-900 dark:text-white">Track Availability</h3>
+                </div>
+                <p className="text-sm text-gray-600 dark:text-gray-300">
+                  Monitor course sections and get notified when seats open up
+                </p>
               </div>
-              <p className="text-sm text-gray-600 dark:text-gray-300">
-                Monitor course sections and get notified when seats open up
-              </p>
-            </div>
+            </a>
 
-            <div className="p-4 bg-orange-50 dark:bg-orange-900/20 rounded-lg border border-orange-200 dark:border-orange-800">
-              <div className="flex items-center mb-2">
-                <svg
-                  className="w-6 h-6 text-orange-600 dark:text-orange-400 mr-2"
-                  fill="currentColor"
-                  viewBox="0 0 20 20"
-                >
-                  <path d="M5 3a2 2 0 00-2 2v2a2 2 0 002 2h2a2 2 0 002-2V5a2 2 0 00-2-2H5zM5 11a2 2 0 00-2 2v2a2 2 0 002 2h2a2 2 0 002-2v-2a2 2 0 00-2-2H5zM11 5a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2h-2a2 2 0 01-2-2V5zM13 11a2 2 0 00-2 2v2a2 2 0 002 2h2a2 2 0 002-2v-2a2 2 0 00-2-2h-2z" />
-                </svg>
-                <h3 className="text-lg font-semibold text-gray-900 dark:text-white">Compare Courses</h3>
+            <a href="/compare" className="no-underline">
+              <div className="p-4 bg-orange-50 dark:bg-orange-900/20 rounded-lg border border-orange-200 dark:border-orange-800">
+                <div className="flex items-center mb-2">
+                  <svg
+                    className="w-6 h-6 text-orange-600 dark:text-orange-400 mr-2"
+                    fill="currentColor"
+                    viewBox="0 0 20 20"
+                  >
+                    <path d="M5 3a2 2 0 00-2 2v2a2 2 0 002 2h2a2 2 0 002-2V5a2 2 0 00-2-2H5zM5 11a2 2 0 00-2 2v2a2 2 0 002 2h2a2 2 0 002-2v-2a2 2 0 00-2-2H5zM11 5a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2h-2a2 2 0 01-2-2V5zM13 11a2 2 0 00-2 2v2a2 2 0 002 2h2a2 2 0 002-2v-2a2 2 0 00-2-2h-2z" />
+                  </svg>
+                  <h3 className="text-lg font-semibold text-gray-900 dark:text-white">Compare Courses</h3>
+                </div>
+                <p className="text-sm text-gray-600 dark:text-gray-300">
+                  Compare courses and offerings side-by-side to make better decisions
+                </p>
               </div>
-              <p className="text-sm text-gray-600 dark:text-gray-300">
-                Compare courses and offerings side-by-side to make better decisions
-              </p>
-            </div>
+            </a>
           </div>
         </section>
 
