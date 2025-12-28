@@ -1,0 +1,146 @@
+-- ============================================
+-- SFU Course Planner - Phase 2 Schema
+-- ONLY creates tables and indexes
+-- Data population done via Java
+-- ============================================
+
+-- Drop existing tables if migrating from Phase 1
+DROP TABLE IF EXISTS courses CASCADE;
+DROP TABLE IF EXISTS departments CASCADE;
+
+
+-- ============================================
+-- TABLE: DEPARTMENTS
+-- ============================================
+CREATE TABLE departments (
+    dept_id SERIAL PRIMARY KEY,
+    dept_code VARCHAR(10) NOT NULL UNIQUE,
+    name VARCHAR(255) NOT NULL,
+    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+);
+
+INSERT INTO "public"."departments" ("dept_id", "dept_code", "name", "created_at") VALUES ('1', 'acma', 'ACMA', '2025-12-20 06:10:22.544177');
+
+-- ============================================
+-- TABLE: COURSES
+-- ============================================
+CREATE TABLE courses (
+    course_id SERIAL PRIMARY KEY,
+    dept_id INTEGER NOT NULL REFERENCES departments(dept_id) ON DELETE CASCADE,
+    course_number VARCHAR(10) NOT NULL,
+    title VARCHAR(500),
+    description TEXT,
+    units INTEGER,
+    degree_level VARCHAR(20),
+    prerequisites TEXT,
+    corequisites TEXT,
+    designation VARCHAR(100),
+    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    UNIQUE(dept_id, course_number)
+);
+
+[{"idx":0,"course_id":3481,"dept_id":1,"course_number":"101","title":"Introduction to Insurance","description":"General overview of universally useful concepts in insurance, pensions and financial management. Typical life, health and property & casualty insurance products; underwriting; pricing; reserving; regulation; social insurance; retirement plans and annuities; financial planning: mortgages, loans, wealth management.","units":3,"degree_level":"UGRD","prerequisites":null,"corequisites":"MATH 150, 151, 154 or 157.","designation":"Quantitative/Breadth-Science","created_at":"2025-12-20 06:28:45.110467","updated_at":"2025-12-20 07:52:20.788319"}]
+
+-- ============================================
+-- INDEXES
+-- ============================================
+CREATE INDEX idx_courses_dept ON courses(dept_id);
+CREATE INDEX idx_courses_number ON courses(course_number);
+CREATE INDEX idx_courses_dept_number ON courses(dept_id, course_number);
+CREATE INDEX idx_departments_code ON departments(dept_code);
+
+-- ============================================
+-- MINIMAL TERMS TABLE
+-- Only stores 2 rows: current term + enrolling term
+-- Manual updates only
+-- ============================================
+
+DROP TABLE IF EXISTS terms CASCADE;
+
+CREATE TABLE terms (
+    term_id SERIAL PRIMARY KEY,
+    year INTEGER NOT NULL,
+    term VARCHAR(10) NOT NULL,  -- 'spring', 'summer', 'fall' (lowercase for URLs)
+    is_current BOOLEAN DEFAULT FALSE,
+    is_enrolling BOOLEAN DEFAULT FALSE,
+    updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+);
+
+-- Index for quick lookups
+CREATE INDEX idx_terms_current ON terms(is_current) WHERE is_current = TRUE;
+CREATE INDEX idx_terms_enrolling ON terms(is_enrolling) WHERE is_enrolling = TRUE;
+
+
+-- ============================================
+-- POPULATE
+-- Current: Fall 2025
+-- Enrolling: Spring 2026
+-- ============================================
+
+INSERT INTO terms (year, term, is_current, is_enrolling) VALUES
+(2025, 'fall', TRUE, FALSE),      -- Current semester
+(2026, 'spring', FALSE, TRUE);    -- Open for registration
+
+[{"idx":0,"term_id":1,"year":2025,"term":"fall","is_current":true,"is_enrolling":false,"updated_at":"2025-12-20 08:50:39.144028"},{"idx":1,"term_id":2,"year":2026,"term":"spring","is_current":false,"is_enrolling":true,"updated_at":"2025-12-20 08:50:39.144028"}]
+
+
+-- ============================================
+-- COURSE_STATS TABLE
+-- ============================================
+
+DROP TABLE IF EXISTS course_stats CASCADE;
+
+CREATE TABLE course_stats (
+    stats_id SERIAL PRIMARY KEY,
+    course_id INTEGER NOT NULL 
+        REFERENCES courses(course_id) ON DELETE CASCADE,
+    
+    total_enrollment INTEGER DEFAULT 0,
+    total_capacity INTEGER DEFAULT 0,
+    load_percent DECIMAL(5,2),    
+    offered_terms JSONB, -- Example: { "2023": ["fall", "spring"], "2024": ["spring", "fall"], "2025": ["fall"]}
+    last_calculated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,    
+    UNIQUE(course_id)
+);
+
+-- Index for fast lookups
+CREATE INDEX idx_stats_course ON course_stats(course_id);
+CREATE INDEX idx_stats_offered_terms ON course_stats USING GIN(offered_terms);
+
+
+DROP TABLE IF EXISTS course_digger_map CASCADE;
+
+CREATE TABLE course_digger_map (
+    course_digger_map_id SERIAL PRIMARY KEY,
+    course_id INTEGER NOT NULL UNIQUE
+        REFERENCES courses(course_id) ON DELETE CASCADE,
+    digger_course_id INTEGER NOT NULL UNIQUE,
+    source_school_id INTEGER NOT NULL DEFAULT 1, -- 1 = SFU
+    discovered_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    last_verified_at TIMESTAMP
+);
+
+CREATE INDEX idx_course_digger_map ON course_digger_map(course_id);
+
+[{"idx":0,"course_digger_map_id":1,"course_id":3492,"digger_course_id":2467,"source_school_id":1,"discovered_at":"2025-12-20 10:38:43.886013","last_verified_at":"2025-12-20 10:38:43.886013"}]
+
+
+
+
+DROP TABLE IF EXISTS course_digger_stats CASCADE;
+
+CREATE TABLE course_digger_stats (
+    course_digger_stats_id SERIAL PRIMARY KEY,
+    course_digger_map_id INTEGER NOT NULL
+        REFERENCES course_digger_map(course_digger_map_id) ON DELETE CASCADE,
+
+    median_grade VARCHAR(10),
+    fail_rate DECIMAL(5,2),
+    grade_distribution JSONB,  -- full breakdown
+    last_fetched_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    UNIQUE(course_digger_map_id)
+);
+
+CREATE INDEX idx_course_digger_stats ON course_digger_stats(course_digger_stats_id);
+[{"idx":0,"course_digger_stats_id":1,"course_digger_map_id":349,"median_grade":"A-","fail_rate":"2.52","grade_distribution":"{\"A\": 218, \"B\": 82, \"C\": 27, \"D\": 7, \"F\": 22, \"A+\": 68, \"A-\": 196, \"B+\": 137, \"B-\": 63, \"C+\": 37, \"C-\": 17, \"Fail Rate\": 2.517162471395881, \"Median Grade\": \"A-\"}","last_fetched_at":"2025-12-20 11:08:29.003399"}]

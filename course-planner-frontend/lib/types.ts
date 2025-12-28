@@ -1,52 +1,130 @@
 // API Response Types (matching Spring Boot DTOs)
 
-export interface Department {
+// ----------------------------
+// Common: Departments / Courses
+// ----------------------------
+export type Department = {
   deptId: number;
+  deptCode: string;
   name: string;
-}
+};
 
-export interface Course {
+export type Course = {
   courseId: number;
-  catalogNumber: string;
-}
+  deptId: number;
+  courseNumber: string;
+  title: string | null;
+  description: string | null;
+  units: number | null;
+  degreeLevel: string | null;
+  prerequisites: string | null;
+  corequisites: string | null;
+  designation: string | null;
+};
 
+// ----------------------------
+// Browse: Offerings + Details
+// ----------------------------
 export interface CourseOffering {
-  courseOfferingId: number;
+  section: string;
+  infoUrl: string;
+
+  term: string;
+  year: number;
+  semesterCode: number;
+  isEnrolling: boolean;
+
   location: string;
   instructors: string;
-  term: string;
-  semesterCode: number;
-  year: number;
+
+  enrolled: string;
+  capacity: string;
+  loadPercent: number;
 }
 
-export interface OfferingSection {
-  type: string;
-  enrollmentCap: number;
-  enrollmentTotal: number;
+export interface OfferingDetail {
+  // Course identity
+  deptCode: string; // "CMPT"
+  courseNumber: string; // "276"
+  title: string; // "Introduction to Software Engineering"
+
+  // Term info
+  year: number; // 2025
+  term: string; // "fall" | "spring" | "summer"
+
+  // Display info
+  campus: string | null; // "Burnaby" (derived from sections)
+
+  // CourseDiggers stats
+  medianGrade: string | null; // "A-"
+  failRate: number; // 2.52
+  gradeDistribution: Record<string, number> | null;
+
+  // Course metadata (from courses table)
+  description: string | null;
+  prerequisites: string | null;
+  corequisites: string | null;
+  units: number; // 3
+  degreeLevel: string | null; // "UGRD"
+  designation: string | null;
+
+  // Sections (CourseSys)
+  sections: CourseOffering[];
+
+  // External links
+  outlineUrl: string; // SFU outline link
 }
 
+// ----------------------------
+// About
+// ----------------------------
 export interface AboutInfo {
   appName: string;
   authorName: string;
 }
 
-export interface Watcher {
-  id: number;
-  department: Department;
-  course: Course;
-  events: string[];
+// ----------------------------
+// Graph Data
+// ----------------------------
+// for grade distribution graph
+export interface GradeDistribution {
+  deptCode: string; // "CMPT"
+  courseNumber: string; // "276"
+  title: string; // "Introduction to Software Engineering"
+
+  medianGrade: string; // "A-"
+  failRate: number; // 2.52
+
+  distribution: Record<string, number>; // { "A+": 68, "A": 218, "A-": 196, ... }
+}
+// for load + enrollement graphs
+export interface EnrollmentDataPoint {
+  semesterCode: number; // 1257
+  term: string; // "fall", "spring", "summer"
+  year: number; // 2025
+
+  enrolled: number; // Total enrolled students
+  capacity: number; // Total capacity
+  loadPercent: number; // enrolled/capacity * 100
 }
 
-export interface GraphDataPoint {
+// ----------------------------
+// Term Info
+// ----------------------------
+export interface TermInfo {
+  year: number;
+  term: string; // "spring" | "summer" | "fall"
   semesterCode: number;
-  totalCoursesTaken: number;
 }
 
-export interface CourseLoadData {
-  semester: number;
-  enrolled: number;
-  capacity: number;
-  load: number;
-  location: string;
-  instructors: string;
+// ----------------------------
+// Watchers
+// ----------------------------
+export interface Watcher {
+  watcherId: number;
+  deptId: number;
+  courseId: number;
+  semesterCode: number;
+  section: string;
+  createdAt: string; // ISO timestamp from backend
 }
