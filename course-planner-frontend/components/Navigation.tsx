@@ -13,6 +13,7 @@ export default function Navigation() {
   const navLinks = [
     { name: "Browse", href: "/browse" },
     { name: "Graph", href: "/graph" },
+    { name: "Compare", href: "/compare" },
     { name: "Watchers", href: "/watchers" },
     { name: "About", href: "/about" },
   ];

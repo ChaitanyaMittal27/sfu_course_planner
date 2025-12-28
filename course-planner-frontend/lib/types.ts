@@ -109,6 +109,15 @@ export interface EnrollmentDataPoint {
 }
 
 // ----------------------------
+// Term Info
+// ----------------------------
+export interface TermInfo {
+  year: number;
+  term: string; // "spring" | "summer" | "fall"
+  semesterCode: number;
+}
+
+// ----------------------------
 // Watchers
 // ----------------------------
 export interface Watcher {

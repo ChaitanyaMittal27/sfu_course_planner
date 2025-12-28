@@ -7,6 +7,7 @@ import {
   OfferingDetail,
   GradeDistribution,
   EnrollmentDataPoint,
+  TermInfo,
 } from "@/lib/types";
 
 // API base URL from environment variable
@@ -79,6 +80,11 @@ export const api = {
     ),
 
   // -------------------------
+  // Term Info
+  // -------------------------
+  getEnrollingTerm: () => fetchAPI<TermInfo>("/api/terms/enrolling"),
+
+  // -------------------------
   // Watchers
   // -------------------------
   // GET /api/watchers
@@ -125,4 +131,5 @@ export type {
   GradeDistribution,
   OfferingDetail,
   EnrollmentDataPoint,
+  TermInfo,
 };
