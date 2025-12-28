@@ -117,7 +117,7 @@ export default function LoadOverTimePage() {
 
   // Format semester label for chart
   const formatSemester = (semesterCode: number) => {
-    const year = Math.floor(semesterCode / 10) - 1900;
+    const year = Math.floor(semesterCode / 10) - 100;
     const termCode = semesterCode % 10;
     const term = termCode === 1 ? "Sp" : termCode === 4 ? "Su" : "Fa";
     return `${term} ${year}`;

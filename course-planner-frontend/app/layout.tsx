@@ -3,6 +3,7 @@ import { Inter } from "next/font/google";
 import "./globals.css";
 import Navigation from "@/components/Navigation";
 import { NuqsAdapter } from "nuqs/adapters/next/app";
+import Footer from "@/components/Footer";
 
 const inter = Inter({ subsets: ["latin"] });
 
@@ -37,6 +38,7 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
         <NuqsAdapter>
           <Navigation />
           <main className="min-h-screen">{children}</main>
+          <Footer />
         </NuqsAdapter>
       </body>
     </html>

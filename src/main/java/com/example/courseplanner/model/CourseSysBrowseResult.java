@@ -1,3 +1,20 @@
+/**
+ * Model representing the complete result of a CourseSys API browse query.
+ * 
+ * Contains course metadata (department, number, title) along with term information
+ * and a list of all course offerings/sections for that term.
+ * 
+ * Used as the return type for CourseSysClient.fetchCourseSections().
+ * 
+ * Example:
+ *   CourseSysBrowseResult result = client.fetchCourseSections("CMPT", "276", 1257);
+ *   result.getDept()        → "CMPT"
+ *   result.getCourseNumber() → "276"
+ *   result.getYear()        → 2025
+ *   result.getSemester()    → "fall"
+ *   result.getOfferings()   → List of all sections (D100, D200, etc.)
+ */
+
 package com.example.courseplanner.model;
 
 import java.util.List;

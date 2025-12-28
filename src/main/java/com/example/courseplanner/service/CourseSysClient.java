@@ -1,3 +1,12 @@
+/**
+ * Client service for interacting with SFU's CourseSys API.
+ * 
+ * Fetches live course offering data including sections, enrollment numbers,
+ * instructors, and campus locations for specific semesters.
+ * 
+ * API Endpoint: https://coursys.sfu.ca/browse/
+ */
+
 package com.example.courseplanner.service;
 
 import com.example.courseplanner.model.*;
@@ -20,6 +29,19 @@ public class CourseSysClient {
 
     private final RestTemplate restTemplate = new RestTemplate();
 
+    /**
+     * Fetches all course sections for a specific course in a specific semester.
+     * 
+     * @param dept Department code (e.g., "CMPT", "MATH")
+     * @param courseNumber Course number (e.g., "276", "120")
+     * @param semesterCode Semester code (e.g., 1257 for Fall 2025)
+     * @return CourseSysBrowseResult containing course metadata and list of offerings
+     *         Returns empty result (not null) if API call fails or returns no data
+     * 
+     * Example:
+     *   fetchCourseSections("CMPT", "276", 1257)
+     *   → Returns all sections of CMPT 276 in Fall 2025
+     */
     public CourseSysBrowseResult fetchCourseSections(
             String dept,
             String courseNumber,
@@ -54,6 +76,15 @@ public class CourseSysClient {
     // Parsing logic (mirrors Python)
     // -----------------------------
 
+    /**
+     * Parses CourseSys API response data into structured result object.
+     * 
+     * @param rows List of table rows from API response
+     * @param dept Department code
+     * @param courseNumber Course number
+     * @param semesterCode Semester code
+     * @return Populated CourseSysBrowseResult with all offerings
+     */
     private CourseSysBrowseResult parseResult(
             List<List<String>> rows,
             String dept,
@@ -96,6 +127,14 @@ public class CourseSysClient {
         return result;
     }
 
+    /**
+     * Creates an empty result object when API call fails or returns no data.
+     * 
+     * @param dept Department code
+     * @param courseNumber Course number
+     * @param semesterCode Semester code
+     * @return Empty CourseSysBrowseResult with metadata but no offerings
+     */
     private CourseSysBrowseResult emptyResult(
             String dept, String courseNumber, long semesterCode
     ) {
@@ -111,6 +150,13 @@ public class CourseSysClient {
     // Helpers
     // -----------------------------
 
+    /**
+     * Converts semester code to semester name.
+     * 
+     * @param semesterCode Semester code where last digit determines term
+     *                     (1 = spring, 4 = summer, 7 = fall)
+     * @return Semester name ("spring", "summer", "fall", or "unknown")
+     */
     private String parseSemester(long semesterCode) {
         long term = semesterCode % 10;
         return switch ((int)term) {
@@ -121,6 +167,13 @@ public class CourseSysClient {
         };
     }
 
+    /**
+     * Extracts section identifier from HTML link.
+     * 
+     * @param html HTML anchor tag containing section info
+     *             Example: "<a ...>CMPT 276 D100</a>"
+     * @return Section identifier (e.g., "D100")
+     */
     private String extractSection(String html) {
         // "<a ...>CMPT 276 D100</a>" → "D100"
         int start = html.indexOf('>') + 1;
@@ -131,6 +184,13 @@ public class CourseSysClient {
         return tokens[tokens.length - 1];
     }
 
+    /**
+     * Extracts course info URL from HTML link.
+     * 
+     * @param html HTML anchor tag with href attribute
+     *             Example: "<a href='/browse/info/2025fa-cmpt-276-d1'>..."
+     * @return URL path (e.g., "/browse/info/2025fa-cmpt-276-d1")
+     */
     private String extractInfoUrl(String html) {
         // href="/browse/info/..."
         long start = html.indexOf("href=\"") + 6;

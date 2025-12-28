@@ -3,7 +3,6 @@ import {
   Course,
   AboutInfo,
   Watcher,
-  GraphDataPoint,
   CourseOffering,
   OfferingDetail,
   GradeDistribution,
