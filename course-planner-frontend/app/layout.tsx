@@ -8,8 +8,12 @@ import Footer from "@/components/Footer";
 const inter = Inter({ subsets: ["latin"] });
 
 export const metadata: Metadata = {
-  title: "Course Planner - Plan Your Academic Journey",
-  description: "Browse courses, track enrollment, and plan your academic schedule",
+  title: "SFU Course Planner — Plan Properly. Regret Less.",
+  description:
+    "Minimize hassle and make informed course decisions with all your SFU planning tools in one place — clear comparisons, better choices, less second-guessing.",
+  icons: {
+    icon: "/favicon.ico",
+  },
 };
 
 export default function RootLayout({ children }: { children: React.ReactNode }) {

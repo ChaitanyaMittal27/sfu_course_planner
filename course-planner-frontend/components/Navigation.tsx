@@ -92,9 +92,7 @@ export default function Navigation() {
         <div className="flex justify-between items-center h-14">
           {/* Logo */}
           <Link href="/" className="flex items-center space-x-2 group">
-            <svg className="w-6 h-6 text-white" fill="currentColor" viewBox="0 0 24 24">
-              <path d="M12 3L1 9l11 6 9-4.91V17h2V9M5 13.18v4L12 21l7-3.82v-4L12 17l-7-3.82z" />
-            </svg>
+            <img src="/favicon.png" alt="SFU Course Planner" className="w-8 h-8" />
             <span className="text-lg font-semibold text-white">SFU Course Planner</span>
           </Link>
 

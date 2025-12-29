@@ -58,10 +58,10 @@ export default function Splash({ onComplete }: SplashProps) {
         stage === 4 ? "opacity-0" : "opacity-100"
       }`}
       style={{
-        background: "linear-gradient(135deg, #D84315 0%, #BF360C 50%, #DD2C00 100%)",
+        background: "linear-gradient(135deg, #E63946 0%, #cd3d3d 100%)",
       }}
     >
-      {/* Floating books background animation */}
+      {/* Floating graduation caps background animation */}
       <div className="absolute inset-0 overflow-hidden">
         {floatingBooks.map((i) => (
           <div
@@ -74,7 +74,9 @@ export default function Splash({ onComplete }: SplashProps) {
               animationDuration: `${3 + (i % 2)}s`,
             }}
           >
-            <div className="w-8 h-10 bg-white/10 backdrop-blur-sm rounded shadow-lg transform rotate-12 hover:rotate-0 transition-transform" />
+            <svg width="40" height="40" viewBox="0 0 24 24" fill="rgba(139, 21, 56, 0.3)" className="drop-shadow-lg">
+              <path d="M12 3L1 9l11 6 9-4.91V17h2V9M5 13.18v4L12 21l7-3.82v-4L12 17l-7-3.82z" />
+            </svg>
           </div>
         ))}
       </div>
@@ -82,11 +84,11 @@ export default function Splash({ onComplete }: SplashProps) {
       {/* Animated gradient orbs */}
       <div className="absolute inset-0 overflow-hidden pointer-events-none">
         <div
-          className="absolute w-96 h-96 bg-orange-400/20 rounded-full blur-3xl animate-pulse-slow"
+          className="absolute w-96 h-96 bg-red-500/15 rounded-full blur-3xl animate-pulse-slow"
           style={{ top: "10%", left: "20%" }}
         />
         <div
-          className="absolute w-80 h-80 bg-amber-300/20 rounded-full blur-3xl animate-pulse-slow"
+          className="absolute w-80 h-80 bg-red-400/15 rounded-full blur-3xl animate-pulse-slow"
           style={{ bottom: "15%", right: "25%", animationDelay: "1s" }}
         />
       </div>
@@ -102,7 +104,7 @@ export default function Splash({ onComplete }: SplashProps) {
 
               {/* Center logo */}
               <div className="absolute inset-0 flex items-center justify-center bg-white rounded-full shadow-2xl">
-                <svg className="w-16 h-16 text-red-800" fill="currentColor" viewBox="0 0 24 24">
+                <svg className="w-16 h-16 text-[#8B1538]" fill="currentColor" viewBox="0 0 24 24">
                   <path d="M12 3L1 9l11 6 9-4.91V17h2V9M5 13.18v4L12 21l7-3.82v-4L12 17l-7-3.82z" />
                 </svg>
               </div>
@@ -113,7 +115,10 @@ export default function Splash({ onComplete }: SplashProps) {
         {/* Title with typewriter effect */}
         {stage >= 2 && (
           <div className="mb-6">
-            <h1 className="text-6xl md:text-7xl font-bold text-white mb-3 tracking-tight animate-fade-in">
+            <h1
+              className="text-6xl md:text-7xl font-bold mb-3 tracking-tight animate-fade-in"
+              style={{ color: "#ffffff" }}
+            >
               SFU Course Planner
             </h1>
             <div className="h-1 w-32 mx-auto bg-gradient-to-r from-transparent via-white to-transparent animate-width-expand" />
@@ -122,7 +127,10 @@ export default function Splash({ onComplete }: SplashProps) {
 
         {/* Subtitle */}
         {stage >= 2 && (
-          <p className="text-xl text-white/90 mb-12 animate-fade-in-delay font-light tracking-wide">
+          <p
+            className="text-xl mb-12 animate-fade-in-delay font-light tracking-wide"
+            style={{ color: "rgba(255, 255, 255, 0.9)" }}
+          >
             Plan Your Academic Journey
           </p>
         )}
@@ -134,7 +142,7 @@ export default function Splash({ onComplete }: SplashProps) {
               {/* Progress bar */}
               <div className="relative h-3 bg-black/20 rounded-full overflow-hidden mb-4">
                 <div
-                  className="absolute inset-y-0 left-0 bg-gradient-to-r from-amber-300 via-orange-300 to-amber-300 rounded-full transition-all duration-300 ease-out shadow-glow"
+                  className="absolute inset-y-0 left-0 bg-gradient-to-r from-[#8B1538] via-white to-[#8B1538] rounded-full transition-all duration-300 ease-out shadow-glow"
                   style={{ width: `${progress}%` }}
                 >
                   {/* Animated shimmer */}
@@ -144,29 +152,37 @@ export default function Splash({ onComplete }: SplashProps) {
 
               {/* Status text */}
               <div className="flex justify-between items-center text-sm">
-                <span className="text-white/80 font-medium">
+                <span className="font-medium" style={{ color: "rgba(255, 255, 255, 0.8)" }}>
                   {progress < 30 && "Loading courses..."}
                   {progress >= 30 && progress < 60 && "Preparing interface..."}
                   {progress >= 60 && progress < 100 && "Almost ready..."}
                   {progress === 100 && "✓ Ready!"}
                 </span>
-                <span className="text-white font-bold">{Math.round(progress)}%</span>
+                <span className="font-bold" style={{ color: "#ffffff" }}>
+                  {Math.round(progress)}%
+                </span>
               </div>
             </div>
 
             {/* Floating stats */}
-            <div className="mt-6 grid grid-cols-3 gap-4 text-white/70 text-sm">
+            <div className="mt-6 grid grid-cols-3 gap-4 text-sm">
               <div className="animate-fade-in-stagger-1">
-                <div className="font-bold text-white">500+</div>
-                <div>Courses</div>
+                <div className="font-bold" style={{ color: "#ffffff" }}>
+                  500+
+                </div>
+                <div style={{ color: "rgba(255, 255, 255, 0.7)" }}>Courses</div>
               </div>
               <div className="animate-fade-in-stagger-2">
-                <div className="font-bold text-white">50+</div>
-                <div>Departments</div>
+                <div className="font-bold" style={{ color: "#ffffff" }}>
+                  50+
+                </div>
+                <div style={{ color: "rgba(255, 255, 255, 0.7)" }}>Departments</div>
               </div>
               <div className="animate-fade-in-stagger-3">
-                <div className="font-bold text-white">3</div>
-                <div>Campuses</div>
+                <div className="font-bold" style={{ color: "#ffffff" }}>
+                  3
+                </div>
+                <div style={{ color: "rgba(255, 255, 255, 0.7)" }}>Campuses</div>
               </div>
             </div>
           </div>
