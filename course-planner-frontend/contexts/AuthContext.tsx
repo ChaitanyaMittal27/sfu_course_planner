@@ -172,3 +172,16 @@ export function useAuth() {
 
   return context;
 }
+
+// testing jwt
+export function useAuthToken() {
+  const [token, setToken] = useState<string | null>(null);
+  useEffect(() => {
+    const fetchToken = async () => {
+      const { data } = await supabase.auth.getSession();
+      setToken(data.session?.access_token ?? null);
+    };
+    fetchToken();
+  }, []);
+  return token;
+}

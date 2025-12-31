@@ -43,6 +43,8 @@ export interface CourseOffering {
 }
 
 export interface OfferingDetail {
+  deptId: number;
+  courseId: number;
   // Course identity
   deptCode: string; // "CMPT"
   courseNumber: string; // "276"
@@ -118,10 +120,10 @@ export interface TermInfo {
 }
 
 // ----------------------------
-// Watchers
+// Bookmarks
 // ----------------------------
-export interface Watcher {
-  watcherId: number;
+export interface Bookmark {
+  bookmarkId: number;
   deptId: number;
   courseId: number;
   semesterCode: number;

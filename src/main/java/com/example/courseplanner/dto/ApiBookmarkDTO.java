@@ -2,9 +2,9 @@ package com.example.courseplanner.dto;
 
 import java.time.LocalDateTime;
 
-public class ApiWatcherDTO {
+public class ApiBookmarkDTO {
 
-    private Long watcherId;
+    private Long bookmarkId;
     private Long deptId;
     private Long courseId;
     private Long semesterCode;
@@ -14,15 +14,15 @@ public class ApiWatcherDTO {
     // ----------------------------
     // Constructor
     // ----------------------------
-    public ApiWatcherDTO(
-        Long watcherId,
+    public ApiBookmarkDTO(
+        Long bookmarkId,
         Long deptId,
         Long courseId,
         Long semesterCode,
         String section,
         LocalDateTime createdAt
     ) {
-        this.watcherId = watcherId;
+        this.bookmarkId = bookmarkId;
         this.deptId = deptId;
         this.courseId = courseId;
         this.semesterCode = semesterCode;
@@ -33,12 +33,12 @@ public class ApiWatcherDTO {
     // ----------------------------
     // Getters & Setters
     // ----------------------------
-    public Long getWatcherId() {
-        return watcherId;
+    public Long getBookmarkId() {
+        return bookmarkId;
     }
 
-    public void setWatcherId(Long watcherId) {
-        this.watcherId = watcherId;
+    public void setBookmarkId(Long bookmarkId) {
+        this.bookmarkId = bookmarkId;
     }
 
     public Long getDeptId() {
