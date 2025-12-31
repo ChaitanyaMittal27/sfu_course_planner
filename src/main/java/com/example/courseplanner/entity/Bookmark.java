@@ -2,10 +2,11 @@ package com.example.courseplanner.entity;
 
 import jakarta.persistence.*;
 import java.time.LocalDateTime;
+import java.util.UUID;
 
 @Entity
 @Table(
-    name = "watchers",
+    name = "bookmarks",
     uniqueConstraints = {
         @UniqueConstraint(columnNames = {
             "dept_id",
@@ -17,23 +18,23 @@ import java.time.LocalDateTime;
     },
     indexes = {
         @Index(
-            name = "idx_watchers_user",
+            name = "idx_bookmarks_user",
             columnList = "user_id, dept_id, course_id, semester_code, section"
         )
     }
 )
-public class Watcher {
+public class Bookmark {
 
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
-    @Column(name = "watcher_id")
-    private Long watcherId;
+    @Column(name = "bookmark_id")
+    private Long bookmarkId;
 
     @Column(name = "dept_id", nullable = false)
     private Long deptId;
 
-    @Column(name = "user_id", nullable = false)
-    private Long userId;
+    @Column(name = "user_id", nullable = false, columnDefinition = "UUID")
+    private UUID userId;
 
     @Column(name = "course_id", nullable = false)
     private Long courseId;
@@ -41,7 +42,7 @@ public class Watcher {
     @Column(name = "semester_code", nullable = false)
     private Long semesterCode;
 
-    @Column(name = "section", nullable = false, length = 10)
+    @Column(name = "section", nullable = false, length = 50)
     private String section;
 
     @Column(name = "created_at", updatable = false)
@@ -50,9 +51,9 @@ public class Watcher {
     // ----------------------------
     // Constructors
     // ----------------------------
-    public Watcher() {}
+    public Bookmark() {}
 
-    public Watcher(Long userId, Long deptId, Long courseId, Long semesterCode, String section) {
+    public Bookmark(UUID userId, Long deptId, Long courseId, Long semesterCode, String section) {
         this.userId = userId;
         this.deptId = deptId;
         this.courseId = courseId;
@@ -72,12 +73,12 @@ public class Watcher {
     // ----------------------------
     // Getters & Setters
     // ----------------------------
-    public Long getWatcherId() {
-        return watcherId;
+    public Long getBookmarkId() {
+        return bookmarkId;
     }
     
-    public void setWatcherId(Long watcherId) {
-        this.watcherId = watcherId;
+    public void setBookmarkId(Long bookmarkId) {
+        this.bookmarkId = bookmarkId;
     }
 
     public Long getDeptId() {
@@ -88,11 +89,11 @@ public class Watcher {
         this.deptId = deptId;
     }
 
-    public Long getUserId() {
+    public UUID getUserId() {
         return userId;
     }
 
-    public void setUserId(Long userId) {
+    public void setUserId(UUID userId) {
         this.userId = userId;
     }
 

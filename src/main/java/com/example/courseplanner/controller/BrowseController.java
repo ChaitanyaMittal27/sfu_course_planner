@@ -252,6 +252,8 @@ public class BrowseController {
 
         // ---- Final DTO construction ----
         ApiOfferingDetailDTO dto = new ApiOfferingDetailDTO(
+                deptId,
+                courseId,
                 deptCode,
                 courseNumber,
                 title,

@@ -2,19 +2,30 @@ import {
   Department,
   Course,
   AboutInfo,
-  Watcher,
+  Bookmark,
   CourseOffering,
   OfferingDetail,
   GradeDistribution,
   EnrollmentDataPoint,
   TermInfo,
 } from "@/lib/types";
+import { supabase } from "@/lib/supabase/client";
 
 // API base URL from environment variable
 const API_BASE_URL = process.env.NEXT_PUBLIC_API_URL;
 
 // ----------------------------
-// Generic fetch wrapper
+// Get JWT from Supabase session
+// ----------------------------
+async function getAuthToken(): Promise<string | null> {
+  const {
+    data: { session },
+  } = await supabase.auth.getSession();
+  return session?.access_token ?? null;
+}
+
+// ----------------------------
+// Generic fetch wrapper (public endpoints)
 // ----------------------------
 async function fetchAPI<T>(endpoint: string): Promise<T> {
   const url = `${API_BASE_URL}${endpoint}`;
@@ -31,12 +42,53 @@ async function fetchAPI<T>(endpoint: string): Promise<T> {
 }
 
 // ----------------------------
+// Generic fetch wrapper (authenticated endpoints)
+// ----------------------------
+async function fetchAuthAPI<T>(endpoint: string, options: RequestInit = {}): Promise<T> {
+  const url = `${API_BASE_URL}${endpoint}`;
+
+  // Get JWT token
+  const token = await getAuthToken();
+  if (!token) {
+    throw new Error("Not authenticated - please log in");
+  }
+
+  try {
+    const response = await fetch(url, {
+      ...options,
+      headers: {
+        ...options.headers,
+        Authorization: `Bearer ${token}`,
+      },
+    });
+
+    if (!response.ok) {
+      if (response.status === 401) {
+        throw new Error("Session expired - please log in again");
+      }
+      throw new Error(`API Error: ${response.status} ${response.statusText}`);
+    }
+
+    // Handle 204 No Content (DELETE responses)
+    if (response.status === 204) {
+      return undefined as T;
+    }
+
+    return await response.json();
+  } catch (error) {
+    console.error(`Failed to fetch ${endpoint}:`, error);
+    throw error;
+  }
+}
+
+// ----------------------------
 // API Functions
 // ----------------------------
 export const api = {
   // -------------------------
-  // Departments / Courses
+  // Departments / Courses (Public)
   // -------------------------
+
   // GET /api/departments
   getDepartments: () => fetchAPI<Department[]>("/api/departments"),
 
@@ -44,8 +96,9 @@ export const api = {
   getCourses: (deptId: number) => fetchAPI<Course[]>(`/api/departments/${deptId}/courses`),
 
   // -------------------------
-  // Offerings + Details
+  // Offerings + Details (Public)
   // -------------------------
+
   // GET /api/departments/{deptId}/courses/{courseId}/offerings
   getOfferings: (deptId: number, courseId: number) =>
     fetchAPI<CourseOffering[]>(`/api/departments/${deptId}/courses/${courseId}/offerings`),
@@ -54,25 +107,21 @@ export const api = {
   getOfferingDetail: (deptId: number, courseId: number, semesterCode: number) =>
     fetchAPI<OfferingDetail>(`/api/departments/${deptId}/courses/${courseId}/offerings/${semesterCode}`),
 
-  // GET /api/watchers/{userId}/offerings
-  getWatcherOfferings: (userId: number) => fetchAPI<CourseOffering[]>(`/api/watchers/${userId}/offerings`),
+  // -------------------------
+  // About (Public)
+  // -------------------------
 
-  // -------------------------
-  // About
-  // -------------------------
   // GET /api/about
   getAbout: () => fetchAPI<AboutInfo>("/api/about"),
 
   // -------------------------
-  // Graph
+  // Graph (Public)
   // -------------------------
+
   // GET /api/graph/grade-distribution?courseId={}
   getGradeDistribution: (courseId: number) =>
     fetchAPI<GradeDistribution>(`/api/graph/grade-distribution?courseId=${courseId}`),
 
-  // -------------------------
-  // Enrollment History (Charts A & B)
-  // -------------------------
   // GET /api/graph/enrollment-history?deptId={}&courseId={}&range=5yr
   getEnrollmentHistory: (deptId: number, courseId: number, range: string = "5yr") =>
     fetchAPI<EnrollmentDataPoint[]>(
@@ -80,22 +129,51 @@ export const api = {
     ),
 
   // -------------------------
-  // Term Info
+  // Term Info (Public)
   // -------------------------
+
+  // GET /api/terms/enrolling
   getEnrollingTerm: () => fetchAPI<TermInfo>("/api/terms/enrolling"),
 
   // -------------------------
-  // Watchers
+  // Bookmarks (Authenticated - JWT Required)
   // -------------------------
-  // GET /api/watchers
-  getWatchers: () => fetchAPI<Watcher[]>("/api/watchers"),
 
-  // POST /api/watchers
-  // Body: { deptId, courseId, semesterCode, section }
-  createWatcher: async (deptId: number, courseId: number, semesterCode: number, section: string): Promise<Watcher> => {
-    const response = await fetch(`${API_BASE_URL}/api/watchers`, {
+  /**
+   * Get all bookmarks for authenticated user
+   *
+   * @returns List of user's bookmarks
+   */
+  getBookmarks: () => fetchAuthAPI<Bookmark[]>("/api/bookmarks"),
+
+  /**
+   * Get watched offerings with live enrollment data
+   *
+   * @returns List of watched course offerings with enrollment data
+   */
+  getBookmarkOfferings: () => fetchAuthAPI<CourseOffering[]>("/api/bookmarks/offerings"),
+
+  /**
+   * Create a new bookmark for authenticated user
+   *
+   *
+   * @param deptId Department ID
+   * @param courseId Course ID
+   * @param semesterCode Semester code (e.g., 1257)
+   * @param section Section (e.g., "D100")
+   * @returns Created bookmark
+   */
+  createBookmark: async (
+    deptId: number,
+    courseId: number,
+    semesterCode: number,
+    section: string
+  ): Promise<Bookmark> => {
+    return fetchAuthAPI<Bookmark>("/api/bookmarks", {
       method: "POST",
-      headers: { "Content-Type": "application/json" },
+      headers: {
+        "Content-Type": "application/json",
+      },
       body: JSON.stringify({
         deptId,
         courseId,
@@ -103,21 +181,17 @@ export const api = {
         section,
       }),
     });
-
-    if (!response.ok) {
-      throw new Error(`Failed to create watcher: ${response.status}`);
-    }
-
-    return (await response.json()) as Watcher;
   },
 
-  // DELETE /api/watchers/{watcherId}
-  deleteWatcher: async (watcherId: number): Promise<void> => {
-    const response = await fetch(`${API_BASE_URL}/api/watchers/${watcherId}`, { method: "DELETE" });
-
-    if (!response.ok) {
-      throw new Error(`Failed to delete watcher: ${response.status}`);
-    }
+  /**
+   * Delete a bookmark (ownership verified by backend)
+   *
+   * @param bookmarkId Bookmark ID to delete
+   */
+  deleteBookmark: async (bookmarkId: number): Promise<void> => {
+    return fetchAuthAPI<void>(`/api/bookmarks/${bookmarkId}`, {
+      method: "DELETE",
+    });
   },
 };
 
@@ -127,7 +201,7 @@ export type {
   Course,
   CourseOffering,
   AboutInfo,
-  Watcher,
+  Bookmark,
   GradeDistribution,
   OfferingDetail,
   EnrollmentDataPoint,

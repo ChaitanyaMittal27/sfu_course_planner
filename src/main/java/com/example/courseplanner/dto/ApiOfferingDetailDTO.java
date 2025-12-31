@@ -6,6 +6,8 @@ import java.util.Map;
 public class ApiOfferingDetailDTO {
 
     // --- Header ---
+    private Long deptId;           
+    private Long courseId;
     private String deptCode;        // CMPT
     private String courseNumber;    // 276
     private String title;           // Intro Software Engineering
@@ -34,7 +36,9 @@ public class ApiOfferingDetailDTO {
     private String outlineUrl;
 
     // constructor
-    public ApiOfferingDetailDTO(String deptCode, String courseNumber, String title, long year, String term, String campus, String medianGrade, double failRate, Map<String, Long> gradeDistribution, String description, String prerequisites, String corequisites, long units, String degreeLevel, String designation, List<ApiCourseOfferingDTO> sections, String outlineUrl) {
+    public ApiOfferingDetailDTO(Long deptId, Long courseId, String deptCode, String courseNumber, String title, long year, String term, String campus, String medianGrade, double failRate, Map<String, Long> gradeDistribution, String description, String prerequisites, String corequisites, long units, String degreeLevel, String designation, List<ApiCourseOfferingDTO> sections, String outlineUrl) {
+        this.deptId = deptId;
+        this.courseId = courseId;
         this.deptCode = deptCode;
         this.courseNumber = courseNumber;
         this.title = title;
@@ -55,6 +59,18 @@ public class ApiOfferingDetailDTO {
     }
 
     // Getters and Setters
+    public Long getDeptId() {
+        return deptId;
+    }
+    public void setDeptId(Long deptId) {
+        this.deptId = deptId;
+    }
+    public Long getCourseId() {
+        return courseId;
+    }
+    public void setCourseId(Long courseId) {
+        this.courseId = courseId;
+    }
     public String getDeptCode() {
         return deptCode;
     }

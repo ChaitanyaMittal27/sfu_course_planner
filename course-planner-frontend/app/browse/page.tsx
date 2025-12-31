@@ -7,6 +7,7 @@ import { api } from "@/lib/api";
 import type { Course, CourseOffering, Department } from "@/lib/types";
 import LoadingSpinner from "@/components/LoadingSpinner";
 import ErrorMessage from "@/components/ErrorMessage";
+import BookmarkButton from "@/components/BookmarkButton";
 
 // ----------------------------
 // Helpers
@@ -154,6 +155,7 @@ function OfferingDetailScreen({ detail, onBack }: { detail: OfferingDetail; onBa
                     <th className="table-header text-left">Capacity</th>
                     <th className="table-header text-left">Load</th>
                     <th className="table-header text-left">Jump to Outline</th>
+                    <th className="table-header text-center">Bookmark</th>
                   </tr>
                 </thead>
                 <tbody>
@@ -178,6 +180,14 @@ function OfferingDetailScreen({ detail, onBack }: { detail: OfferingDetail; onBa
                         >
                           Open outline
                         </a>
+                      </td>
+                      <td className="table-cell text-center">
+                        <BookmarkButton
+                          deptId={detail.deptId}
+                          courseId={detail.courseId}
+                          semesterCode={s.semesterCode}
+                          section={s.section}
+                        />
                       </td>
                     </tr>
                   ))}
