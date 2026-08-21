@@ -44,8 +44,13 @@ bin/
 java_docs/
 data/
 test_public/
+
+# env
 .env
 backend/.env.local
+frontend/.env.local
+
+
 archive_old/
 application.jar
 
