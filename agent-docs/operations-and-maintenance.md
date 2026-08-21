@@ -17,7 +17,9 @@ The public contact endpoint first calls the same non-throwing mail helper, then 
 
 ## Database and schema operations
 
-JPA is configured with `ddl-auto=validate`; a running backend requires a pre-existing compatible schema. There are no migration files in the repository. In addition to JPA, admin users and analytics use direct SQL: `UsersController` selects from Supabase `auth.users` and public preferences/bookmarks, so schema/privilege changes around Auth can break admin reporting even when entity validation passes.
+JPA is configured with `ddl-auto=validate`; a running backend requires a pre-existing compatible schema. The current baseline is captured in `supabase/migrations/20260821070750_remote_schema.sql`; `supabase/seed.sql` contains public catalog data but excludes application-user data, preferences, bookmarks, and contact submissions. In addition to JPA, admin users and analytics use direct SQL: `UsersController` selects from Supabase `auth.users` and public preferences/bookmarks, so schema/privilege changes around Auth can break admin reporting even when entity validation passes.
+
+Use the Supabase CLI for local database work: `npx supabase@latest start` starts the local stack, and `npx supabase@latest db reset` recreates the local database from migrations and seed data. Treat `db push` as a production-affecting action because the linked project is production; review its SQL and use a dry run first. Never run `db reset --linked`.
 
 ## Population scripts
 
@@ -35,5 +37,6 @@ Several scripts use insert-on-conflict/upsert or only fill null/missing values, 
 - Backend: Gradle wrapper, Spring Boot 3.0.0, Java 17 source compatibility. From `backend/`, `bootRun`, `test`, and `bootJar` are the relevant tasks.
 - Frontend: npm lockfile, Next.js 16/React 19, with `dev`, `lint`, `build`, and `start` scripts. ESLint is the only verified automated frontend check.
 - There is no `src/test` directory or repository CI/deployment configuration (GitHub Actions or platform manifests). README names Vercel, Elastic Beanstalk, and Supabase, but deployment setup itself is external to this repository.
-- Dockerfiles are present for both apps. Their verified targets are `dev`/`builder`/`runtime` for the backend and `dev`/`build`/`runtime` for the frontend; Docker Compose remains pending.
+- Dockerfiles are present for both apps. Their verified targets are `dev`/`builder`/`runtime` for the backend and `dev`/`build`/`runtime` for the frontend. `docker-compose.yaml` runs their development targets only; it does not participate in Vercel or Elastic Beanstalk deployment.
+- On Windows, `scripts/dev.ps1` starts the Supabase CLI and then Compose; `scripts/dev-down.ps1` stops both. Compose containers reach Supabase through `host.docker.internal`, while browser-visible Supabase URLs remain `127.0.0.1`/`localhost`.
 - Backend environment is supplied through `application.properties` placeholders; its `.env.local` is for Docker or manual shell loading, not auto-loaded by Spring. Frontend variables are `.env.local`. Keep credentials outside source control.

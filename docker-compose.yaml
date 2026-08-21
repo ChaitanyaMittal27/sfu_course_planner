@@ -1,0 +1,38 @@
+services:
+  backend:
+    build:
+      context: ./backend
+      target: dev
+    env_file:
+      - ./backend/.env.local
+    environment:
+      # Inside a container, 127.0.0.1 means the container itself:
+      # so we use host.docker.internal instead.
+      DB_URL_NEW: jdbc:postgresql://host.docker.internal:54322/postgres
+      SUPABASE_URL_NEW: http://host.docker.internal:54321
+    ports:
+      - "5000:5000"
+    volumes:
+      - ./backend/src:/workspace/src
+
+  frontend:
+    build:
+      context: ./frontend
+      target: dev
+    depends_on:
+      - backend
+    env_file:
+      - ./frontend/.env.local
+    environment:
+      SUPABASE_INTERNAL_URL: http://host.docker.internal:54321
+      WATCHPACK_POLLING: "true"
+    ports:
+      - "3000:3000"
+    volumes:
+      - ./frontend:/app
+      - frontend_node_modules:/app/node_modules
+      - frontend_next:/app/.next
+
+volumes:
+  frontend_node_modules:
+  frontend_next:

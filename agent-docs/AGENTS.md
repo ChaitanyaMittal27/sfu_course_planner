@@ -20,7 +20,9 @@
 - Backend configuration is environment-only: `DB_URL_NEW`, `DB_USER_NEW`, `DB_PASS_NEW`, `SUPABASE_URL_NEW`, `SUPABASE_KEY_NEW`, and `RESEND_API_KEY`; `SERVER_PORT` defaults to 5000. Never commit values.
 - `backend/.env.local` is an ignored Docker/runtime environment file, not an automatic Spring Boot configuration source. Load its values into the shell for manual Gradle/JAR runs.
 - Run backend tasks from `backend/` with a Java 17+ runtime: `./gradlew bootRun`, `./gradlew test`, and `./gradlew bootJar`.
-- Dockerfiles are multi-stage: `backend/Dockerfile` has `dev`, `builder`, and `runtime` targets; `frontend/Dockerfile` has `dev`, `build`, and `runtime` targets. Keep build contexts free of `.env*` files. Docker Compose is not present yet.
+- Dockerfiles are multi-stage: `backend/Dockerfile` has `dev`, `builder`, and `runtime` targets; `frontend/Dockerfile` has `dev`, `build`, and `runtime` targets. Keep build contexts free of `.env*` files.
+- `docker-compose.yaml` is development-only: it runs the frontend and backend `dev` targets. Supabase remains owned by the Supabase CLI, which starts its own local service stack. On Windows, use `scripts/dev.ps1` to start both and `scripts/dev-down.ps1` to stop both; this does not deploy either application.
+- Browser-facing Supabase configuration must remain a browser-reachable URL (normally `http://127.0.0.1:54321` locally). When the frontend runs in Compose, its server-only `SUPABASE_INTERNAL_URL` reaches the host through `host.docker.internal`; `lib/supabase/server.ts` falls back to the public value outside Compose.
 
 ## Frontend
 
@@ -31,6 +33,7 @@
 - The UI is token-based and dark-mode aware. For new UI, use the semantic Tailwind tokens defined in `app/globals.css` and the typography constants in `app/fonts.ts`; do not introduce one-off colors, dark-mode hardcoded palettes, or typography scales. Add a token to both `:root` and `.dark` before using a new semantic color.
 - Prefer the provided animation utilities in `globals.css` and Tailwind spacing over component-level CSS/style values. Type component props and reuse shared types instead of `any`.
 - Frontend variables belong in `frontend/.env.local`: `NEXT_PUBLIC_API_URL`, `NEXT_PUBLIC_SUPABASE_URL`, `NEXT_PUBLIC_SUPABASE_ANON_KEY`, and `NEXT_PUBLIC_SITE_URL`. They are public-client configuration, not a place for service-role or Resend secrets.
+- Local Supabase schema and catalog seed data live in `supabase/migrations/` and `supabase/seed.sql`. Use the CLI to test migrations locally before a reviewed `db push`; never use `db reset --linked` against production.
 - From `frontend/`, use `npm install`, `npm run dev`, `npm run lint`, and `npm run build`.
 
 ## Data scripts and maintenance
@@ -40,6 +43,5 @@
 
 ## Documentation hygiene and validation
 
-- Treat implementation, `README.md`, and this guidance as the current references. `docs/curl_commands.sh` and parts of `scripts_README.md` contain historical material (for example removed watcher endpoints and a nonexistent `populate_courses_deep_first.py`); verify any claim from them against code before acting on it.
+- Treat implementation, `README.md`, and this guidance as the current references. Parts of `scripts_README.md` contain historical material (for example a nonexistent `populate_courses_deep_first.py`); verify any claim from them against code before acting on it.
 - There is currently no `src/test` suite. At minimum, run frontend lint for frontend changes and the relevant Gradle task for backend changes; the backend requires Java 17+ even if the host default JVM is older.
-- Preserve unrelated work: this repository may have an existing modified `frontend/package-lock.json`.

@@ -55,3 +55,6 @@ archive_old/
 application.jar
 
 ignore/
+
+# local_docs
+local_docs/
