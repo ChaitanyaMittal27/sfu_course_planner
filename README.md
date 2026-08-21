@@ -70,8 +70,8 @@ On top of that, signed-in users can bookmark specific course offerings and opt i
 ## Project Structure
 
 ```
-├── build.gradle                        # Spring Boot config (Java 17, Spring Boot 3.0.0)
-├── src/main/java/com/example/courseplanner/
+├── backend/build.gradle                # Spring Boot config (Java 17, Spring Boot 3.0.0)
+├── backend/src/main/java/com/example/courseplanner/
 │   ├── Application.java                # Spring Boot entry point (@EnableScheduling for notification cron)
 │   ├── config/CorsConfig.java          # CORS (localhost + sfucourseplanner.com + vercel.app)
 │   ├── controller/
@@ -101,8 +101,8 @@ On top of that, signed-in users can bookmark specific course offerings and opt i
 │   ├── exception/                      # GlobalExceptionHandler, ForbiddenException
 │   ├── utils/SemesterUtil.java         # Semester code encode/decode/previous
 │   └── scripts/                        # Python one-off DB population scripts (see scripts_README.md)
-├── src/main/resources/application.properties
-├── course-planner-frontend/
+├── backend/src/main/resources/application.properties
+├── frontend/
 │   ├── app/
 │   │   ├── layout.tsx                  # Root layout (AuthProvider, NuqsAdapter, Navigation, Footer, Analytics)
 │   │   ├── page.tsx                    # Landing page with splash screen
@@ -135,7 +135,7 @@ On top of that, signed-in users can bookmark specific course offerings and opt i
 │   ├── contexts/AuthContext.tsx        # Auth state (user, userId, isLoading, signOut)
 │   ├── hooks/{useTheme,useScrollReveal}.ts
 │   └── proxy.ts                        # Next.js middleware — route protection, admin gate, token refresh
-├── coding_standards.txt                # Frontend coding rules (design tokens, fonts, shadcn, icons)
+├── agent-docs/AGENTS.md                # Persistent project and frontend coding guidance
 └── docs/                               # Design/migration notes, sample curl commands
 ```
 
@@ -151,16 +151,17 @@ On top of that, signed-in users can bookmark specific course offerings and opt i
 
 ```bash
 # From the repo root
+cd backend
 ./gradlew bootRun      # Starts on port 5000 (or $SERVER_PORT)
 ./gradlew bootJar       # Build a runnable JAR (build/libs/application.jar)
 ```
 
-Configuration is read from environment variables (see below) via `src/main/resources/application.properties`. The database schema is **not** auto-created — `spring.jpa.hibernate.ddl-auto=validate` means the schema must already exist and match the JPA entities.
+Configuration is read from environment variables (see below) via `backend/src/main/resources/application.properties`. The database schema is **not** auto-created — `spring.jpa.hibernate.ddl-auto=validate` means the schema must already exist and match the JPA entities.
 
 ### Frontend
 
 ```bash
-cd course-planner-frontend
+cd frontend
 npm install
 npm run dev        # Starts on http://localhost:3000
 npm run build       # Production build
@@ -183,7 +184,7 @@ Read from the environment by `application.properties`:
 | `SUPABASE_KEY_NEW` | Supabase anon key |
 | `RESEND_API_KEY` | Resend API key, injected directly via `@Value("${RESEND_API_KEY}")` in `EmailService`/`HealthController` |
 
-The Python population scripts under `src/main/java/com/example/courseplanner/scripts/` additionally expect `DB_HOST`, `DB_NAME`, `DB_USER`, `DB_PASS`.
+The Python population scripts under `backend/src/main/java/com/example/courseplanner/scripts/` have their own connection placeholders and must be configured before use.
 
 ### Frontend
 Read from `.env.local`:
@@ -195,7 +196,7 @@ Read from `.env.local`:
 | `NEXT_PUBLIC_SUPABASE_ANON_KEY` | Supabase anon key |
 | `NEXT_PUBLIC_SITE_URL` | Site base URL (used for auth redirects) |
 
-> **Note:** never commit real values for these — both `.env` (backend) and `course-planner-frontend/.env.local` are gitignored. Treat the Supabase service role key and Resend API key as secrets; the service role key in particular bypasses row-level security and should never be exposed client-side or committed.
+> **Note:** never commit real values for these — both `.env` (backend) and `frontend/.env.local` are gitignored. Treat the Supabase service role key and Resend API key as secrets; the service role key in particular bypasses row-level security and should never be exposed client-side or committed.
 
 ## API Reference
 
@@ -279,7 +280,7 @@ All API calls go through `lib/api.ts`:
 
 ## Database Population Scripts
 
-`src/main/java/com/example/courseplanner/scripts/` contains standalone Python scripts used to seed and maintain the `departments`/`courses`/grade-related tables (see `scripts_README.md` for full details). They are stepwise and idempotent — safe to interrupt and re-run:
+`backend/src/main/java/com/example/courseplanner/scripts/` contains standalone Python scripts used to seed and maintain the `departments`/`courses`/grade-related tables (see `scripts_README.md` for full details). They are stepwise and idempotent — safe to interrupt and re-run:
 
 1. `populate_departments.py` — inserts all departments.
 2. `populate_courses_base.py` — inserts course numbers/titles across 2024–2026.
@@ -296,7 +297,7 @@ The `terms` table (current/enrolling term) is managed separately via the admin *
 The frontend is deployed on Vercel (`@vercel/analytics` is wired into `layout.tsx`). CORS on the backend explicitly allows `https://sfu-course-planner.vercel.app` and `https://*.vercel.app` in addition to the production domain, so preview deployments work against the live API. Set the frontend environment variables (above) in the Vercel project settings.
 
 ### Backend — AWS Elastic Beanstalk
-The backend reads `SERVER_PORT` from the environment (defaulting to `5000`, which is what Elastic Beanstalk expects). Build the deployable artifact with `./gradlew bootJar` (outputs `build/libs/application.jar`) and configure the environment variables listed above in the Elastic Beanstalk environment configuration. `spring.jpa.hibernate.ddl-auto=validate` means database migrations must be applied out-of-band before deploying schema-affecting changes.
+The backend reads `SERVER_PORT` from the environment (defaulting to `5000`, which is what Elastic Beanstalk expects). Build the deployable artifact from `backend/` with `./gradlew bootJar` (outputs `backend/build/libs/application.jar`) and configure the environment variables listed above in the Elastic Beanstalk environment configuration. `spring.jpa.hibernate.ddl-auto=validate` means database migrations must be applied out-of-band before deploying schema-affecting changes.
 
 ### CORS
 Allowed origins are hardcoded in `CorsConfig.java`: `localhost:3000`, `localhost:5000`, `sfu-course-planner.vercel.app`, `*.vercel.app`, `api.sfucourseplanner.com`, `sfucourseplanner.com`, and their `www` variants.
