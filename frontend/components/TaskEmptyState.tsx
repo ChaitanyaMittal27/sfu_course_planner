@@ -2,13 +2,13 @@ import type { LucideIcon } from "lucide-react";
 import { Card, CardContent } from "@/components/ui/card";
 import { bodyStyles, headerStyles } from "@/app/fonts";
 
-type AnalyticsEmptyStateProps = {
+type TaskEmptyStateProps = {
   icon: LucideIcon;
   title: string;
   description: string;
 };
 
-export default function AnalyticsEmptyState({ icon: Icon, title, description }: AnalyticsEmptyStateProps) {
+export default function TaskEmptyState({ icon: Icon, title, description }: TaskEmptyStateProps) {
   return (
     <Card className="min-h-64 p-5 sm:p-6">
       <CardContent className="flex min-h-48 flex-col items-center justify-center p-0 text-center">

@@ -6,14 +6,14 @@ import { ClipboardList } from "lucide-react";
 import PageContainer from "@/components/PageContainer";
 import LoadingSpinner from "@/components/LoadingSpinner";
 import ErrorMessage from "@/components/ErrorMessage";
+import TaskEmptyState from "@/components/TaskEmptyState";
 import { api, Department, Course, OfferingDetail, CourseOffering } from "@/lib/api";
 import { Card, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Table, TableBody, TableCell, TableRow } from "@/components/ui/table";
 import { displayStyles, headerStyles, bodyStyles, labelStyles } from "@/app/fonts";
 
-const selectClass =
-  "w-full rounded-md border border-border bg-background text-text-primary px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-ring disabled:opacity-50";
+const selectClass = `w-full rounded-md border border-border bg-background text-text-primary px-3 py-2 ${bodyStyles.md} focus:outline-none focus:ring-2 focus:ring-ring disabled:opacity-50`;
 
 function SectionComparisonContent() {
   const [deptIdParam, setDeptIdParam] = useQueryState("deptId");
@@ -46,7 +46,7 @@ function SectionComparisonContent() {
     try {
       const depts = await api.getDepartments();
       setDepartments(depts);
-    } catch (err) {
+    } catch {
       setError("Failed to load departments");
     }
   };
@@ -70,7 +70,7 @@ function SectionComparisonContent() {
 
       setSemesters(sems);
       setSelectedSemester(enrolling.semesterCode);
-    } catch (err) {
+    } catch {
       setError("Failed to load semesters");
     }
   };
@@ -123,7 +123,7 @@ function SectionComparisonContent() {
       setOfferingData(data);
       setAvailableSections(data.sections);
       setSelectedSections([]);
-    } catch (err) {
+    } catch {
       setError("Failed to fetch offering data. This course may not be offered in the selected semester.");
       setOfferingData(null);
       setAvailableSections([]);
@@ -150,32 +150,35 @@ function SectionComparisonContent() {
     <PageContainer>
       <div>
         {/* Header */}
-        <div className="mb-8">
+        <div className="mb-6">
           <h1 className={`${displayStyles.sm} text-text-primary mb-2`}>Compare Sections</h1>
           <p className={`${bodyStyles.md} text-text-muted`}>
-            Select a course and semester, then compare different sections to find the best fit.
+            Select a course and term, then compare up to three sections to find the best fit.
           </p>
         </div>
 
         {/* Selection Panel */}
-        <Card className="p-6 mb-8">
+        <Card className="p-5 sm:p-6 mb-6 sm:mb-8">
           <CardContent className="p-0">
-            <h2 className={`${headerStyles.md} text-text-primary mb-4`}>Select Course & Semester</h2>
+            <h2 className={`${headerStyles.md} text-text-primary mb-1`}>Select a course and term</h2>
+            <p className={`${bodyStyles.md} text-text-muted mb-4`}>Load its available sections, then choose at least two to compare.</p>
 
-            <div className="grid md:grid-cols-3 gap-4 mb-4">
+            <div className="grid gap-4 md:grid-cols-3">
               <div>
-                <label className={`block ${labelStyles.md} text-text-primary mb-2`}>Department</label>
+                <label htmlFor="compare-section-department" className={`block ${labelStyles.md} text-text-primary mb-2`}>
+                  Department
+                </label>
                 <select
-                  title="dept"
+                  id="compare-section-department"
                   value={selectedDept || ""}
-                  onChange={(e) => {
-                    setSelectedDept(Number(e.target.value));
+                  onChange={(event) => {
+                    setSelectedDept(Number(event.target.value) || null);
                     setSelectedCourse(null);
                     setOfferingData(null);
                   }}
                   className={selectClass}
                 >
-                  <option value="">Select Department</option>
+                  <option value="">Select a department…</option>
                   {departments.map((dept) => (
                     <option key={dept.deptId} value={dept.deptId}>
                       {dept.name}
@@ -185,38 +188,42 @@ function SectionComparisonContent() {
               </div>
 
               <div>
-                <label className={`block ${labelStyles.md} text-text-primary mb-2`}>Course</label>
+                <label htmlFor="compare-section-course" className={`block ${labelStyles.md} text-text-primary mb-2`}>
+                  Course
+                </label>
                 <select
-                  title="course"
+                  id="compare-section-course"
                   value={selectedCourse || ""}
-                  onChange={(e) => {
-                    setSelectedCourse(Number(e.target.value));
+                  onChange={(event) => {
+                    setSelectedCourse(Number(event.target.value) || null);
                     setOfferingData(null);
                   }}
                   className={selectClass}
                   disabled={!selectedDept}
                 >
-                  <option value="">Select Course</option>
-                  {courses
+                  <option value="">Select a course…</option>
+                  {[...courses]
                     .sort((a, b) => a.courseNumber.localeCompare(b.courseNumber))
                     .map((course) => (
                       <option key={course.courseId} value={course.courseId}>
-                        {course.courseNumber} - {course.title}
+                        {course.courseNumber} — {course.title}
                       </option>
                     ))}
                 </select>
               </div>
 
               <div>
-                <label className={`block ${labelStyles.md} text-text-primary mb-2`}>Semester</label>
+                <label htmlFor="compare-section-semester" className={`block ${labelStyles.md} text-text-primary mb-2`}>
+                  Term
+                </label>
                 <select
-                  title="sem"
+                  id="compare-section-semester"
                   value={selectedSemester || ""}
-                  onChange={(e) => setSelectedSemester(Number(e.target.value))}
+                  onChange={(event) => setSelectedSemester(Number(event.target.value) || null)}
                   className={selectClass}
                   disabled={!selectedCourse}
                 >
-                  <option value="">Select Semester</option>
+                  <option value="">Select a term…</option>
                   {semesters.map((sem) => (
                     <option key={sem.code} value={sem.code}>
                       {sem.label}
@@ -227,7 +234,7 @@ function SectionComparisonContent() {
             </div>
 
             {selectedDept && selectedCourse && selectedSemester && !offeringData && (
-              <Button onClick={() => fetchOfferingData(selectedDept, selectedCourse, selectedSemester)}>
+              <Button onClick={() => fetchOfferingData(selectedDept, selectedCourse, selectedSemester)} className="mt-4 w-full sm:w-auto">
                 Load Sections
               </Button>
             )}
@@ -238,7 +245,7 @@ function SectionComparisonContent() {
         {loading && <LoadingSpinner />}
 
         {!loading && offeringData && availableSections.length > 0 && (
-          <Card className="p-6 mb-8">
+          <Card className="p-5 sm:p-6 mb-6 sm:mb-8">
             <CardContent className="p-0">
               <h2 className={`${headerStyles.md} text-text-primary mb-2`}>
                 Available Sections ({availableSections.length})
@@ -247,11 +254,12 @@ function SectionComparisonContent() {
                 Select 2-3 sections to compare. Selected: {selectedSections.length}/3
               </p>
 
-              <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-3">
+              <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-3">
                 {availableSections.map((section) => (
                   <button
                     key={section.section}
                     onClick={() => toggleSection(section.section)}
+                    aria-pressed={selectedSections.includes(section.section)}
                     className={`p-4 rounded-lg border-2 text-left transition-all ${
                       selectedSections.includes(section.section)
                         ? "border-accent bg-accent/5"
@@ -344,22 +352,19 @@ function SectionComparisonContent() {
         )}
 
         {!loading && !offeringData && (
-          <Card className="p-12 text-center">
-            <div className="w-16 h-16 mx-auto mb-4 bg-surface-raised rounded-full flex items-center justify-center">
-              <ClipboardList className="w-8 h-8 text-text-subtle" />
-            </div>
-            <h3 className={`${headerStyles.md} text-text-primary mb-2`}>No Sections Loaded</h3>
-            <p className={`${bodyStyles.md} text-text-muted`}>
-              Select a course and semester above to view available sections
-            </p>
-          </Card>
+          <TaskEmptyState
+            icon={ClipboardList}
+            title="Choose a course and term"
+            description="Load a course’s available sections, then select at least two to compare."
+          />
         )}
 
         {!loading && offeringData && availableSections.length > 0 && selectedSections.length < 2 && (
-          <Card className="p-8 text-center">
-            <h3 className={`${headerStyles.sm} text-text-primary mb-2`}>Select Sections to Compare</h3>
-            <p className={`${bodyStyles.md} text-text-muted`}>Choose at least 2 sections from the list above</p>
-          </Card>
+          <TaskEmptyState
+            icon={ClipboardList}
+            title="Select one more section"
+            description="Choose at least two sections from the list above to compare them side by side."
+          />
         )}
       </div>
     </PageContainer>

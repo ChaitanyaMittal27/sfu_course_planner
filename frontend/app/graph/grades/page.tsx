@@ -8,7 +8,7 @@ import LoadingSpinner from "@/components/LoadingSpinner";
 import ErrorMessage from "@/components/ErrorMessage";
 import GradeHistogram from "@/components/GradeHistogram";
 import AnalyticsCourseSelector from "@/components/analytics/AnalyticsCourseSelector";
-import AnalyticsEmptyState from "@/components/analytics/AnalyticsEmptyState";
+import TaskEmptyState from "@/components/TaskEmptyState";
 import { api, Department, Course, GradeDistribution } from "@/lib/api";
 import { Card, CardContent } from "@/components/ui/card";
 import { displayStyles, headerStyles, bodyStyles } from "@/app/fonts";
@@ -189,7 +189,7 @@ function GradeDistributionPageContent() {
       )}
 
       {!loadingGrades && !error && !gradeData && selectedCourseId && (
-        <AnalyticsEmptyState
+        <TaskEmptyState
           icon={BarChart2}
           title="No grade data available"
           description="Grade distribution data is not available for this course."
@@ -197,7 +197,7 @@ function GradeDistributionPageContent() {
       )}
 
       {!selectedCourseId && (
-        <AnalyticsEmptyState
+        <TaskEmptyState
           icon={BarChart2}
           title="Choose a course to view grade data"
           description="Select a department and course above to view its historical grade distribution."

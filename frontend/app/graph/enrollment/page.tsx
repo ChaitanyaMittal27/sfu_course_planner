@@ -7,7 +7,7 @@ import PageContainer from "@/components/PageContainer";
 import LoadingSpinner from "@/components/LoadingSpinner";
 import ErrorMessage from "@/components/ErrorMessage";
 import AnalyticsCourseSelector from "@/components/analytics/AnalyticsCourseSelector";
-import AnalyticsEmptyState from "@/components/analytics/AnalyticsEmptyState";
+import TaskEmptyState from "@/components/TaskEmptyState";
 import { api, Department, Course, EnrollmentDataPoint } from "@/lib/api";
 import { Card, CardContent } from "@/components/ui/card";
 import { displayStyles, headerStyles, bodyStyles, labelStyles } from "@/app/fonts";
@@ -230,7 +230,7 @@ function EnrollmentVsCapacityPageContent() {
       )}
 
       {!loadingChart && !error && chartData.length === 0 && selectedCourseId && (
-        <AnalyticsEmptyState
+        <TaskEmptyState
           icon={BarChart2}
           title="No enrollment data available"
           description="No enrollment data was found for this course in the selected time range."
@@ -238,7 +238,7 @@ function EnrollmentVsCapacityPageContent() {
       )}
 
       {!selectedCourseId && (
-        <AnalyticsEmptyState
+        <TaskEmptyState
           icon={Users}
           title="Choose a course to compare enrollment"
           description="Select a department and course above to compare enrollment with capacity over time."

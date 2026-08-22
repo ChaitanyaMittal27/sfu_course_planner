@@ -7,7 +7,7 @@ import PageContainer from "@/components/PageContainer";
 import LoadingSpinner from "@/components/LoadingSpinner";
 import ErrorMessage from "@/components/ErrorMessage";
 import AnalyticsCourseSelector from "@/components/analytics/AnalyticsCourseSelector";
-import AnalyticsEmptyState from "@/components/analytics/AnalyticsEmptyState";
+import TaskEmptyState from "@/components/TaskEmptyState";
 import { api, Department, Course, EnrollmentDataPoint } from "@/lib/api";
 import { Card, CardContent } from "@/components/ui/card";
 import { displayStyles, headerStyles, bodyStyles, labelStyles } from "@/app/fonts";
@@ -257,7 +257,7 @@ function LoadOverTimePageContent() {
       )}
 
       {!loadingChart && !error && chartData.length === 0 && selectedCourseId && (
-        <AnalyticsEmptyState
+        <TaskEmptyState
           icon={BarChart2}
           title="No load data available"
           description="No enrollment data was found for this course in the selected time range."
@@ -265,7 +265,7 @@ function LoadOverTimePageContent() {
       )}
 
       {!selectedCourseId && (
-        <AnalyticsEmptyState
+        <TaskEmptyState
           icon={TrendingUp}
           title="Choose a course to view load"
           description="Select a department and course above to view its enrollment load over time."
