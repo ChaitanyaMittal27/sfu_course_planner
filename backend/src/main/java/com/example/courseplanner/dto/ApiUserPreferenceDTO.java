@@ -1,5 +1,7 @@
 package com.example.courseplanner.dto;
 
+import io.swagger.v3.oas.annotations.media.Schema;
+
 /**
  * =========================================================
  * API USER PREFERENCE DTO
@@ -16,9 +18,12 @@ package com.example.courseplanner.dto;
  * }
  * =========================================================
  */
+@Schema(description = "The current user's email notification settings")
 public class ApiUserPreferenceDTO {
 
+    @Schema(description = "Whether enrollment notification emails are enabled", example = "true")
     private Boolean emailNotificationsEnabled;
+    @Schema(description = "Optional preferred email address", example = "student@example.com")
     private String userEmail;
 
     public ApiUserPreferenceDTO() {

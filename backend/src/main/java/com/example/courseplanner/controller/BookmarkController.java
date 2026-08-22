@@ -7,6 +7,10 @@ import com.example.courseplanner.repository.*;
 import com.example.courseplanner.service.*;
 import com.example.courseplanner.utils.*;
 
+import io.swagger.v3.oas.annotations.Operation;
+import io.swagger.v3.oas.annotations.Parameter;
+import io.swagger.v3.oas.annotations.security.SecurityRequirement;
+import io.swagger.v3.oas.annotations.tags.Tag;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
@@ -40,6 +44,8 @@ import java.util.UUID;
  */
 @RestController
 @RequestMapping("/api/bookmarks")
+@Tag(name = "Bookmarks", description = "Authenticated user's watched course offerings")
+@SecurityRequirement(name = "supabaseBearerAuth")
 public class BookmarkController {
 
     private final BookmarkRepository bookmarkRepository;
@@ -72,8 +78,9 @@ public class BookmarkController {
     // Returns: List<ApiBookmarkDTO>
     // =====================================================
     @GetMapping
+    @Operation(summary = "List the current user's bookmarks")
     public List<ApiBookmarkDTO> getBookmarks(
-        @RequestHeader("Authorization") String authHeader
+        @Parameter(hidden = true) @RequestHeader("Authorization") String authHeader
     ) {
         // Extract userId from JWT
         UUID userId = UUID.fromString(jwtService.extractUserId(authHeader));
@@ -95,8 +102,9 @@ public class BookmarkController {
     // Returns: List<ApiCourseOfferingDTO>
     // =====================================================
     @GetMapping("/offerings")
+    @Operation(summary = "List live offerings for the current user's bookmarks")
     public ResponseEntity<List<ApiCourseOfferingDTO>> getBookmarkedOfferings(
-        @RequestHeader("Authorization") String authHeader
+        @Parameter(hidden = true) @RequestHeader("Authorization") String authHeader
     ) {
         // Extract userId from JWT
         UUID userId = UUID.fromString(jwtService.extractUserId(authHeader));
@@ -191,8 +199,9 @@ public class BookmarkController {
     // Returns: ApiBookmarkDTO
     // =====================================================
     @PostMapping
+    @Operation(summary = "Create a bookmark", description = "The request body identifies one course offering. Server-generated fields are ignored.")
     public ResponseEntity<ApiBookmarkDTO> createBookmark(
-        @RequestHeader("Authorization") String authHeader,
+        @Parameter(hidden = true) @RequestHeader("Authorization") String authHeader,
         @RequestBody ApiBookmarkDTO payload
     ) {
         // Extract userId from JWT
@@ -240,9 +249,10 @@ public class BookmarkController {
     // Returns: 204 No Content
     // =====================================================
     @DeleteMapping("/{bookmarkId}")
+    @Operation(summary = "Delete one of the current user's bookmarks")
     public ResponseEntity<Void> deleteBookmark(
-        @RequestHeader("Authorization") String authHeader,
-        @PathVariable Long bookmarkId
+        @Parameter(hidden = true) @RequestHeader("Authorization") String authHeader,
+        @Parameter(description = "Bookmark ID", example = "123") @PathVariable Long bookmarkId
     ) {
         // Extract userId from JWT
         UUID userId = UUID.fromString(jwtService.extractUserId(authHeader));

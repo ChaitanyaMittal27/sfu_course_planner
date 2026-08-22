@@ -5,6 +5,10 @@ import com.example.courseplanner.entity.UserPreference;
 import com.example.courseplanner.repository.UserPreferenceRepository;
 import com.example.courseplanner.service.JwtService;
 
+import io.swagger.v3.oas.annotations.Operation;
+import io.swagger.v3.oas.annotations.Parameter;
+import io.swagger.v3.oas.annotations.security.SecurityRequirement;
+import io.swagger.v3.oas.annotations.tags.Tag;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
@@ -31,6 +35,8 @@ import java.util.UUID;
  */
 @RestController
 @RequestMapping("/api/preferences")
+@Tag(name = "Preferences", description = "Authenticated user's notification preferences")
+@SecurityRequirement(name = "supabaseBearerAuth")
 public class UserPreferenceController {
 
     private final UserPreferenceRepository userPreferenceRepository;
@@ -55,8 +61,9 @@ public class UserPreferenceController {
     // Returns: 201 Created (new) or 200 OK (already exists)
     // =====================================================
     @PostMapping
+    @Operation(summary = "Initialize the current user's preferences")
     public ResponseEntity<ApiUserPreferenceDTO> initializePreferences(
-        @RequestHeader("Authorization") String authHeader,
+        @Parameter(hidden = true) @RequestHeader("Authorization") String authHeader,
         @RequestBody ApiUserPreferenceDTO dto
     ) {
         UUID userId = UUID.fromString(jwtService.extractUserId(authHeader));
@@ -92,8 +99,9 @@ public class UserPreferenceController {
     //            "userEmail": "user@example.com" }
     // =====================================================
     @GetMapping("/email-notifications")
+    @Operation(summary = "Get email-notification preferences")
     public ResponseEntity<ApiUserPreferenceDTO> getEmailNotificationPreference(
-        @RequestHeader("Authorization") String authHeader
+        @Parameter(hidden = true) @RequestHeader("Authorization") String authHeader
     ) {
         UUID userId = UUID.fromString(jwtService.extractUserId(authHeader));
 
@@ -118,8 +126,9 @@ public class UserPreferenceController {
     //            "userEmail": "user@example.com" }
     // =====================================================
     @PutMapping("/email-notifications")
+    @Operation(summary = "Update email-notification preferences")
     public ResponseEntity<ApiUserPreferenceDTO> updateEmailNotificationPreference(
-        @RequestHeader("Authorization") String authHeader,
+        @Parameter(hidden = true) @RequestHeader("Authorization") String authHeader,
         @RequestBody ApiUserPreferenceDTO dto
     ) {
         UUID userId = UUID.fromString(jwtService.extractUserId(authHeader));

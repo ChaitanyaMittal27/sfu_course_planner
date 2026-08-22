@@ -6,6 +6,7 @@ import com.example.courseplanner.repository.ContactSubmissionRepository;
 import com.example.courseplanner.service.EmailService;
 import com.example.courseplanner.service.JwtService;
 
+import io.swagger.v3.oas.annotations.Hidden;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
@@ -17,6 +18,7 @@ import java.util.UUID;
 
 @RestController
 @RequestMapping("/api/admin/support")
+@Hidden
 public class SupportController {
 
     private final JwtService jwtService;

@@ -3,6 +3,7 @@ package com.example.courseplanner.controller;
 import com.example.courseplanner.dto.HealthCheckDTO;
 import com.example.courseplanner.service.JwtService;
 
+import io.swagger.v3.oas.annotations.Hidden;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.http.*;
 import org.springframework.web.bind.annotation.*;
@@ -17,6 +18,7 @@ import java.util.concurrent.CompletableFuture;
 
 @RestController
 @RequestMapping("/api/admin/health")
+@Hidden
 public class HealthController {
 
     private final JwtService jwtService;

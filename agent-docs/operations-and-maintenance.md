@@ -35,6 +35,7 @@ Several scripts use insert-on-conflict/upsert or only fill null/missing values, 
 ## Development and validation facts
 
 - Backend: Gradle wrapper, Spring Boot 3.0.0, Java 17 source compatibility. From `backend/`, `bootRun`, `test`, and `bootJar` are the relevant tasks.
+- Springdoc 2.1.0 is pinned for Spring Boot 3.0 compatibility. It exposes Swagger UI at `/api-docs` and JSON/YAML specifications at `/v3/api-docs` and `/v3/api-docs.yaml`; validate that internal admin paths remain absent when changing controller visibility.
 - Frontend: npm lockfile, Next.js 16/React 19, with `dev`, `lint`, `build`, and `start` scripts. ESLint is the only verified automated frontend check.
 - There is no `src/test` directory or repository CI/deployment configuration (GitHub Actions or platform manifests). README names Vercel, Elastic Beanstalk, and Supabase, but deployment setup itself is external to this repository.
 - Dockerfiles are present for both apps. Their verified targets are `dev`/`builder`/`runtime` for the backend and `dev`/`build`/`runtime` for the frontend. `docker-compose.yaml` runs their development targets only; it does not participate in Vercel or Elastic Beanstalk deployment.

@@ -18,11 +18,10 @@ This is a product-hardening backlog derived from the repository audit. It is ord
 14. Redesign the admin Test page into a safer operations/diagnostics area, with confirmation for consequential actions.
 15. Decide whether the backend remains JAR-on-Elastic-Beanstalk or becomes Docker-on-Elastic-Beanstalk/ECR.
 16. Document the final Docker, Supabase, and local-development workflow in `README.md` after the local Dashboard flow is verified.
-17. Add generated API documentation with Springdoc OpenAPI and Swagger UI.
-18. Add frontend component tests and a small end-to-end suite for critical user flows.
-19. Standardize Python ingestion-script configuration, credential handling, execution instructions, and data-safety expectations.
-20. Review and test the Supabase `auth.users` SQL dependency used by admin reporting, including required database permissions.
-21. Improve observability for CourseSys and email: structured failures, latency visibility, and meaningful health checks.
-22. Review CORS and production security configuration, especially allowed origins and environment-secret handling.
+17. Add frontend component tests and a small end-to-end suite for critical user flows.
+18. Standardize Python ingestion-script configuration, credential handling, execution instructions, and data-safety expectations.
+19. Review and test the Supabase `auth.users` SQL dependency used by admin reporting, including required database permissions.
+20. Improve observability for CourseSys and email: structured failures, latency visibility, and meaningful health checks.
+21. Review CORS and production security configuration, especially allowed origins and environment-secret handling.
 
 Start with item 1. It creates the safety net required for the known semester defect and for subsequent CourseSys, bookmark, support, and email work.

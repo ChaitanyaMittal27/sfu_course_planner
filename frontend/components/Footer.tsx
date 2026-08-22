@@ -3,6 +3,8 @@ import { Heart } from "lucide-react";
 import { bodyStyles } from "@/app/fonts";
 
 export default function Footer() {
+  const apiDocsUrl = `${process.env.NEXT_PUBLIC_API_URL ?? "https://api.sfucourseplanner.com"}/api-docs`;
+
   return (
     <footer className="border-t border-border mt-auto">
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-6">
@@ -26,6 +28,15 @@ export default function Footer() {
             <Link href="/termsofservice" className="hover:text-accent transition-colors">
               Terms
             </Link>
+
+            <a
+              href={apiDocsUrl}
+              target="_blank"
+              rel="noopener noreferrer"
+              className="hover:text-accent transition-colors"
+            >
+              API Docs
+            </a>
 
             <span className="hidden sm:inline text-border-strong">|</span>
 

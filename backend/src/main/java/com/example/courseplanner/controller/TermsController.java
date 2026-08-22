@@ -5,6 +5,8 @@ import com.example.courseplanner.dto.UpdateTermsRequestDTO;
 import com.example.courseplanner.entity.Term;
 import com.example.courseplanner.repository.TermRepository;
 import com.example.courseplanner.service.JwtService;
+
+import io.swagger.v3.oas.annotations.Hidden;
 import com.example.courseplanner.utils.SemesterUtil;
 
 import org.springframework.http.HttpStatus;
@@ -19,6 +21,7 @@ import java.util.Map;
 
 @RestController
 @RequestMapping("/api/admin/terms")
+@Hidden
 public class TermsController {
 
     private static final Map<String, Integer> TERM_ORDER = Map.of(

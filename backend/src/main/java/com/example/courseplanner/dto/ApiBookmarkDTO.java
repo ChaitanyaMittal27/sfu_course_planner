@@ -1,14 +1,22 @@
 package com.example.courseplanner.dto;
 
+import io.swagger.v3.oas.annotations.media.Schema;
 import java.time.LocalDateTime;
 
+@Schema(description = "A course offering saved by a user")
 public class ApiBookmarkDTO {
 
+    @Schema(accessMode = Schema.AccessMode.READ_ONLY, description = "Server-generated bookmark ID", example = "123")
     private Long bookmarkId;
+    @Schema(description = "Database department ID", example = "1")
     private Long deptId;
+    @Schema(description = "Database course ID", example = "42")
     private Long courseId;
+    @Schema(description = "SFU semester code", example = "1257")
     private Long semesterCode;
+    @Schema(description = "Offering section", example = "D100")
     private String section;
+    @Schema(accessMode = Schema.AccessMode.READ_ONLY, description = "Bookmark creation time")
     private LocalDateTime createdAt;
 
     // ----------------------------

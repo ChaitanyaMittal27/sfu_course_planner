@@ -8,7 +8,6 @@ import {
   BarChart2,
   ClipboardList,
   Info,
-  BookOpen,
   Sun,
   Moon,
   Menu,
@@ -34,7 +33,6 @@ const navLinks = [
   { name: "Graph", href: "/graph", icon: BarChart2 },
   { name: "Compare", href: "/compare", icon: ClipboardList },
   { name: "About", href: "/about", icon: Info },
-  { name: "API Docs", href: "/docs", icon: BookOpen },
 ];
 
 export default function Navigation() {
