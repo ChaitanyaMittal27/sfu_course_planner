@@ -4,11 +4,10 @@ import { useEffect, useMemo, useState, Suspense } from "react";
 import { useRouter } from "next/navigation";
 import { useQueryState } from "nuqs";
 import { api } from "@/lib/api";
-import { courseHref, offeringHref } from "@/lib/course-routes";
-import type { Course, CourseOffering, Department, TermInfo } from "@/lib/types";
+import { courseHref } from "@/lib/course-routes";
+import type { Course, Department } from "@/lib/types";
 import LoadingSpinner from "@/components/LoadingSpinner";
 import ErrorMessage from "@/components/ErrorMessage";
-import OfferingsTable from "@/components/OfferingsTable";
 import { Search, X } from "lucide-react";
 import { Card } from "@/components/ui/card";
 import { displayStyles, headerStyles, bodyStyles, labelStyles } from "@/app/fonts";
@@ -23,11 +22,10 @@ function sortAlphaNum(a: string, b: string) {
 function BrowsePageContent() {
   const router = useRouter();
   const [deptId, setDeptId] = useQueryState("dept");
-  const [courseId, setCourseId] = useQueryState("course");
+  const [, setCourseId] = useQueryState("course");
 
   const [departments, setDepartments] = useState<Department[]>([]);
   const [courses, setCourses] = useState<Course[]>([]);
-  const [offerings, setOfferings] = useState<CourseOffering[]>([]);
 
   const [searchQuery, setSearchQuery] = useState("");
   const [searchResults, setSearchResults] = useState<Array<{ dept: Department; course: Course }>>([]);
@@ -35,11 +33,9 @@ function BrowsePageContent() {
 
   const [courseCache, setCourseCache] = useState<Record<number, Course[]>>({});
 
-  const [enrollingTerm, setEnrollingTerm] = useState<TermInfo | null>(null);
 
   const [loadingDepartments, setLoadingDepartments] = useState(false);
   const [loadingCourses, setLoadingCourses] = useState(false);
-  const [loadingOfferings, setLoadingOfferings] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
   const selectedDept = useMemo(
@@ -47,22 +43,6 @@ function BrowsePageContent() {
     [departments, deptId],
   );
 
-  const selectedCourse = useMemo(
-    () => courses.find((c) => c.courseId === Number(courseId)) ?? null,
-    [courses, courseId],
-  );
-
-  useEffect(() => {
-    if (!selectedDept || !selectedCourse) return;
-    router.replace(courseHref(selectedDept.deptCode, selectedCourse.courseNumber));
-  }, [router, selectedCourse, selectedDept]);
-
-  useEffect(() => {
-    api
-      .getEnrollingTerm()
-      .then(setEnrollingTerm)
-      .catch(() => null);
-  }, []);
 
   useEffect(() => {
     (async () => {
@@ -83,7 +63,6 @@ function BrowsePageContent() {
     if (!deptId) {
       setCourses([]);
       setCourseId(null);
-      setOfferings([]);
       return;
     }
 
@@ -91,7 +70,6 @@ function BrowsePageContent() {
     (async () => {
       try {
         setError(null);
-        setOfferings([]);
         setLoadingCourses(true);
 
         if (courseCache[did]) {
@@ -112,28 +90,6 @@ function BrowsePageContent() {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [deptId]);
 
-  useEffect(() => {
-    if (!deptId || !courseId) {
-      setOfferings([]);
-      return;
-    }
-
-    (async () => {
-      try {
-        setError(null);
-        setLoadingOfferings(true);
-        setOfferings([]);
-
-        const data = await api.getOfferings(Number(deptId), Number(courseId));
-        const sorted = [...data].sort((a, b) => b.semesterCode - a.semesterCode);
-        setOfferings(sorted);
-      } catch {
-        setError("Failed to load course offerings.");
-      } finally {
-        setLoadingOfferings(false);
-      }
-    })();
-  }, [deptId, courseId]);
 
   useEffect(() => {
     const q = searchQuery.trim();
@@ -193,18 +149,13 @@ function BrowsePageContent() {
     setShowSearchResults(false);
   };
 
-  const openOfferingDetail = (offering: CourseOffering) => {
-    if (!selectedDept || !selectedCourse) return;
-    router.push(offeringHref(selectedDept.deptCode, selectedCourse.courseNumber, offering.semesterCode));
-  };
-
   const mainGridRef = useScrollReveal();
 
   return (
     <div className="max-w-[1180px] mx-auto px-4 sm:px-7 py-8 sm:py-10">
       {/* Header */}
       <div className="mb-5 sm:mb-6">
-        <h1 className={`${displayStyles.sm} text-text-primary`}>Browse Courses</h1>
+        <h1 className={`${displayStyles.mdResponsive} text-text-primary`}>Browse Courses</h1>
         <p className={`${bodyStyles.lg} text-text-muted mt-1`}>
           Search by course code, or choose a department and course to see available offerings.
         </p>
@@ -272,11 +223,9 @@ function BrowsePageContent() {
         </div>
       )}
 
-      {/* Main Grid */}
-      <div ref={mainGridRef} className="grid grid-cols-1 lg:grid-cols-12 gap-6">
-        {/* LEFT */}
-        <aside className="lg:col-span-3">
-          <Card className="p-5 rounded-2xl sticky top-24">
+      <div ref={mainGridRef} className="max-w-3xl">
+          <Card className="p-5 sm:p-6 rounded-2xl">
+            <p className={`${bodyStyles.md} text-text-muted mb-5`}>Choose a department, then a course to view its available offerings.</p>
             <label htmlFor="department-select" className={`${headerStyles.md} text-text-primary mb-3 block`}>
               Department
             </label>
@@ -301,77 +250,13 @@ function BrowsePageContent() {
             </select>
 
             <div className="mt-6">
-              <div className={`${headerStyles.md} text-text-primary mb-2`}>
-                {selectedDept ? `${selectedDept.deptCode.toUpperCase()} Courses` : "Courses"}
-              </div>
-
-              {loadingCourses && <div className={`${bodyStyles.md} text-text-muted`}>Loading courses…</div>}
-
-              {!loadingCourses && !selectedDept && (
-                <p className={`${bodyStyles.md} text-text-muted`}>Choose a department to load its courses.</p>
-              )}
-
-              {!loadingCourses && selectedDept && courses.length === 0 && (
-                <div className={`${bodyStyles.md} text-text-muted`}>No courses found.</div>
-              )}
-
-              {selectedDept && courses.length > 0 && (
-                <div className="mt-3 grid grid-cols-2 gap-2 max-h-[420px] overflow-y-auto pr-2">
-                  {courses.map((c) => {
-                    const active = selectedCourse?.courseId === c.courseId;
-                    return (
-                      <button
-                        key={c.courseId}
-                        onClick={() => router.push(courseHref(selectedDept.deptCode, c.courseNumber))}
-                        className={[
-                          `px-3 py-2 rounded-lg ${bodyStyles.md} font-medium transition`,
-                          active
-                            ? "bg-gradient-to-r from-primary to-accent text-primary-foreground shadow-md"
-                            : "bg-accent/5 text-text-primary hover:bg-accent/10",
-                        ].join(" ")}
-                      >
-                        {c.courseNumber}
-                      </button>
-                    );
-                  })}
-                </div>
-              )}
+              <label htmlFor="course-select" className={`${headerStyles.md} text-text-primary mb-3 block`}>Course</label>
+              <select id="course-select" className={selectClass} value="" disabled={!selectedDept || loadingCourses} onChange={(event) => { const course = courses.find((item) => item.courseId === Number(event.target.value)); if (course && selectedDept) router.push(courseHref(selectedDept.deptCode, course.courseNumber)); }}>
+                <option value="">{loadingCourses ? "Loading courses…" : selectedDept ? "Select a course…" : "Select a department first…"}</option>
+                {courses.map((course) => <option key={course.courseId} value={course.courseId}>{course.courseNumber} — {course.title}</option>)}
+              </select>
             </div>
           </Card>
-        </aside>
-
-        {/* CENTER */}
-        <section className="lg:col-span-9">
-          <Card className="p-5 sm:p-6 rounded-2xl min-h-64">
-            {!selectedCourse ? (
-              <div className="min-h-48 flex flex-col justify-center">
-                <div className={`${headerStyles.lg} text-text-primary`}>Choose a course to view offerings</div>
-                <p className={`${bodyStyles.md} text-text-muted mt-2 max-w-xl`}>
-                  Select a department, then a course. We’ll show the enrolling term first, followed by previous terms.
-                </p>
-              </div>
-            ) : (
-              <>
-                <div className="flex items-start justify-between gap-3 mb-4">
-                  <div>
-                    <div className={`${headerStyles.lg} text-text-primary`}>
-                      {selectedDept?.name} {selectedCourse.courseNumber} : {selectedCourse.title}
-                    </div>
-                    <div className={`${bodyStyles.md} text-text-muted`}>Click a term row to open full details.</div>
-                  </div>
-                </div>
-
-                {loadingOfferings && <LoadingSpinner />}
-
-                {!loadingOfferings && offerings.length === 0 && (
-                  <div className={`${bodyStyles.md} text-text-muted`}>No offerings found.</div>
-                )}
-
-                <OfferingsTable offerings={offerings} enrollingTerm={enrollingTerm} onRowClick={openOfferingDetail} />
-              </>
-            )}
-          </Card>
-        </section>
       </div>
     </div>
   );

@@ -1,7 +1,7 @@
 "use client";
 
 import { useEffect, useMemo, useState } from "react";
-import { useParams } from "next/navigation";
+import { useParams, useRouter } from "next/navigation";
 import BackButton from "@/components/BackButton";
 import CourseOfferingsPanel from "@/components/CourseOfferingsPanel";
 import ErrorMessage from "@/components/ErrorMessage";
@@ -12,6 +12,7 @@ import { resolveCourseIdentity, type ResolvedCourseRoute } from "@/lib/course-re
 
 export default function BrowseCoursePage() {
   const params = useParams<{ deptCode: string; courseNumber: string }>();
+  const router = useRouter();
   const identity = useMemo(
     () => normalizeCourseIdentity(params.deptCode, params.courseNumber),
     [params.courseNumber, params.deptCode],
@@ -50,7 +51,7 @@ export default function BrowseCoursePage() {
 
   return (
     <main className="max-w-[1180px] mx-auto px-4 sm:px-7 py-8 sm:py-10">
-      <BackButton onClick={() => history.back()} label="Back to Browse" className="mb-5" />
+      <BackButton onClick={() => router.push("/browse")} label="Back to Browse" className="mb-5" />
       <div className="mb-5 sm:mb-6">
         <h1 className={`${displayStyles.sm} text-text-primary`}>Browse Courses</h1>
         <p className={`${bodyStyles.lg} text-text-muted mt-1`}>Course offerings and enrollment details.</p>
