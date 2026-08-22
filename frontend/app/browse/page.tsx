@@ -4,6 +4,7 @@ import { useEffect, useMemo, useState, Suspense } from "react";
 import { useRouter } from "next/navigation";
 import { useQueryState } from "nuqs";
 import { api } from "@/lib/api";
+import { courseHref, offeringHref } from "@/lib/course-routes";
 import type { Course, CourseOffering, Department, TermInfo } from "@/lib/types";
 import LoadingSpinner from "@/components/LoadingSpinner";
 import ErrorMessage from "@/components/ErrorMessage";
@@ -50,6 +51,11 @@ function BrowsePageContent() {
     () => courses.find((c) => c.courseId === Number(courseId)) ?? null,
     [courses, courseId],
   );
+
+  useEffect(() => {
+    if (!selectedDept || !selectedCourse) return;
+    router.replace(courseHref(selectedDept.deptCode, selectedCourse.courseNumber));
+  }, [router, selectedCourse, selectedDept]);
 
   useEffect(() => {
     api
@@ -182,15 +188,14 @@ function BrowsePageContent() {
   }, [searchQuery, departments]);
 
   const selectFromSearch = (dept: Department, course: Course) => {
-    setDeptId(String(dept.deptId));
-    setCourseId(String(course.courseId));
+    router.push(courseHref(dept.deptCode, course.courseNumber));
     setSearchQuery("");
     setShowSearchResults(false);
   };
 
   const openOfferingDetail = (offering: CourseOffering) => {
-    if (!deptId || !courseId) return;
-    router.push(`/browse/departments/${deptId}/courses/${courseId}/offerings/${offering.semesterCode}`);
+    if (!selectedDept || !selectedCourse) return;
+    router.push(offeringHref(selectedDept.deptCode, selectedCourse.courseNumber, offering.semesterCode));
   };
 
   const mainGridRef = useScrollReveal();
@@ -317,7 +322,7 @@ function BrowsePageContent() {
                     return (
                       <button
                         key={c.courseId}
-                        onClick={() => setCourseId(String(c.courseId))}
+                        onClick={() => router.push(courseHref(selectedDept.deptCode, c.courseNumber))}
                         className={[
                           `px-3 py-2 rounded-lg ${bodyStyles.md} font-medium transition`,
                           active

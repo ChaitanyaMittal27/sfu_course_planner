@@ -10,6 +10,8 @@ import GradeHistogram from "@/components/GradeHistogram";
 import TaskEmptyState from "@/components/TaskEmptyState";
 import { api, Department, Course, OfferingDetail } from "@/lib/api";
 import Link from "next/link";
+import { courseHref, parseComparedCourses, serializeComparedCourses } from "@/lib/course-routes";
+import { resolveCourseIds, resolveCourseIdentity } from "@/lib/course-resolver";
 import { Card, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Table, TableBody, TableCell, TableRow } from "@/components/ui/table";
@@ -39,9 +41,14 @@ function CourseComparisonContent() {
   const [error, setError] = useState<string | null>(null);
 
   useEffect(() => {
-    loadDepartments();
-    loadFromURL();
+    void loadDepartments();
   }, []);
+
+  useEffect(() => {
+    void loadFromURL();
+    // URL parameters are the source of truth for a shared comparison.
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [coursesParam]);
 
   const loadDepartments = async () => {
     try {
@@ -52,15 +59,33 @@ function CourseComparisonContent() {
     }
   };
 
-  const loadFromURL = () => {
+  const loadFromURL = async () => {
     if (!coursesParam) return;
     try {
-      const parsed = coursesParam.split(",").map((pair) => {
-        const [deptId, courseId] = pair.split(":").map(Number);
-        return { deptId, courseId, deptCode: "", courseNumber: "" };
-      });
-      setSelectedCourses(parsed);
-      fetchComparisonData(parsed);
+      const readableCourses = parseComparedCourses(coursesParam);
+      const parsed = readableCourses.length > 0
+        ? await Promise.all(readableCourses.map(resolveCourseIdentity))
+        : await Promise.all(
+            coursesParam.split(",").map((pair) => {
+              const [deptId, courseId] = pair.split(":").map(Number);
+              return resolveCourseIds(deptId, courseId);
+            }),
+          );
+
+      if (parsed.some((course) => course === null)) throw new Error("Invalid course reference");
+      const resolved = parsed.filter((course): course is NonNullable<typeof course> => course !== null);
+      if (resolved.length < 2 || resolved.length > 3) throw new Error("Invalid course count");
+
+      const selected = resolved.map((course) => ({
+        deptId: course.deptId,
+        courseId: course.courseId,
+        deptCode: course.deptCode,
+        courseNumber: course.courseNumber,
+      }));
+
+      if (readableCourses.length === 0) updateURL(selected);
+      setSelectedCourses(selected);
+      fetchComparisonData(selected);
     } catch {
       setError("Invalid URL parameters");
     }
@@ -70,7 +95,7 @@ function CourseComparisonContent() {
     if (courses.length === 0) {
       setCoursesParam(null);
     } else {
-      setCoursesParam(courses.map((c) => `${c.deptId}:${c.courseId}`).join(","));
+      setCoursesParam(serializeComparedCourses(courses));
     }
   };
 
@@ -370,7 +395,7 @@ function CourseComparisonContent() {
             <ComparisonSection title="View Full Details">
               <div className="grid md:grid-cols-3 gap-4">
                 {selectedCourses.map((course, idx) => (
-                  <Link key={idx} href={`/browse?dept=${course.deptId}&course=${course.courseId}`} className="group">
+                  <Link key={idx} href={courseHref(course.deptCode, course.courseNumber)} className="group">
                     <Card className="p-4 text-center hover:scale-105 transition-transform">
                       <p className={`${labelStyles.lg} text-text-primary mb-2`}>
                         {course.deptCode} {course.courseNumber}

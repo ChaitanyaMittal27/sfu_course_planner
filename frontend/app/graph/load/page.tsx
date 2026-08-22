@@ -2,6 +2,8 @@
 
 import { useState, useEffect, Suspense } from "react";
 import { useQueryState } from "nuqs";
+import { useRouter } from "next/navigation";
+import { graphCourseHref } from "@/lib/course-routes";
 import { TrendingUp, BarChart2 } from "lucide-react";
 import PageContainer from "@/components/PageContainer";
 import LoadingSpinner from "@/components/LoadingSpinner";
@@ -23,6 +25,7 @@ import {
 } from "recharts";
 
 function LoadOverTimePageContent() {
+  const router = useRouter();
   const [selectedDeptId, setSelectedDeptId] = useQueryState("deptId");
   const [selectedCourseId, setSelectedCourseId] = useQueryState("courseId");
   const [range, setRange] = useQueryState("range", { defaultValue: "5yr" });
@@ -95,6 +98,10 @@ function LoadOverTimePageContent() {
 
   const selectedDept = departments.find((d) => d.deptId === parseInt(selectedDeptId || "0"));
   const selectedCourse = courses.find((c) => c.courseId === parseInt(selectedCourseId || "0"));
+
+  useEffect(() => {
+    if (selectedDept && selectedCourse) router.replace(graphCourseHref("load", selectedDept.deptCode, selectedCourse.courseNumber, { range }));
+  }, [range, router, selectedCourse, selectedDept]);
 
   const formatSemester = (semesterCode: number) => {
     const year = Math.floor(semesterCode / 10) - 100;

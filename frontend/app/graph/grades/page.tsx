@@ -2,6 +2,8 @@
 
 import { useState, useEffect, Suspense } from "react";
 import { useQueryState } from "nuqs";
+import { useRouter } from "next/navigation";
+import { graphCourseHref } from "@/lib/course-routes";
 import { BarChart2, Info, AlertCircle, ClipboardList } from "lucide-react";
 import PageContainer from "@/components/PageContainer";
 import LoadingSpinner from "@/components/LoadingSpinner";
@@ -14,6 +16,7 @@ import { Card, CardContent } from "@/components/ui/card";
 import { displayStyles, headerStyles, bodyStyles } from "@/app/fonts";
 
 function GradeDistributionPageContent() {
+  const router = useRouter();
   const [selectedDeptId, setSelectedDeptId] = useQueryState("deptId");
   const [selectedCourseId, setSelectedCourseId] = useQueryState("courseId");
 
@@ -89,6 +92,10 @@ function GradeDistributionPageContent() {
 
   const selectedDept = departments.find((d) => d.deptId === parseInt(selectedDeptId || "0"));
   const selectedCourse = courses.find((c) => c.courseId === parseInt(selectedCourseId || "0"));
+
+  useEffect(() => {
+    if (selectedDept && selectedCourse) router.replace(graphCourseHref("grades", selectedDept.deptCode, selectedCourse.courseNumber));
+  }, [router, selectedCourse, selectedDept]);
 
   if (loadingDepts) {
     return (
