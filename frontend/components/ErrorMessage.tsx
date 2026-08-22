@@ -10,7 +10,7 @@ interface ErrorMessageProps {
 
 export default function ErrorMessage({ message, onRetry }: ErrorMessageProps) {
   return (
-    <Card className="border-l-4 border-destructive p-6">
+    <Card className="border-l-4 border-destructive p-6" role="alert">
       <div className="flex items-start gap-3">
         <AlertCircle className="w-6 h-6 text-destructive shrink-0" />
         <div className="flex-1">
