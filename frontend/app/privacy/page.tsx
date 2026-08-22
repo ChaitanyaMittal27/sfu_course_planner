@@ -1,5 +1,8 @@
 "use client";
 
+/* Legal copy intentionally preserves its original punctuation and wording. */
+/* eslint-disable react/no-unescaped-entities */
+
 import LoadingSpinner from "@/components/LoadingSpinner";
 import PageContainer from "@/components/PageContainer";
 import { Suspense } from "react";
@@ -9,12 +12,14 @@ import { displayStyles, headerStyles, bodyStyles } from "@/app/fonts";
 function PrivacyPageContent() {
   return (
     <PageContainer>
-      <div className="max-w-4xl mx-auto">
-        <h1 className={`${displayStyles.sm} text-text-primary mb-4`}>Privacy Policy</h1>
-        <p className={`${bodyStyles.md} text-text-muted mb-8`}>Last updated: December 29, 2024</p>
+      <div className="max-w-3xl mx-auto">
+        <header className="mb-8">
+          <h1 className={`${displayStyles.mdResponsive} text-text-primary mb-2`}>Privacy Policy</h1>
+          <p className={`${bodyStyles.sm} text-text-muted`}>Last updated: December 29, 2024</p>
+        </header>
 
-        <div className="space-y-8">
-          <Card className="p-6">
+        <div className="space-y-4 sm:space-y-5">
+          <Card className="p-5 sm:p-6">
             <h2 className={`${headerStyles.lg} text-text-primary mb-4`}>Introduction</h2>
             <p className={`${bodyStyles.md} text-text-muted`}>
               SFU Course Planner ("we", "our", or "us") is committed to protecting your privacy. This Privacy Policy
@@ -22,7 +27,7 @@ function PrivacyPageContent() {
             </p>
           </Card>
 
-          <Card className="p-6">
+          <Card className="p-5 sm:p-6">
             <h2 className={`${headerStyles.lg} text-text-primary mb-4`}>Information We Collect</h2>
 
             <h3 className={`${headerStyles.md} text-text-primary mb-3 mt-4`}>Public Course Data</h3>
@@ -52,7 +57,7 @@ function PrivacyPageContent() {
             </p>
           </Card>
 
-          <Card className="p-6">
+          <Card className="p-5 sm:p-6">
             <h2 className={`${headerStyles.lg} text-text-primary mb-4`}>How We Use Your Information</h2>
             <p className={`${bodyStyles.md} text-text-muted mb-4`}>We use the information we collect to:</p>
             <ul className={`list-disc list-inside ${bodyStyles.md} text-text-muted space-y-2 ml-4`}>
@@ -63,7 +68,7 @@ function PrivacyPageContent() {
             </ul>
           </Card>
 
-          <Card className="p-6">
+          <Card className="p-5 sm:p-6">
             <h2 className={`${headerStyles.lg} text-text-primary mb-4`}>Data Sharing</h2>
             <p className={`${bodyStyles.md} text-text-muted`}>
               We do not sell, trade, or otherwise transfer your information to third parties. Course data displayed in
@@ -71,7 +76,7 @@ function PrivacyPageContent() {
             </p>
           </Card>
 
-          <Card className="p-6">
+          <Card className="p-5 sm:p-6">
             <h2 className={`${headerStyles.lg} text-text-primary mb-4`}>Third-Party Services</h2>
             <p className={`${bodyStyles.md} text-text-muted mb-4`}>
               Our application uses the following third-party services:
@@ -87,7 +92,7 @@ function PrivacyPageContent() {
             </p>
           </Card>
 
-          <Card className="p-6">
+          <Card className="p-5 sm:p-6">
             <h2 className={`${headerStyles.lg} text-text-primary mb-4`}>Data Security</h2>
             <p className={`${bodyStyles.md} text-text-muted`}>
               We implement appropriate security measures to protect against unauthorized access, alteration, disclosure,
@@ -95,7 +100,7 @@ function PrivacyPageContent() {
             </p>
           </Card>
 
-          <Card className="p-6">
+          <Card className="p-5 sm:p-6">
             <h2 className={`${headerStyles.lg} text-text-primary mb-4`}>Your Rights</h2>
             <p className={`${bodyStyles.md} text-text-muted mb-4`}>You have the right to:</p>
             <ul className={`list-disc list-inside ${bodyStyles.md} text-text-muted space-y-2 ml-4`}>
@@ -106,7 +111,7 @@ function PrivacyPageContent() {
             </ul>
           </Card>
 
-          <Card className="p-6">
+          <Card className="p-5 sm:p-6">
             <h2 className={`${headerStyles.lg} text-text-primary mb-4`}>Children's Privacy</h2>
             <p className={`${bodyStyles.md} text-text-muted`}>
               Our service is intended for use by university students and adults. We do not knowingly collect information
@@ -114,7 +119,7 @@ function PrivacyPageContent() {
             </p>
           </Card>
 
-          <Card className="p-6">
+          <Card className="p-5 sm:p-6">
             <h2 className={`${headerStyles.lg} text-text-primary mb-4`}>Changes to This Privacy Policy</h2>
             <p className={`${bodyStyles.md} text-text-muted`}>
               We may update this Privacy Policy from time to time. We will notify users of any material changes by
@@ -122,7 +127,7 @@ function PrivacyPageContent() {
             </p>
           </Card>
 
-          <Card className="p-6">
+          <Card className="p-5 sm:p-6">
             <h2 className={`${headerStyles.lg} text-text-primary mb-4`}>Contact Us</h2>
             <p className={`${bodyStyles.md} text-text-muted`}>
               If you have questions about this Privacy Policy, please contact us through the{" "}
@@ -133,7 +138,7 @@ function PrivacyPageContent() {
             </p>
           </Card>
 
-          <Card className="p-6 border-l-4 border-accent">
+          <Card className="p-5 sm:p-6 border-l-4 border-accent">
             <h2 className={`${headerStyles.md} text-text-primary mb-3`}>Disclaimer</h2>
             <p className={`${bodyStyles.md} text-text-muted`}>
               SFU Course Planner is an independent application and is not officially affiliated with, endorsed by, or

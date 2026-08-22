@@ -47,7 +47,15 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
         <AuthProvider>
           <NuqsAdapter>
             <Navigation />
-            <main className="min-h-screen">{children}</main>
+            <a
+              href="#main-content"
+              className="sr-only fixed left-4 top-4 z-50 rounded-md bg-primary px-4 py-2 text-primary-foreground focus:not-sr-only focus:outline-none"
+            >
+              Skip to main content
+            </a>
+            <main id="main-content" className="min-h-screen" tabIndex={-1}>
+              {children}
+            </main>
             <Footer />
           </NuqsAdapter>
         </AuthProvider>
