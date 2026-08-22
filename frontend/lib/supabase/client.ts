@@ -13,13 +13,12 @@
  * - Used by: AuthContext, Login page, protected components
  *
  * Session Storage:
- * - Uses cookies to store session (httpOnly for security)
- * - Sessions persist across page refreshes
- * - Automatically refreshes expired tokens
+ * - Uses the Supabase SSR browser storage adapter
+ * - Sessions persist across page refreshes and refresh automatically
  *
  * Note:
  * - This is a SINGLETON (one instance shared by all components)
- * - DO NOT use in server components or middleware
+ * - DO NOT use in server components or the proxy layer
  * - For server-side, use lib/supabase/server.ts instead
  * =============================================================================
  */
