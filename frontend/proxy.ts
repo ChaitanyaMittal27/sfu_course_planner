@@ -41,7 +41,20 @@
  */
 
 import { type NextRequest, NextResponse } from "next/server";
-import { createClient } from "@/lib/supabase/server";
+import { buildLoginPath, resolveAuthRedirect } from "@/lib/auth/redirect";
+import { createProxyClient } from "@/lib/supabase/proxy";
+
+function matchesRoute(pathname: string, route: string) {
+  return pathname === route || pathname.startsWith(`${route}/`);
+}
+
+function redirectWithSessionCookies(request: NextRequest, destination: string, sessionResponse: NextResponse) {
+  const redirectResponse = NextResponse.redirect(new URL(destination, request.url));
+
+  sessionResponse.cookies.getAll().forEach((cookie) => redirectResponse.cookies.set(cookie));
+
+  return redirectResponse;
+}
 
 /**
  * Middleware function
@@ -61,8 +74,7 @@ import { createClient } from "@/lib/supabase/server";
 export async function proxy(request: NextRequest) {
   const { pathname } = request.nextUrl;
 
-  // Create authenticated Supabase client
-  const supabase = await createClient();
+  const { supabase, getResponse } = createProxyClient(request);
 
   // Check if user is logged in
   const {
@@ -70,8 +82,9 @@ export async function proxy(request: NextRequest) {
   } = await supabase.auth.getUser();
 
   // Define protected routes (require authentication)
-  const protectedRoutes = ["/dashboard", "/admin"];
-  const isProtectedRoute = protectedRoutes.some((route) => pathname.startsWith(route));
+  const isDashboardRoute = matchesRoute(pathname, "/dashboard");
+  const isAdminRoute = matchesRoute(pathname, "/admin");
+  const isProtectedRoute = isDashboardRoute || isAdminRoute;
 
   /**
    * PROTECTED ROUTE LOGIC
@@ -82,12 +95,8 @@ export async function proxy(request: NextRequest) {
    * 3. After login, redirect back to original destination
    */
   if (isProtectedRoute && !user) {
-    const redirectUrl = new URL("/login", request.url);
-
-    // Save original destination for post-login redirect
-    redirectUrl.searchParams.set("redirectTo", pathname);
-
-    return NextResponse.redirect(redirectUrl);
+    const requestedPath = `${pathname}${request.nextUrl.search}`;
+    return redirectWithSessionCookies(request, buildLoginPath(requestedPath), getResponse());
   }
 
   /**
@@ -96,9 +105,9 @@ export async function proxy(request: NextRequest) {
    * If user is logged in but not an admin, redirect to /admin/unauthorized.
    * The unauthorized page itself is excluded to avoid a redirect loop.
    */
-  if (pathname.startsWith("/admin") && pathname !== "/admin/unauthorized" && user) {
+  if (isAdminRoute && pathname !== "/admin/unauthorized" && user) {
     if (user.app_metadata?.role !== "admin") {
-      return NextResponse.redirect(new URL("/admin/unauthorized", request.url));
+      return redirectWithSessionCookies(request, "/admin/unauthorized", getResponse());
     }
   }
 
@@ -111,13 +120,12 @@ export async function proxy(request: NextRequest) {
    * 3. If no: Redirect to dashboard
    */
   if (pathname === "/login" && user) {
-    const redirectTo = request.nextUrl.searchParams.get("redirectTo");
-    const destination = redirectTo || "/dashboard";
-    return NextResponse.redirect(new URL(destination, request.url));
+    const destination = resolveAuthRedirect(request.nextUrl.searchParams.get("redirectTo"));
+    return redirectWithSessionCookies(request, destination, getResponse());
   }
 
   // Allow request to continue (user is authenticated or route is public)
-  return NextResponse.next();
+  return getResponse();
 }
 
 /**
