@@ -52,7 +52,7 @@ function CompareLandingContent() {
       <div className="max-w-5xl mx-auto">
         {/* Header */}
         <div className="text-center mb-12">
-          <h1 className={`${displayStyles.hero} text-text-primary mb-4`}>Compare & Decide</h1>
+          <h1 className={`${displayStyles.mdResponsive} text-text-primary mb-4`}>Compare & Decide</h1>
           <p className={`${bodyStyles.lg} text-text-muted max-w-2xl mx-auto`}>
             Make informed decisions about your courses. Compare different courses to find the right fit, or compare
             sections to choose the best offering.

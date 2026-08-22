@@ -379,10 +379,10 @@ function BrowsePageContent() {
   }
 
   return (
-    <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-10">
+    <div className="max-w-[1180px] mx-auto px-4 sm:px-7 py-10">
       {/* Header */}
       <div className="mb-6">
-        <h1 className={`${displayStyles.hero} text-text-primary`}>Browse Courses</h1>
+        <h1 className={`${displayStyles.sm} text-text-primary`}>Browse Courses</h1>
         <p className={`${bodyStyles.lg} text-text-muted mt-1`}>
           Pick a Department → Course → Click to view enrollments by term offering.
         </p>

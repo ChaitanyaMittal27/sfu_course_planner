@@ -7,12 +7,12 @@ export default function Footer() {
 
   return (
     <footer className="border-t border-border mt-auto">
-      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-6">
+      <div className="max-w-[1180px] mx-auto px-4 sm:px-7 py-6">
         <div
           className={`flex flex-col sm:flex-row items-center justify-between gap-4 ${bodyStyles.md} text-text-muted`}
         >
           <div className="flex items-center space-x-2">
-            <span>© 2026 Anonymouse</span>
+            <span>© 2026 SFU Course Planner</span>
             <span className="hidden sm:inline">•</span>
             <span className="flex items-center gap-1">
               Made with

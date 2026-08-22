@@ -57,7 +57,7 @@ function GraphLandingPageContent() {
           <BarChart2 className="w-12 h-12 text-primary-foreground" />
         </div>
 
-        <h1 className={`${displayStyles.hero} text-text-primary mb-6`}>Course Analytics</h1>
+        <h1 className={`${displayStyles.mdResponsive} text-text-primary mb-6`}>Course Analytics</h1>
 
         <p className={`${headerStyles.lg} text-text-muted mb-4 max-w-3xl mx-auto`}>
           Visualize enrollment trends, analyze grade distributions, and make data-driven course planning decisions

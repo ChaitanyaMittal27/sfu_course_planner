@@ -148,7 +148,7 @@ function SectionComparisonContent() {
 
   return (
     <PageContainer>
-      <div className="max-w-7xl mx-auto">
+      <div>
         {/* Header */}
         <div className="mb-8">
           <h1 className={`${displayStyles.sm} text-text-primary mb-2`}>Compare Sections</h1>
