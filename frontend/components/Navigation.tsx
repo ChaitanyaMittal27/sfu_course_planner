@@ -74,6 +74,7 @@ export default function Navigation() {
             <Link
               key={href}
               href={href}
+              aria-current={isActive(href) ? "page" : undefined}
               className={`relative flex items-center gap-[7px] px-3 py-2 rounded-[7px] ${buttonStyles.md} transition-colors hover:bg-[rgba(127,127,127,0.10)] ${
                 isActive(href) ? "text-nav-text" : "text-nav-muted hover:text-nav-text"
               }`}
@@ -91,11 +92,12 @@ export default function Navigation() {
         <div className="hidden md:flex items-center gap-3 shrink-0">
           {/* Segmented theme toggle */}
           {mounted && (
-            <div className="flex items-center gap-0.5 p-[3px] rounded-lg bg-[rgba(127,127,127,0.14)]">
+            <div className="flex items-center gap-0.5 p-[3px] rounded-lg bg-[rgba(127,127,127,0.14)]" role="group" aria-label="Color theme">
               <button
                 type="button"
                 onClick={() => setThemeTo("light")}
-                title="Light mode"
+                aria-label="Use light theme"
+                aria-pressed={theme === "light"}
                 className={`w-[30px] h-[26px] rounded-md flex items-center justify-center transition-colors ${
                   theme === "light"
                     ? "bg-nav-text text-nav-bg"
@@ -107,7 +109,8 @@ export default function Navigation() {
               <button
                 type="button"
                 onClick={() => setThemeTo("dark")}
-                title="Dark mode"
+                aria-label="Use dark theme"
+                aria-pressed={theme === "dark"}
                 className={`w-[30px] h-[26px] rounded-md flex items-center justify-center transition-colors ${
                   theme === "dark"
                     ? "bg-nav-text text-nav-bg"
@@ -177,6 +180,8 @@ export default function Navigation() {
           onClick={() => setMobileMenuOpen(!mobileMenuOpen)}
           className="md:hidden text-nav-text hover:text-nav-muted hover:bg-[rgba(127,127,127,0.10)]"
           aria-label="Toggle menu"
+          aria-expanded={mobileMenuOpen}
+          aria-controls="mobile-navigation-menu"
         >
           {mobileMenuOpen ? <X className="w-6 h-6" /> : <Menu className="w-6 h-6" />}
         </Button>
@@ -184,13 +189,14 @@ export default function Navigation() {
 
       {/* Mobile Menu */}
       {mobileMenuOpen && (
-        <div className="md:hidden pb-3 animate-fade-in border-t border-nav-muted/20 pt-3 px-4 sm:px-7">
+        <div id="mobile-navigation-menu" className="md:hidden pb-3 animate-fade-in border-t border-nav-muted/20 pt-3 px-4 sm:px-7">
           <div className="flex flex-col gap-1">
             {navLinks.map(({ name, href, icon: Icon }) => (
               <Link
                 key={href}
                 href={href}
                 onClick={() => setMobileMenuOpen(false)}
+                aria-current={isActive(href) ? "page" : undefined}
                 className={`${labelStyles.lg} px-3 py-2 text-nav-text transition-all rounded flex items-center gap-2 ${
                   isActive(href) ? "bg-nav-text/20" : "hover:bg-nav-text/10"
                 }`}
@@ -205,6 +211,7 @@ export default function Navigation() {
               <button
                 type="button"
                 onClick={toggleTheme}
+                aria-label={theme === "light" ? "Use dark theme" : "Use light theme"}
                 className={`${labelStyles.lg} px-3 py-2 text-nav-text text-left hover:bg-nav-text/10 flex items-center justify-between rounded`}
               >
                 <span className="flex items-center gap-2">

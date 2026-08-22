@@ -30,7 +30,7 @@ export default function HeroPreview() {
       {/* Subject + inbox tabs */}
       <div className="px-5 pt-4 pb-3 border-b border-border">
         <h3 className={`${headerStyles.xs} text-text-primary mb-2.5`}>
-          SFU Course Planner — Daily Enrollment Update
+          Example: Daily Enrollment Update
         </h3>
         <div className="flex items-center gap-2">
           <span className={`${labelStyles.sm} font-semibold text-text-primary bg-surface-raised px-2.5 py-1 rounded-md`}>
@@ -71,7 +71,7 @@ export default function HeroPreview() {
 
           {/* Heading */}
           <h4 className={`${headerStyles.md} text-text-primary mb-1`}>Enrollment Update</h4>
-          <p className={`${labelStyles.sm} text-text-subtle mb-4`}>{previewData.date}</p>
+          <p className={`${labelStyles.sm} text-text-subtle mb-4`}>Example date: {previewData.date}</p>
 
           {/* Table */}
           <div className="border border-border rounded-[10px] overflow-hidden">

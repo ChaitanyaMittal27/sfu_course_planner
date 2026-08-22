@@ -10,14 +10,13 @@ import ErrorMessage from "@/components/ErrorMessage";
 import BookmarkButton from "@/components/BookmarkButton";
 import BackButton from "@/components/BackButton";
 import OfferingsTable from "@/components/OfferingsTable";
-import { Search } from "lucide-react";
+import { Search, X } from "lucide-react";
 import { Card } from "@/components/ui/card";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { displayStyles, headerStyles, bodyStyles, labelStyles } from "@/app/fonts";
 import { useScrollReveal } from "@/hooks/useScrollReveal";
 
-const selectClass =
-  "w-full rounded-md border border-border bg-background text-text-primary px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-ring disabled:opacity-50";
+const selectClass = `w-full rounded-md border border-border bg-background text-text-primary px-3 py-2 ${bodyStyles.md} focus:outline-none focus:ring-2 focus:ring-ring disabled:opacity-50`;
 
 function sortAlphaNum(a: string, b: string) {
   return a.localeCompare(b, undefined, { numeric: true, sensitivity: "base" });
@@ -379,28 +378,45 @@ function BrowsePageContent() {
   }
 
   return (
-    <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-10">
+    <div className="max-w-[1180px] mx-auto px-4 sm:px-7 py-8 sm:py-10">
       {/* Header */}
-      <div className="mb-6">
-        <h1 className={`${displayStyles.hero} text-text-primary`}>Browse Courses</h1>
+      <div className="mb-5 sm:mb-6">
+        <h1 className={`${displayStyles.sm} text-text-primary`}>Browse Courses</h1>
         <p className={`${bodyStyles.lg} text-text-muted mt-1`}>
-          Pick a Department → Course → Click to view enrollments by term offering.
+          Search by course code, or choose a department and course to see available offerings.
         </p>
       </div>
 
       {/* Search Bar */}
-      <div className="mb-6 relative">
-        <div className="relative max-w-2xl">
+      <div className="mb-6 relative max-w-3xl">
+        <label htmlFor="course-search" className={`${labelStyles.lg} text-text-primary mb-2 block`}>
+          Find a course
+        </label>
+        <div className="relative">
           <input
+            id="course-search"
             type="text"
-            placeholder="Search like: CMPT 213"
+            placeholder="Try CMPT 213"
             value={searchQuery}
             onChange={(e) => setSearchQuery(e.target.value)}
             onFocus={() => searchQuery.length >= 2 && setShowSearchResults(true)}
             onBlur={() => setTimeout(() => setShowSearchResults(false), 200)}
-            className="w-full pl-12 pr-4 py-3 border-2 border-border rounded-lg bg-background text-text-primary focus:outline-none focus:ring-2 focus:ring-ring transition-all"
+            className={`w-full pl-12 ${searchQuery ? "pr-12" : "pr-4"} py-3 border-2 border-border rounded-lg bg-background text-text-primary ${bodyStyles.lg} focus:outline-none focus:ring-2 focus:ring-ring transition-all`}
           />
           <Search className="absolute left-4 top-1/2 -translate-y-1/2 w-5 h-5 text-text-subtle" />
+          {searchQuery && (
+            <button
+              type="button"
+              onClick={() => {
+                setSearchQuery("");
+                setShowSearchResults(false);
+              }}
+              className="absolute right-3 top-1/2 -translate-y-1/2 rounded-md p-1 text-text-muted hover:bg-surface-raised hover:text-text-primary focus:outline-none focus:ring-2 focus:ring-ring"
+              aria-label="Clear course search"
+            >
+              <X className="w-4 h-4" />
+            </button>
+          )}
 
           {showSearchResults && (
             <div className="absolute z-10 w-full mt-2 bg-surface-raised border border-border rounded-lg shadow-xl max-h-80 overflow-y-auto">
@@ -438,9 +454,12 @@ function BrowsePageContent() {
         {/* LEFT */}
         <aside className="lg:col-span-3">
           <Card className="p-5 rounded-2xl sticky top-24">
-            <div className={`${headerStyles.md} text-text-primary mb-3`}>Department</div>
+            <label htmlFor="department-select" className={`${headerStyles.md} text-text-primary mb-3 block`}>
+              Department
+            </label>
 
             <select
+              id="department-select"
               title="select_dept"
               className={selectClass}
               value={deptId || ""}
@@ -465,48 +484,54 @@ function BrowsePageContent() {
 
               {loadingCourses && <div className={`${bodyStyles.md} text-text-muted`}>Loading courses…</div>}
 
+              {!loadingCourses && !selectedDept && (
+                <p className={`${bodyStyles.md} text-text-muted`}>Choose a department to load its courses.</p>
+              )}
+
               {!loadingCourses && selectedDept && courses.length === 0 && (
                 <div className={`${bodyStyles.md} text-text-muted`}>No courses found.</div>
               )}
 
-              <div className="mt-3 grid grid-cols-2 gap-2 max-h-[420px] overflow-y-auto pr-2">
-                {courses.map((c) => {
-                  const active = selectedCourse?.courseId === c.courseId;
-                  return (
-                    <button
-                      key={c.courseId}
-                      onClick={() => setCourseId(String(c.courseId))}
-                      className={[
-                        "px-3 py-2 rounded-lg text-sm font-medium transition",
-                        active
-                          ? "bg-gradient-to-r from-primary to-accent text-primary-foreground shadow-md"
-                          : "bg-accent/5 text-text-primary hover:bg-accent/10",
-                      ].join(" ")}
-                    >
-                      {c.courseNumber}
-                    </button>
-                  );
-                })}
-              </div>
+              {selectedDept && courses.length > 0 && (
+                <div className="mt-3 grid grid-cols-2 gap-2 max-h-[420px] overflow-y-auto pr-2">
+                  {courses.map((c) => {
+                    const active = selectedCourse?.courseId === c.courseId;
+                    return (
+                      <button
+                        key={c.courseId}
+                        onClick={() => setCourseId(String(c.courseId))}
+                        className={[
+                          `px-3 py-2 rounded-lg ${bodyStyles.md} font-medium transition`,
+                          active
+                            ? "bg-gradient-to-r from-primary to-accent text-primary-foreground shadow-md"
+                            : "bg-accent/5 text-text-primary hover:bg-accent/10",
+                        ].join(" ")}
+                      >
+                        {c.courseNumber}
+                      </button>
+                    );
+                  })}
+                </div>
+              )}
             </div>
           </Card>
         </aside>
 
         {/* CENTER */}
         <section className="lg:col-span-9">
-          <Card className="p-5 rounded-2xl">
+          <Card className="p-5 sm:p-6 rounded-2xl min-h-64">
             {!selectedCourse ? (
-              <>
-                <div className={`${headerStyles.md} text-text-primary`}>Course Offerings</div>
-                <p className={`${bodyStyles.md} text-text-muted mt-2`}>
-                  Select a department and course to view: enrolling term first, then previous terms.
+              <div className="min-h-48 flex flex-col justify-center">
+                <div className={`${headerStyles.lg} text-text-primary`}>Choose a course to view offerings</div>
+                <p className={`${bodyStyles.md} text-text-muted mt-2 max-w-xl`}>
+                  Select a department, then a course. We’ll show the enrolling term first, followed by previous terms.
                 </p>
-              </>
+              </div>
             ) : (
               <>
                 <div className="flex items-start justify-between gap-3 mb-4">
                   <div>
-                    <div className={`${headerStyles.md} text-text-primary`}>
+                    <div className={`${headerStyles.lg} text-text-primary`}>
                       {selectedDept?.name} {selectedCourse.courseNumber} : {selectedCourse.title}
                     </div>
                     <div className={`${bodyStyles.md} text-text-muted`}>Click a term row to open full details.</div>

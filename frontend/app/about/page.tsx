@@ -58,7 +58,7 @@ const faqs = [
   {
     question: "How do Bookmarks work?",
     answer:
-      "Bookmarks let you save your favorite courses. More importantly, they allow you to track enrollment changes and get notified everyday with updates (so you can stay informed). You can manage your bookmarks in the Dashboard section.",
+      "Bookmarks let you save your favorite courses. More importantly, they allow you to track enrollment changes and get notified every day with updates (so you can stay informed). You can manage your bookmarks in the Dashboard section.",
   },
   {
     question: "Can I suggest new features or report bugs?",
@@ -130,72 +130,78 @@ function AboutPageContent() {
 
   return (
     <PageContainer>
-      <div className="max-w-4xl mx-auto space-y-12">
+      <div className="max-w-4xl mx-auto space-y-8 sm:space-y-10">
         {/* About Section */}
-        <div ref={aboutRef}>
-          <Card>
-            <CardContent className="p-8">
-              <h1 className={`${displayStyles.sm} text-text-primary mb-6`}>About SFU Course Planner</h1>
+        <section ref={aboutRef}>
+          <div className="max-w-3xl">
+            <h1 className={`${displayStyles.mdResponsive} text-text-primary mb-3`}>About SFU Course Planner</h1>
 
-              <p className={`${bodyStyles.lg} text-text-muted mb-8 leading-relaxed`}>
-                SFU Course Planner helps students make informed course enrollment decisions by aggregating real-time
-                data from multiple sources into one intuitive platform.
+            <p className={`${bodyStyles.lg} text-text-muted leading-relaxed`}>
+              SFU Course Planner helps students make informed course enrollment decisions by aggregating real-time
+              data from multiple sources into one intuitive platform.
+            </p>
+          </div>
+
+          <div className="mt-8 grid gap-5 md:grid-cols-2">
+            <div className="border-l-2 border-accent pl-4">
+              <h2 className={`${headerStyles.lg} text-text-primary mb-2`}>The Problem</h2>
+              <p className={`${bodyStyles.md} text-text-muted leading-relaxed`}>
+                SFU students face scattered course information across multiple systems like CourseSys, the SFU
+                Calendar, and CourseDiggers. There&apos;s no easy way to track enrollment changes, visualize historical
+                trends, or compare courses side-by-side. Students often miss enrollment opportunities or make
+                uninformed decisions.
               </p>
+            </div>
 
-              <div className="mb-8">
-                <h2 className={`${headerStyles.lg} text-text-primary mb-4`}>The Problem</h2>
-                <p className={`${bodyStyles.md} text-text-muted leading-relaxed`}>
-                  SFU students face scattered course information across multiple systems like CourseSys, the SFU
-                  Calendar, and CourseDiggers. There's no easy way to track enrollment changes, visualize historical
-                  trends, or compare courses side-by-side. Students often miss enrollment opportunities or make
-                  uninformed decisions.
-                </p>
-              </div>
+            <div className="border-l-2 border-accent pl-4">
+              <h2 className={`${headerStyles.lg} text-text-primary mb-2`}>The Solution</h2>
+              <p className={`${bodyStyles.md} text-text-muted leading-relaxed`}>
+                This platform consolidates everything you need in one place with a clean, searchable interface that
+                makes course planning simple and efficient.
+              </p>
+            </div>
+          </div>
 
-              <div className="mb-8">
-                <h2 className={`${headerStyles.lg} text-text-primary mb-4`}>The Solution</h2>
-                <p className={`${bodyStyles.md} text-text-muted leading-relaxed`}>
-                  This platform consolidates everything you need in one place with a clean, searchable interface that
-                  makes course planning simple and efficient.
-                </p>
-              </div>
-
-              <div className="grid md:grid-cols-2 gap-6">
-                {features.map(({ href, icon: Icon, title, description }) => (
-                  <Link href={href} key={href} className="no-underline">
-                    <div className="p-4 bg-accent/5 rounded-lg border border-accent/20 hover:border-accent/40 transition-colors">
-                      <div className="flex items-center gap-2 mb-2">
-                        <Icon className="w-6 h-6 text-accent" />
-                        <h3 className={`${headerStyles.md} text-text-primary`}>{title}</h3>
-                      </div>
-                      <p className={`${bodyStyles.md} text-text-muted`}>{description}</p>
-                    </div>
-                  </Link>
-                ))}
-              </div>
-            </CardContent>
-          </Card>
-        </div>
+          <div className="mt-8 grid gap-4 sm:grid-cols-2">
+            {features.map(({ href, icon: Icon, title, description }) => (
+              <Link
+                href={href}
+                key={href}
+                className="group rounded-xl border border-border bg-surface p-5 no-underline transition-colors hover:border-accent/50 hover:bg-surface-raised focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
+              >
+                <div className="flex items-center gap-2 mb-2">
+                  <Icon className="w-5 h-5 text-accent" aria-hidden="true" />
+                  <h3 className={`${headerStyles.md} text-text-primary`}>{title}</h3>
+                </div>
+                <p className={`${bodyStyles.md} text-text-muted`}>{description}</p>
+              </Link>
+            ))}
+          </div>
+        </section>
 
         {/* FAQ Section */}
-        <div ref={faqRef}>
+        <section ref={faqRef} aria-labelledby="faq-heading">
           <Card>
-            <CardContent className="p-8">
-              <h2 className={`${displayStyles.sm} text-text-primary mb-6`}>Frequently Asked Questions</h2>
-              <div className="space-y-4">
+            <CardContent className="p-5 sm:p-8">
+              <h2 id="faq-heading" className={`${displayStyles.sm} text-text-primary mb-5`}>Frequently Asked Questions</h2>
+              <div className="space-y-3">
                 {faqs.map((faq, index) => (
                   <div key={index} className="border border-border rounded-lg overflow-hidden transition-all">
                     <button
+                      id={`faq-question-${index}`}
                       onClick={() => setOpenFaq(openFaq === index ? null : index)}
-                      className="w-full px-6 py-4 flex items-center justify-between bg-surface hover:bg-surface-raised transition-colors"
+                      aria-expanded={openFaq === index}
+                      aria-controls={`faq-answer-${index}`}
+                      className="w-full px-4 sm:px-6 py-4 flex items-center justify-between bg-surface hover:bg-surface-raised transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-inset focus-visible:ring-ring"
                     >
                       <span className={`${labelStyles.lg} text-text-primary text-left`}>{faq.question}</span>
                       <ChevronDown
                         className={`w-5 h-5 text-text-muted shrink-0 transition-transform ${openFaq === index ? "rotate-180" : ""}`}
+                        aria-hidden="true"
                       />
                     </button>
                     {openFaq === index && (
-                      <div className="px-6 py-4 bg-surface border-t border-border animate-fade-in">
+                      <div id={`faq-answer-${index}`} role="region" aria-labelledby={`faq-question-${index}`} className="px-4 sm:px-6 py-4 bg-surface border-t border-border animate-fade-in">
                         <p className={`${bodyStyles.md} text-text-muted leading-relaxed`}>{faq.answer}</p>
                       </div>
                     )}
@@ -204,15 +210,15 @@ function AboutPageContent() {
               </div>
             </CardContent>
           </Card>
-        </div>
+        </section>
 
         {/* Contact Form */}
-        <div ref={contactRef}>
+        <section ref={contactRef} aria-labelledby="contact-heading">
           <Card>
-            <CardContent className="p-8">
-              <h2 className={`${displayStyles.sm} text-text-primary mb-2`}>Contact Us</h2>
+            <CardContent className="p-5 sm:p-8">
+              <h2 id="contact-heading" className={`${displayStyles.sm} text-text-primary mb-2`}>Contact Us</h2>
               <p className={`${bodyStyles.md} text-text-muted mb-6`}>
-                Have questions, feedback, or found a bug? We'd love to hear from you!
+                Have questions, feedback, or found a bug? We&apos;d love to hear from you!
               </p>
 
               <form onSubmit={handleSubmit} className="space-y-6">
@@ -282,16 +288,17 @@ function AboutPageContent() {
                 {formStatus === "error" && formError && (
                   <div
                     className={`p-4 bg-destructive/10 border border-destructive/20 rounded-lg ${bodyStyles.md} text-destructive`}
+                    role="alert"
                   >
                     {formError}
                   </div>
                 )}
 
                 {formStatus === "success" && (
-                  <div className="p-4 bg-success/10 border border-success/20 rounded-lg flex items-center gap-2">
-                    <CheckCircle2 className="w-5 h-5 text-success shrink-0" />
+                  <div className="p-4 bg-success/10 border border-success/20 rounded-lg flex items-center gap-2" role="status" aria-live="polite">
+                    <CheckCircle2 className="w-5 h-5 text-success shrink-0" aria-hidden="true" />
                     <span className={`${labelStyles.lg} text-success`}>
-                      Thanks for reaching out! We'll respond ASAP.
+                      Thanks for reaching out! We&apos;ll respond ASAP.
                     </span>
                   </div>
                 )}
@@ -309,7 +316,7 @@ function AboutPageContent() {
               </form>
             </CardContent>
           </Card>
-        </div>
+        </section>
       </div>
     </PageContainer>
   );

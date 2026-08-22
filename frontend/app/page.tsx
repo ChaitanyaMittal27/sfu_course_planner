@@ -107,7 +107,7 @@ const features = [
   {
     icon: Bell,
     title: "Track Bookmarks",
-    description: "Watch any section and get an email update everyday so you never miss an opportunity.",
+    description: "Watch any section and get an email update every day so you never miss an opportunity.",
     color: "primary" as const,
     layout: "text-right" as const,
     link: "/dashboard",

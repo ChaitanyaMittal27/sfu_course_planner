@@ -2,10 +2,12 @@
 
 import { useState, useEffect, Suspense } from "react";
 import { useQueryState } from "nuqs";
-import { TrendingUp, Info, BarChart2 } from "lucide-react";
+import { TrendingUp, BarChart2 } from "lucide-react";
 import PageContainer from "@/components/PageContainer";
 import LoadingSpinner from "@/components/LoadingSpinner";
 import ErrorMessage from "@/components/ErrorMessage";
+import AnalyticsCourseSelector from "@/components/analytics/AnalyticsCourseSelector";
+import TaskEmptyState from "@/components/TaskEmptyState";
 import { api, Department, Course, EnrollmentDataPoint } from "@/lib/api";
 import { Card, CardContent } from "@/components/ui/card";
 import { displayStyles, headerStyles, bodyStyles, labelStyles } from "@/app/fonts";
@@ -19,9 +21,6 @@ import {
   CartesianGrid,
   ReferenceLine,
 } from "recharts";
-
-const selectClass =
-  "w-full rounded-md border border-border bg-background text-text-primary px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-ring disabled:opacity-50";
 
 function LoadOverTimePageContent() {
   const [selectedDeptId, setSelectedDeptId] = useQueryState("deptId");
@@ -42,7 +41,7 @@ function LoadOverTimePageContent() {
       try {
         const data = await api.getDepartments();
         setDepartments(data);
-      } catch (err) {
+      } catch {
         setError("Failed to load departments");
       } finally {
         setLoadingDepts(false);
@@ -64,7 +63,7 @@ function LoadOverTimePageContent() {
       try {
         const data = await api.getCourses(parseInt(selectedDeptId));
         setCourses(data);
-      } catch (err) {
+      } catch {
         setError("Failed to load courses");
       } finally {
         setLoadingCourses(false);
@@ -84,7 +83,7 @@ function LoadOverTimePageContent() {
       try {
         const data = await api.getEnrollmentHistory(parseInt(selectedDeptId), parseInt(selectedCourseId), range);
         setChartData(data);
-      } catch (err: any) {
+      } catch {
         setError("Failed to load enrollment data");
         setChartData([]);
       } finally {
@@ -110,8 +109,9 @@ function LoadOverTimePageContent() {
     return "var(--destructive)";
   };
 
-  const CustomDot = (props: any) => {
+  const CustomDot = (props: { cx?: number; cy?: number; payload?: EnrollmentDataPoint }) => {
     const { cx, cy, payload } = props;
+    if (typeof cx !== "number" || typeof cy !== "number" || !payload) return null;
     return (
       <circle cx={cx} cy={cy} r={5} fill={getLoadColor(payload.loadPercent)} stroke="var(--background)" strokeWidth={2} />
     );
@@ -127,93 +127,41 @@ function LoadOverTimePageContent() {
 
   return (
     <PageContainer>
-      {/* HEADER */}
-      <div className="mb-8">
-        <div className="flex items-center space-x-3 mb-4">
-          <div className="w-12 h-12 bg-gradient-to-br from-primary to-accent rounded-xl flex items-center justify-center shadow-lg">
-            <TrendingUp className="w-7 h-7 text-primary-foreground" />
-          </div>
-          <div>
-            <h1 className={`${displayStyles.sm} text-text-primary`}>Load Over Time</h1>
-            <p className={`${bodyStyles.md} text-text-muted mt-1`}>Track enrollment percentage across semesters</p>
-          </div>
-        </div>
+      <div className="mb-6">
+        <h1 className={`${displayStyles.sm} text-text-primary`}>Load Over Time</h1>
+        <p className={`${bodyStyles.md} text-text-muted mt-1`}>Track enrollment percentage across semesters.</p>
       </div>
 
-      {/* COURSE SELECTION */}
-      <Card className="p-6 mb-8">
-        <CardContent className="p-0">
-          <h2 className={`${headerStyles.md} text-text-primary mb-4`}>Select Course</h2>
-          <div className="grid md:grid-cols-2 gap-4">
-            <div>
-              <label className={`block ${labelStyles.md} text-text-primary mb-2`}>Department</label>
-              <select
-                title="dept"
-                value={selectedDeptId || ""}
-                onChange={(e) => setSelectedDeptId(e.target.value || null)}
-                className={selectClass}
+      <AnalyticsCourseSelector
+        departments={departments}
+        courses={courses}
+        selectedDepartmentId={selectedDeptId}
+        selectedCourseId={selectedCourseId}
+        selectedDepartment={selectedDept}
+        selectedCourse={selectedCourse}
+        isLoadingCourses={loadingCourses}
+        onDepartmentChange={(value) => setSelectedDeptId(value || null)}
+        onCourseChange={(value) => setSelectedCourseId(value || null)}
+      >
+        <div className="border-t border-accent/20 pt-4">
+          <span className={`block ${labelStyles.md} text-text-primary mb-2`}>Time range</span>
+          <div className="flex flex-wrap gap-2">
+            {["1yr", "3yr", "5yr"].map((value) => (
+              <button
+                key={value}
+                onClick={() => setRange(value)}
+                className={`rounded-lg px-4 py-2 ${labelStyles.lg} transition-all ${
+                  range === value
+                    ? "bg-gradient-to-r from-primary to-accent text-primary-foreground shadow-md"
+                    : "bg-surface-raised text-text-muted hover:bg-border"
+                }`}
               >
-                <option value="">Select a department...</option>
-                {departments.map((dept) => (
-                  <option key={dept.deptId} value={dept.deptId}>
-                    {dept.name}
-                  </option>
-                ))}
-              </select>
-            </div>
-
-            <div>
-              <label className={`block ${labelStyles.md} text-text-primary mb-2`}>Course</label>
-              <select
-                title="course"
-                value={selectedCourseId || ""}
-                onChange={(e) => setSelectedCourseId(e.target.value || null)}
-                className={selectClass}
-                disabled={!selectedDeptId || loadingCourses}
-              >
-                <option value="">{loadingCourses ? "Loading courses..." : "Select a course..."}</option>
-                {courses
-                  .sort((a, b) => a.courseNumber.localeCompare(b.courseNumber))
-                  .map((course) => (
-                    <option key={course.courseId} value={course.courseId}>
-                      {course.courseNumber} - {course.title}
-                    </option>
-                  ))}
-              </select>
-            </div>
+                {value === "1yr" ? "1 year" : value === "3yr" ? "3 years" : "5 years"}
+              </button>
+            ))}
           </div>
-
-          {selectedDept && selectedCourse && (
-            <div className="mt-4 space-y-4">
-              <div className="p-4 bg-accent/5 rounded-lg border border-accent/20 flex items-center space-x-2">
-                <Info className="w-5 h-5 text-accent shrink-0" />
-                <span className={`${labelStyles.lg} text-text-primary`}>
-                  {selectedDept.name} {selectedCourse.courseNumber} — {selectedCourse.title}
-                </span>
-              </div>
-
-              <div>
-                <label className={`block ${labelStyles.md} text-text-primary mb-2`}>Time Range</label>
-                <div className="flex space-x-2">
-                  {["1yr", "3yr", "5yr"].map((r) => (
-                    <button
-                      key={r}
-                      onClick={() => setRange(r)}
-                      className={`px-4 py-2 rounded-lg font-medium transition-all ${
-                        range === r
-                          ? "bg-gradient-to-r from-primary to-accent text-primary-foreground shadow-md"
-                          : "bg-surface-raised text-text-muted hover:bg-border"
-                      }`}
-                    >
-                      {r === "1yr" ? "1 Year" : r === "3yr" ? "3 Years" : "5 Years"}
-                    </button>
-                  ))}
-                </div>
-              </div>
-            </div>
-          )}
-        </CardContent>
-      </Card>
+        </div>
+      </AnalyticsCourseSelector>
 
       {error && <ErrorMessage message={error} onRetry={() => window.location.reload()} />}
 
@@ -309,27 +257,19 @@ function LoadOverTimePageContent() {
       )}
 
       {!loadingChart && !error && chartData.length === 0 && selectedCourseId && (
-        <Card className="p-12 text-center">
-          <div className="w-20 h-20 bg-surface-raised rounded-full flex items-center justify-center mx-auto mb-4">
-            <BarChart2 className="w-10 h-10 text-text-subtle" />
-          </div>
-          <h3 className={`${headerStyles.md} text-text-primary mb-2`}>No Data Available</h3>
-          <p className={`${bodyStyles.md} text-text-muted`}>
-            No enrollment data found for this course in the selected time range.
-          </p>
-        </Card>
+        <TaskEmptyState
+          icon={BarChart2}
+          title="No load data available"
+          description="No enrollment data was found for this course in the selected time range."
+        />
       )}
 
       {!selectedCourseId && (
-        <Card className="p-12 text-center">
-          <div className="w-20 h-20 bg-surface-raised rounded-full flex items-center justify-center mx-auto mb-4">
-            <BarChart2 className="w-10 h-10 text-text-subtle" />
-          </div>
-          <h3 className={`${headerStyles.md} text-text-primary mb-2`}>No Course Selected</h3>
-          <p className={`${bodyStyles.md} text-text-muted`}>
-            Select a department and course above to view load over time
-          </p>
-        </Card>
+        <TaskEmptyState
+          icon={TrendingUp}
+          title="Choose a course to view load"
+          description="Select a department and course above to view its enrollment load over time."
+        />
       )}
     </PageContainer>
   );

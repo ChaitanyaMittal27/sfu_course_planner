@@ -58,3 +58,5 @@ ignore/
 
 # local_docs
 local_docs/
+
+.idea/

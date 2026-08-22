@@ -1,5 +1,8 @@
 "use client";
 
+/* Legal copy intentionally preserves its original punctuation and wording. */
+/* eslint-disable react/no-unescaped-entities */
+
 import LoadingSpinner from "@/components/LoadingSpinner";
 import PageContainer from "@/components/PageContainer";
 import { Suspense } from "react";
@@ -9,12 +12,14 @@ import { displayStyles, headerStyles, bodyStyles } from "@/app/fonts";
 function TermsOfServicePageContent() {
   return (
     <PageContainer>
-      <div className="max-w-4xl mx-auto">
-        <h1 className={`${displayStyles.sm} text-text-primary mb-4`}>Terms of Service</h1>
-        <p className={`${bodyStyles.md} text-text-muted mb-8`}>Last updated: December 29, 2024</p>
+      <div className="max-w-3xl mx-auto">
+        <header className="mb-8">
+          <h1 className={`${displayStyles.mdResponsive} text-text-primary mb-2`}>Terms of Service</h1>
+          <p className={`${bodyStyles.sm} text-text-muted`}>Last updated: December 29, 2024</p>
+        </header>
 
-        <div className="space-y-8">
-          <Card className="p-6">
+        <div className="space-y-4 sm:space-y-5">
+          <Card className="p-5 sm:p-6">
             <h2 className={`${headerStyles.lg} text-text-primary mb-4`}>1. Acceptance of Terms</h2>
             <p className={`${bodyStyles.md} text-text-muted`}>
               By accessing and using SFU Course Planner ("the Service"), you accept and agree to be bound by these Terms
@@ -22,7 +27,7 @@ function TermsOfServicePageContent() {
             </p>
           </Card>
 
-          <Card className="p-6">
+          <Card className="p-5 sm:p-6">
             <h2 className={`${headerStyles.lg} text-text-primary mb-4`}>2. Description of Service</h2>
             <p className={`${bodyStyles.md} text-text-muted mb-4`}>
               SFU Course Planner is a course planning and information tool that provides:
@@ -35,7 +40,7 @@ function TermsOfServicePageContent() {
             </ul>
           </Card>
 
-          <Card className="p-6">
+          <Card className="p-5 sm:p-6">
             <h2 className={`${headerStyles.lg} text-text-primary mb-4`}>3. Acceptable Use</h2>
             <p className={`${bodyStyles.md} text-text-muted mb-4`}>
               You agree to use the Service only for lawful purposes and in accordance with these Terms. You agree not
@@ -50,7 +55,7 @@ function TermsOfServicePageContent() {
             </ul>
           </Card>
 
-          <Card className="p-6">
+          <Card className="p-5 sm:p-6">
             <h2 className={`${headerStyles.lg} text-text-primary mb-4`}>4. Data Accuracy and Availability</h2>
             <p className={`${bodyStyles.md} text-text-muted mb-4`}>
               While we strive to provide accurate and up-to-date information:
@@ -63,7 +68,7 @@ function TermsOfServicePageContent() {
             </ul>
           </Card>
 
-          <Card className="p-6">
+          <Card className="p-5 sm:p-6">
             <h2 className={`${headerStyles.lg} text-text-primary mb-4`}>5. Disclaimers</h2>
             <p className={`${bodyStyles.md} text-text-muted mb-4`}>
               THE SERVICE IS PROVIDED "AS IS" AND "AS AVAILABLE" WITHOUT WARRANTIES OF ANY KIND. WE DISCLAIM ALL
@@ -76,7 +81,7 @@ function TermsOfServicePageContent() {
             </ul>
           </Card>
 
-          <Card className="p-6">
+          <Card className="p-5 sm:p-6">
             <h2 className={`${headerStyles.lg} text-text-primary mb-4`}>6. Limitation of Liability</h2>
             <p className={`${bodyStyles.md} text-text-muted mb-4`}>
               To the maximum extent permitted by law, we shall not be liable for any indirect, incidental, special,
@@ -90,7 +95,7 @@ function TermsOfServicePageContent() {
             </ul>
           </Card>
 
-          <Card className="p-6">
+          <Card className="p-5 sm:p-6">
             <h2 className={`${headerStyles.lg} text-text-primary mb-4`}>7. Intellectual Property</h2>
             <p className={`${bodyStyles.md} text-text-muted mb-4`}>
               The Service and its original content (excluding third-party data) are owned by SFU Course Planner and are
@@ -102,7 +107,7 @@ function TermsOfServicePageContent() {
             </p>
           </Card>
 
-          <Card className="p-6">
+          <Card className="p-5 sm:p-6">
             <h2 className={`${headerStyles.lg} text-text-primary mb-4`}>8. Third-Party Links and Data</h2>
             <p className={`${bodyStyles.md} text-text-muted mb-4`}>
               The Service contains links to and data from third-party websites and services, including:
@@ -118,7 +123,7 @@ function TermsOfServicePageContent() {
             </p>
           </Card>
 
-          <Card className="p-6">
+          <Card className="p-5 sm:p-6">
             <h2 className={`${headerStyles.lg} text-text-primary mb-4`}>9. Modifications to Service</h2>
             <p className={`${bodyStyles.md} text-text-muted`}>
               We reserve the right to modify, suspend, or discontinue the Service (or any part thereof) at any time
@@ -127,7 +132,7 @@ function TermsOfServicePageContent() {
             </p>
           </Card>
 
-          <Card className="p-6">
+          <Card className="p-5 sm:p-6">
             <h2 className={`${headerStyles.lg} text-text-primary mb-4`}>10. Changes to Terms</h2>
             <p className={`${bodyStyles.md} text-text-muted`}>
               We may update these Terms of Service from time to time. We will notify you of any material changes by
@@ -136,7 +141,7 @@ function TermsOfServicePageContent() {
             </p>
           </Card>
 
-          <Card className="p-6">
+          <Card className="p-5 sm:p-6">
             <h2 className={`${headerStyles.lg} text-text-primary mb-4`}>11. Governing Law</h2>
             <p className={`${bodyStyles.md} text-text-muted`}>
               These Terms shall be governed by and construed in accordance with the laws of British Columbia, Canada,
@@ -144,7 +149,7 @@ function TermsOfServicePageContent() {
             </p>
           </Card>
 
-          <Card className="p-6">
+          <Card className="p-5 sm:p-6">
             <h2 className={`${headerStyles.lg} text-text-primary mb-4`}>12. Contact Information</h2>
             <p className={`${bodyStyles.md} text-text-muted`}>
               If you have any questions about these Terms of Service, please contact us through the{" "}
@@ -155,7 +160,7 @@ function TermsOfServicePageContent() {
             </p>
           </Card>
 
-          <Card className="p-6 border-l-4 border-accent">
+          <Card className="p-5 sm:p-6 border-l-4 border-accent">
             <h2 className={`${headerStyles.md} text-text-primary mb-3`}>Important Disclaimer</h2>
             <p className={`${bodyStyles.md} text-text-muted mb-4`}>
               <strong>

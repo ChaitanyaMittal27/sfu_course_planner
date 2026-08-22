@@ -7,6 +7,7 @@ import PageContainer from "@/components/PageContainer";
 import LoadingSpinner from "@/components/LoadingSpinner";
 import ErrorMessage from "@/components/ErrorMessage";
 import GradeHistogram from "@/components/GradeHistogram";
+import TaskEmptyState from "@/components/TaskEmptyState";
 import { api, Department, Course, OfferingDetail } from "@/lib/api";
 import Link from "next/link";
 import { Card, CardContent } from "@/components/ui/card";
@@ -14,8 +15,7 @@ import { Button } from "@/components/ui/button";
 import { Table, TableBody, TableCell, TableRow } from "@/components/ui/table";
 import { displayStyles, headerStyles, bodyStyles, labelStyles } from "@/app/fonts";
 
-const selectClass =
-  "w-full rounded-md border border-border bg-background text-text-primary px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-ring disabled:opacity-50";
+const selectClass = `w-full rounded-md border border-border bg-background text-text-primary px-3 py-2 ${bodyStyles.md} focus:outline-none focus:ring-2 focus:ring-ring disabled:opacity-50`;
 
 type SelectedCourse = {
   deptId: number;
@@ -47,7 +47,7 @@ function CourseComparisonContent() {
     try {
       const depts = await api.getDepartments();
       setDepartments(depts);
-    } catch (err) {
+    } catch {
       setError("Failed to load departments");
     }
   };
@@ -135,7 +135,7 @@ function CourseComparisonContent() {
       const promises = courses.map((c) => api.getOfferingDetail(c.deptId, c.courseId, latestSemester));
       const results = await Promise.all(promises);
       setComparisonData(results);
-    } catch (err) {
+    } catch {
       setError("Failed to fetch course data. Some courses may not be offered this semester.");
       setComparisonData([]);
     } finally {
@@ -145,30 +145,33 @@ function CourseComparisonContent() {
 
   return (
     <PageContainer>
-      <div className="max-w-7xl mx-auto">
+      <div>
         {/* Header */}
-        <div className="mb-8">
+        <div className="mb-6">
           <h1 className={`${displayStyles.sm} text-text-primary mb-2`}>Compare Courses</h1>
           <p className={`${bodyStyles.md} text-text-muted`}>
-            Select 2-3 courses to compare prerequisites, difficulty, and grade distributions.
+            Select two or three courses to compare their requirements, historical grades, and course details.
           </p>
         </div>
 
         {/* Selection Panel */}
-        <Card className="p-6 mb-8">
+        <Card className="p-5 sm:p-6 mb-6 sm:mb-8">
           <CardContent className="p-0">
-            <h2 className={`${headerStyles.md} text-text-primary mb-4`}>Select Courses</h2>
+            <h2 className={`${headerStyles.md} text-text-primary mb-1`}>Select courses</h2>
+            <p className={`${bodyStyles.md} text-text-muted mb-4`}>Add up to three courses, then compare once you have at least two.</p>
 
-            <div className="grid md:grid-cols-3 gap-4 mb-4">
+            <div className="grid gap-4 md:grid-cols-3">
               <div>
-                <label className={`block ${labelStyles.md} text-text-primary mb-2`}>Department</label>
+                <label htmlFor="compare-course-department" className={`block ${labelStyles.md} text-text-primary mb-2`}>
+                  Department
+                </label>
                 <select
-                  title="dept"
+                  id="compare-course-department"
                   value={selectedDept || ""}
-                  onChange={(e) => setSelectedDept(Number(e.target.value))}
+                  onChange={(event) => setSelectedDept(Number(event.target.value) || null)}
                   className={selectClass}
                 >
-                  <option value="">Select Department</option>
+                  <option value="">Select a department…</option>
                   {departments.map((dept) => (
                     <option key={dept.deptId} value={dept.deptId}>
                       {dept.name}
@@ -178,20 +181,22 @@ function CourseComparisonContent() {
               </div>
 
               <div>
-                <label className={`block ${labelStyles.md} text-text-primary mb-2`}>Course</label>
+                <label htmlFor="compare-course-course" className={`block ${labelStyles.md} text-text-primary mb-2`}>
+                  Course
+                </label>
                 <select
-                  title="course"
+                  id="compare-course-course"
                   value={selectedCourse || ""}
-                  onChange={(e) => setSelectedCourse(Number(e.target.value))}
+                  onChange={(event) => setSelectedCourse(Number(event.target.value) || null)}
                   className={selectClass}
                   disabled={!selectedDept}
                 >
-                  <option value="">Select Course</option>
-                  {courses
+                  <option value="">Select a course…</option>
+                  {[...courses]
                     .sort((a, b) => a.courseNumber.localeCompare(b.courseNumber))
                     .map((course) => (
                       <option key={course.courseId} value={course.courseId}>
-                        {course.courseNumber} - {course.title}
+                        {course.courseNumber} — {course.title}
                       </option>
                     ))}
                 </select>
@@ -205,8 +210,8 @@ function CourseComparisonContent() {
             </div>
 
             {selectedCourses.length > 0 && (
-              <div className="border-t border-border pt-4">
-                <h3 className={`${labelStyles.md} text-text-muted mb-2`}>Selected ({selectedCourses.length}/3):</h3>
+              <div className="mt-4 border-t border-border pt-4">
+                <h3 className={`${labelStyles.md} text-text-muted mb-2`}>Selected courses ({selectedCourses.length}/3)</h3>
                 <div className="flex flex-wrap gap-2">
                   {selectedCourses.map((course) => (
                     <div
@@ -217,7 +222,8 @@ function CourseComparisonContent() {
                         {course.deptCode} {course.courseNumber}
                       </span>
                       <button
-                        title="Remove Course"
+                        type="button"
+                        aria-label={`Remove ${course.deptCode} ${course.courseNumber}`}
                         onClick={() => removeCourse(course.courseId)}
                         className="hover:text-destructive transition-colors"
                       >
@@ -231,7 +237,7 @@ function CourseComparisonContent() {
 
             {selectedCourses.length >= 2 && (
               <div className="mt-4">
-                <Button onClick={() => fetchComparisonData(selectedCourses)}>
+                <Button onClick={() => fetchComparisonData(selectedCourses)} className="w-full sm:w-auto">
                   Compare {selectedCourses.length} Courses
                 </Button>
               </div>
@@ -379,13 +385,11 @@ function CourseComparisonContent() {
         )}
 
         {!loading && comparisonData.length === 0 && selectedCourses.length === 0 && (
-          <Card className="p-12 text-center">
-            <div className="w-16 h-16 mx-auto mb-4 bg-surface-raised rounded-full flex items-center justify-center">
-              <ClipboardList className="w-8 h-8 text-text-subtle" />
-            </div>
-            <h3 className={`${headerStyles.md} text-text-primary mb-2`}>No Courses Selected</h3>
-            <p className={`${bodyStyles.md} text-text-muted`}>Select 2-3 courses above to start comparing</p>
-          </Card>
+          <TaskEmptyState
+            icon={ClipboardList}
+            title="Choose courses to compare"
+            description="Add two or three courses above to compare their details side by side."
+          />
         )}
       </div>
     </PageContainer>
