@@ -4,12 +4,13 @@ import { useState, useEffect, Suspense } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
 import { CheckCircle2, X } from "lucide-react";
 import { supabase } from "@/lib/supabase/client";
-import { useAuth } from "@/contexts/AuthContext";
+import { api } from "@/lib/api";
 import LoadingSpinner from "@/components/LoadingSpinner";
 import { Card, CardContent } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import { displayStyles, bodyStyles, labelStyles, headerStyles } from "@/app/fonts";
+import { resolveAuthRedirect } from "@/lib/auth/redirect";
 
 function getErrorMessage(error: unknown, fallback: string) {
   return error instanceof Error ? error.message : fallback;
@@ -18,7 +19,6 @@ function getErrorMessage(error: unknown, fallback: string) {
 function LoginPageContent() {
   const router = useRouter();
   const searchParams = useSearchParams();
-  const { user, isLoading: authLoading } = useAuth();
 
   const [activeTab, setActiveTab] = useState<"signin" | "signup">("signin");
   const [email, setEmail] = useState("");
@@ -38,13 +38,6 @@ function LoginPageContent() {
     if (tab === "signup") setActiveTab("signup");
   }, [searchParams]);
 
-  useEffect(() => {
-    if (!authLoading && user) {
-      const redirectTo = searchParams.get("redirectTo") || "/dashboard";
-      router.push(redirectTo);
-    }
-  }, [user, authLoading, router, searchParams]);
-
   const handleSignIn = async (e: React.FormEvent) => {
     e.preventDefault();
     setError(null);
@@ -53,7 +46,7 @@ function LoginPageContent() {
     try {
       const { error } = await supabase.auth.signInWithPassword({ email, password });
       if (error) throw error;
-      router.push(searchParams.get("redirectTo") || "/dashboard");
+      router.replace(resolveAuthRedirect(searchParams.get("redirectTo")));
     } catch (err: unknown) {
       setError(getErrorMessage(err, "Failed to sign in"));
     } finally {
@@ -71,12 +64,23 @@ function LoginPageContent() {
     }
     setIsLoading(true);
     try {
-      const { error } = await supabase.auth.signUp({
+      const { data, error } = await supabase.auth.signUp({
         email,
         password,
         options: { emailRedirectTo: `${window.location.origin}/auth/callback` },
       });
       if (error) throw error;
+
+      if (data.session) {
+        try {
+          await api.initializePreferencesOnSignup(email);
+        } catch {
+          console.warn("Failed to initialize preferences after signup");
+        }
+        router.replace(resolveAuthRedirect(searchParams.get("redirectTo")));
+        return;
+      }
+
       setSuccessMessage("Account created! Please check your email to verify your account.");
       // reset form fields
       setEmail("");
@@ -93,10 +97,10 @@ function LoginPageContent() {
     setError(null);
     setIsLoading(true);
     try {
-      const redirectTo = searchParams.get("redirectTo") || "/dashboard";
+      const redirectTo = resolveAuthRedirect(searchParams.get("redirectTo"));
       const { error } = await supabase.auth.signInWithOAuth({
         provider: "google",
-        options: { redirectTo: `${window.location.origin}/auth/callback?redirectTo=${redirectTo}` },
+        options: { redirectTo: `${window.location.origin}/auth/callback?redirectTo=${encodeURIComponent(redirectTo)}` },
       });
       if (error) throw error;
     } catch (err: unknown) {
@@ -125,16 +129,6 @@ function LoginPageContent() {
       setForgotLoading(false);
     }
   };
-
-  if (authLoading) {
-    return (
-      <div className="min-h-screen flex items-center justify-center">
-        <LoadingSpinner />
-      </div>
-    );
-  }
-
-  if (user) return null;
 
   return (
     <div className="min-h-screen flex items-center justify-center px-4 py-8 sm:py-12">

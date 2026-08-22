@@ -8,7 +8,6 @@
  * Unlike the browser client, this reads cookies from the request context.
  *
  * Usage:
- * - Import in middleware.ts
  * - Import in Server Components (app router)
  * - Import in Server Actions
  * - Call createClient() to get authenticated instance
@@ -21,7 +20,7 @@
  * Cookie Handling:
  * - Reads session cookies from incoming request
  * - Writes updated cookies to response (token refresh)
- * - Automatically syncs with browser client
+ * - Can write cookies when the calling server context permits it
  *
  * Note:
  * - DO NOT use in client components
@@ -31,6 +30,7 @@
 
 import { createServerClient } from "@supabase/ssr";
 import { cookies } from "next/headers";
+import { supabaseAnonKey, supabaseAuthCookieName, supabasePublicUrl } from "@/lib/supabase/config";
 
 /**
  * Creates a Supabase client for server-side operations
@@ -43,15 +43,6 @@ import { cookies } from "next/headers";
  *
  * @returns Authenticated Supabase client instance
  *
- * Example usage in middleware:
- * ```typescript
- * const supabase = createClient();
- * const { data: { user } } = await supabase.auth.getUser();
- * if (!user) {
- *   return NextResponse.redirect('/login');
- * }
- * ```
- *
  * Example usage in Server Component:
  * ```typescript
  * const supabase = createClient();
@@ -61,9 +52,10 @@ import { cookies } from "next/headers";
 export async function createClient() {
   const cookieStore = await cookies();
 
-  const supabaseUrl = process.env.SUPABASE_INTERNAL_URL ?? process.env.NEXT_PUBLIC_SUPABASE_URL!;
+  const supabaseUrl = process.env.SUPABASE_INTERNAL_URL ?? supabasePublicUrl;
 
-  return createServerClient(supabaseUrl, process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!, {
+  return createServerClient(supabaseUrl, supabaseAnonKey, {
+    cookieOptions: { name: supabaseAuthCookieName },
     cookies: {
       // Read cookie from request
       getAll() {
@@ -74,8 +66,8 @@ export async function createClient() {
         try {
           cookiesToSet.forEach(({ name, value, options }) => cookieStore.set(name, value, options));
         } catch {
-          // Cookie setting can fail in Server Components
-          // This is okay - cookies will be set in middleware instead
+          // Cookie setting can fail in Server Components.
+          // Proxy code uses lib/supabase/proxy.ts instead.
         }
       },
     },

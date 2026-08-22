@@ -4,7 +4,8 @@ import { useState, useEffect } from "react";
 import { useRouter } from "next/navigation";
 import { Bookmark, Loader2 } from "lucide-react";
 import { api } from "@/lib/api";
-import { supabase } from "@/lib/supabase/client";
+import { buildLoginPath } from "@/lib/auth/redirect";
+import { useAuth } from "@/contexts/AuthContext";
 import { Button } from "@/components/ui/button";
 import { buttonStyles } from "@/app/fonts";
 
@@ -24,23 +25,27 @@ export default function BookmarkButton({
   onBookmarkChange,
 }: BookmarkButtonProps) {
   const router = useRouter();
-  const [user, setUser] = useState<any>(null);
+  const { user, isLoading: authLoading } = useAuth();
   const [isBookmarked, setIsBookmarked] = useState(false);
   const [loading, setLoading] = useState(false);
   const [checking, setChecking] = useState(true);
 
   useEffect(() => {
-    async function checkAuth() {
-      const { data: { session } } = await supabase.auth.getSession();
-      setUser(session?.user ?? null);
-    }
-    checkAuth();
-  }, []);
+    let isActive = true;
 
-  useEffect(() => {
+    if (authLoading) {
+      setChecking(true);
+      return () => {
+        isActive = false;
+      };
+    }
+
     if (!user) {
+      setIsBookmarked(false);
       setChecking(false);
-      return;
+      return () => {
+        isActive = false;
+      };
     }
 
     async function checkBookmark() {
@@ -53,21 +58,26 @@ export default function BookmarkButton({
             b.semesterCode === semesterCode &&
             b.section === section
         );
-        setIsBookmarked(exists);
-      } catch (err) {
+        if (isActive) setIsBookmarked(exists);
+      } catch (err: unknown) {
         console.error("Failed to check bookmark:", err);
       } finally {
-        setChecking(false);
+        if (isActive) setChecking(false);
       }
     }
 
-    checkBookmark();
-  }, [user, deptId, courseId, semesterCode, section]);
+    setChecking(true);
+    void checkBookmark();
+
+    return () => {
+      isActive = false;
+    };
+  }, [authLoading, user, deptId, courseId, semesterCode, section]);
 
   const handleClick = async () => {
     if (!user) {
-      const currentPath = window.location.pathname;
-      router.push(`/login?redirectTo=${encodeURIComponent(currentPath)}`);
+      const currentPath = `${window.location.pathname}${window.location.search}${window.location.hash}`;
+      router.push(buildLoginPath(currentPath));
       return;
     }
 
@@ -78,9 +88,9 @@ export default function BookmarkButton({
       await api.createBookmark(deptId, courseId, semesterCode, section);
       setIsBookmarked(true);
       onBookmarkChange?.();
-    } catch (err: any) {
+    } catch (err: unknown) {
       console.error("Failed to add bookmark:", err);
-      alert("Failed to add bookmark: " + err.message);
+      alert(`Failed to add bookmark: ${err instanceof Error ? err.message : "Unknown error"}`);
     } finally {
       setLoading(false);
     }

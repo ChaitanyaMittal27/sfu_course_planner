@@ -13,22 +13,18 @@
  * - Used by: AuthContext, Login page, protected components
  *
  * Session Storage:
- * - Uses cookies to store session (httpOnly for security)
- * - Sessions persist across page refreshes
- * - Automatically refreshes expired tokens
+ * - Uses the Supabase SSR browser storage adapter
+ * - Sessions persist across page refreshes and refresh automatically
  *
  * Note:
  * - This is a SINGLETON (one instance shared by all components)
- * - DO NOT use in server components or middleware
+ * - DO NOT use in server components or the proxy layer
  * - For server-side, use lib/supabase/server.ts instead
  * =============================================================================
  */
 
 import { createBrowserClient } from "@supabase/ssr";
-
-// Get Supabase config from environment variables
-const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL!;
-const supabaseAnonKey = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!;
+import { supabaseAnonKey, supabaseAuthCookieName, supabasePublicUrl } from "@/lib/supabase/config";
 
 /**
  * Supabase browser client instance
@@ -46,7 +42,9 @@ const supabaseAnonKey = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!;
  * - supabase.auth.getSession() - Get current session
  * - supabase.auth.getUser() - Get current user
  */
-export const supabase = createBrowserClient(supabaseUrl, supabaseAnonKey);
+export const supabase = createBrowserClient(supabasePublicUrl, supabaseAnonKey, {
+  cookieOptions: { name: supabaseAuthCookieName },
+});
 
 // Export types for convenience
 export type { User, Session } from "@supabase/supabase-js";

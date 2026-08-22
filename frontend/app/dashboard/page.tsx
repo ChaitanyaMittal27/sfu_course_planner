@@ -5,6 +5,7 @@ import { useRouter } from "next/navigation";
 import { Plus, Eye, TrendingUp, BarChart3, Bell, X, ChevronDown, ChevronUp, Check, Pencil } from "lucide-react";
 import { api, CourseOffering, Bookmark, Course, Department } from "@/lib/api";
 import { supabase } from "@/lib/supabase/client";
+import { useAuth } from "@/contexts/AuthContext";
 import LoadingSpinner from "@/components/LoadingSpinner";
 import ErrorMessage from "@/components/ErrorMessage";
 import ProfileAvatar from "@/components/ProfileAvatar";
@@ -29,8 +30,8 @@ const getStatusFromLoad = (loadPercent: number): string =>
 
 function DashboardPageContent() {
   const router = useRouter();
-  const [user, setUser] = useState<any>(null);
-  const [loading, setLoading] = useState(true);
+  const { user, isAuthenticated, isLoading: authLoading } = useAuth();
+  const [dataLoading, setDataLoading] = useState(true);
   const [bookmarks, setBookmarks] = useState<Bookmark[]>([]);
   const [offerings, setOfferings] = useState<CourseOffering[]>([]);
   const [courses, setCourses] = useState<Map<number, Course>>(new Map());
@@ -50,43 +51,35 @@ function DashboardPageContent() {
   const [editableEmail, setEditableEmail] = useState("");
 
   useEffect(() => {
-    async function checkAuth() {
-      const {
-        data: { session },
-      } = await supabase.auth.getSession();
-
-      if (!session) {
-        router.push("/login?returnTo=/dashboard");
-        return;
-      }
-
-      setUser(session.user);
-      setDisplayName(session.user.user_metadata?.display_name || session.user.email?.split("@")[0] || "User");
+    if (user) {
+      setDisplayName(user.user_metadata?.display_name || user.email?.split("@")[0] || "User");
     }
-    checkAuth();
-  }, [router]);
+  }, [user]);
 
   useEffect(() => {
-    if (!user) return;
+    if (!isAuthenticated || !user?.id) return;
+    let isActive = true;
 
     async function loadData() {
       try {
-        setLoading(true);
+        setDataLoading(true);
         setError(null);
 
         const allDepartments = await api.getDepartments();
         const deptMap = new Map(allDepartments.map((d) => [d.deptId, d]));
-        setDepartments(deptMap);
+        if (isActive) setDepartments(deptMap);
 
         const [bookmarkData, offeringData, preferences] = await Promise.all([
           api.getBookmarks(),
           api.getBookmarkOfferings(),
           api.getUserPreferences(),
         ]);
-        setBookmarks(bookmarkData);
-        setOfferings(offeringData);
-        setEmailNotificationsEnabled(preferences.emailNotificationsEnabled);
-        setPreferredEmail(preferences.userEmail);
+        if (isActive) {
+          setBookmarks(bookmarkData);
+          setOfferings(offeringData);
+          setEmailNotificationsEnabled(preferences.emailNotificationsEnabled);
+          setPreferredEmail(preferences.userEmail);
+        }
 
         const uniqueDeptIds = [...new Set(bookmarkData.map((b) => b.deptId))];
         const coursesMap = new Map<number, Course>();
@@ -102,17 +95,21 @@ function DashboardPageContent() {
           }),
         );
 
-        setCourses(coursesMap);
-      } catch (err: any) {
+        if (isActive) setCourses(coursesMap);
+      } catch (err: unknown) {
         console.error("Failed to load bookmarks:", err);
-        setError(err.message || "Failed to load bookmarks");
+        if (isActive) setError(err instanceof Error ? err.message : "Failed to load bookmarks");
       } finally {
-        setLoading(false);
+        if (isActive) setDataLoading(false);
       }
     }
 
-    loadData();
-  }, [user]);
+    void loadData();
+
+    return () => {
+      isActive = false;
+    };
+  }, [isAuthenticated, user?.id]);
 
   const handleDelete = async (bookmarkId: number) => {
     try {
@@ -124,9 +121,9 @@ function DashboardPageContent() {
           prev.filter((o) => !(o.semesterCode === deleted.semesterCode && o.section === deleted.section)),
         );
       }
-    } catch (err: any) {
+    } catch (err: unknown) {
       console.error("Failed to delete bookmark:", err);
-      alert("Failed to remove bookmark: " + err.message);
+      alert(`Failed to remove bookmark: ${err instanceof Error ? err.message : "Unknown error"}`);
     }
   };
 
@@ -153,8 +150,8 @@ function DashboardPageContent() {
       setPasswordStatus("Password updated");
       setNewPassword("");
       setShowPasswordChange(false);
-    } catch (err: any) {
-      setPasswordStatus(err.message || "Failed to update password");
+    } catch (err: unknown) {
+      setPasswordStatus(err instanceof Error ? err.message : "Failed to update password");
     }
   };
 
@@ -214,7 +211,24 @@ function DashboardPageContent() {
   const profileRef = useScrollReveal({ delay: 100 });
   const watchersRef = useScrollReveal({ delay: 150 });
 
-  if (!user && loading) return null;
+  if (authLoading) {
+    return (
+      <div className="min-h-screen flex items-center justify-center">
+        <LoadingSpinner />
+      </div>
+    );
+  }
+
+  if (!isAuthenticated || !user) {
+    return (
+      <div className="min-h-screen flex flex-col items-center justify-center gap-3">
+        <p className={`${bodyStyles.md} text-text-muted`}>Your session could not be restored in this tab.</p>
+        <a className={`${bodyStyles.md} text-accent hover:underline`} href="/login?redirectTo=%2Fdashboard">
+          Sign in again
+        </a>
+      </div>
+    );
+  }
 
   return (
     <div className="min-h-screen pt-4">
@@ -385,10 +399,10 @@ function DashboardPageContent() {
                   </div>
                 </div>
 
-                {loading && <LoadingSpinner />}
+                {dataLoading && <LoadingSpinner />}
                 {error && <ErrorMessage message={error} onRetry={() => window.location.reload()} />}
 
-                {!loading && !error && (
+                {!dataLoading && !error && (
                   <>
                     {bookmarks.length === 0 ? (
                       <div className="text-center py-12">

@@ -5,7 +5,7 @@ This is a product-hardening backlog derived from the repository audit. It is ord
 1. Add automated backend tests for semesters, authorization, bookmarks, terms, CourseSys parsing, and notifications.
 2. Upgrade the backend to Java 21 LTS and Spring Boot 3.5.x after core tests exist; align local, Docker, and Elastic Beanstalk runtimes.
 3. Audit end-to-end frontend/backend logic flows—especially authentication, redirects, authorization, and duplicated state ownership—and add regression coverage for the inconsistencies found.
-   - Reproduce and fix the local authenticated Dashboard blank screen after login; it currently redirects to `/dashboard` but never renders usable content.
+   - Make the Browse offering-detail selection URL-addressable so a post-login redirect restores the exact detail view, not only its parent course table.
    - Fix Section Comparison deep links: its initial URL-sync flow drops the `sections` query parameter before the selected sections are restored.
 4. Fix `SemesterUtil.decodeSemesterCode()` so decoded semester years match its encoding, with regression coverage.
 5. Add CourseSys request timeouts, safe error handling, and predictable fallback responses.

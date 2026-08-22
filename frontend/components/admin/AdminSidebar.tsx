@@ -2,9 +2,8 @@
 
 import Link from "next/link";
 import { usePathname } from "next/navigation";
-import { Activity, MessageSquare, Calendar, Users, Eye, FlaskConical, Sun, Moon } from "lucide-react";
+import { Activity, MessageSquare, Calendar, Users, Eye, FlaskConical } from "lucide-react";
 import { useAuth } from "@/contexts/AuthContext";
-import { useTheme } from "@/hooks/useTheme";
 import { labelStyles, bodyStyles } from "@/app/fonts";
 
 const navItems = [
@@ -19,7 +18,6 @@ const navItems = [
 export default function AdminSidebar() {
   const pathname = usePathname();
   const { user } = useAuth();
-  const { theme, setThemeTo, mounted } = useTheme();
 
   const isActive = (href: string) => pathname === href || (href !== "/admin" && pathname.startsWith(href + "/"));
 

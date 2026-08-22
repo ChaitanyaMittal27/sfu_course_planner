@@ -40,7 +40,7 @@ export default function Navigation() {
   const pathname = usePathname();
   const router = useRouter();
   const { theme, toggleTheme, setThemeTo, mounted } = useTheme();
-  const { user, signOut } = useAuth();
+  const { user, isLoading: authLoading, signOut } = useAuth();
 
   const isActive = (href: string) => pathname === href;
 
@@ -123,7 +123,9 @@ export default function Navigation() {
           )}
 
           {/* Auth */}
-          {!user ? (
+          {authLoading ? (
+            <div className="h-8 w-24" aria-hidden="true" />
+          ) : !user ? (
             <>
               <Link
                 href="/login"
@@ -223,7 +225,9 @@ export default function Navigation() {
 
             {/* Mobile Auth */}
             <div className="pt-2 border-t border-nav-text/20 mt-2">
-              {!user ? (
+              {authLoading ? (
+                <div className="h-10" aria-hidden="true" />
+              ) : !user ? (
                 <div className="flex flex-col gap-2">
                   <Link
                     href="/login"
