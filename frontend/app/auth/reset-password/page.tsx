@@ -23,8 +23,11 @@ function ResetPasswordPageContent() {
   useEffect(() => {
     const checkSession = async () => {
       try {
-        const { data: { session } } = await supabase.auth.getSession();
-        if (!session) {
+        const {
+          data: { session },
+          error: sessionError,
+        } = await supabase.auth.getSession();
+        if (sessionError || !session) {
           setError("Invalid or expired reset link. Please request a new password reset.");
           setTokenValid(false);
         } else {
@@ -56,9 +59,9 @@ function ResetPasswordPageContent() {
       const { error } = await supabase.auth.updateUser({ password });
       if (error) throw error;
       setSuccess(true);
-      setTimeout(() => router.push("/login"), 2000);
-    } catch (err: any) {
-      setError(err.message || "Failed to reset password");
+      setTimeout(() => router.replace("/login"), 2000);
+    } catch (err: unknown) {
+      setError(err instanceof Error ? err.message : "Failed to reset password");
     } finally {
       setIsLoading(false);
     }
@@ -85,7 +88,7 @@ function ResetPasswordPageContent() {
             <p className={`${bodyStyles.md} text-text-muted mb-6`}>
               {error || "This password reset link is invalid or has expired."}
             </p>
-            <Button onClick={() => router.push("/login")}>Back to Login</Button>
+            <Button onClick={() => router.replace("/login")}>Back to Login</Button>
           </CardContent>
         </Card>
       </div>
@@ -152,7 +155,7 @@ function ResetPasswordPageContent() {
               {isLoading ? "Resetting Password..." : "Reset Password"}
             </Button>
             <div className="text-center">
-              <Button type="button" variant="link" onClick={() => router.push("/login")} className="text-accent">
+              <Button type="button" variant="link" onClick={() => router.replace("/login")} className="text-accent">
                 Back to Login
               </Button>
             </div>

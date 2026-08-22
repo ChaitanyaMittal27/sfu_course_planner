@@ -8,6 +8,7 @@ import LoadingSpinner from "@/components/LoadingSpinner";
 import { Card, CardContent } from "@/components/ui/card";
 import { bodyStyles, headerStyles } from "@/app/fonts";
 import { api } from "@/lib/api";
+import { resolveAuthRedirect } from "@/lib/auth/redirect";
 
 // callback page
 // This page is used as the redirect URL for OAuth sign-in flows.
@@ -20,18 +21,26 @@ function AuthCallbackPageContent() {
   const [error, setError] = useState<string | null>(null);
 
   useEffect(() => {
+    let isActive = true;
+    let redirectTimer: ReturnType<typeof setTimeout> | undefined;
+
+    const showError = (message: string) => {
+      if (!isActive) return;
+      setError(message);
+      redirectTimer = setTimeout(() => router.replace("/login"), 3000);
+    };
+
     const handleCallback = async () => {
       try {
         const code = searchParams.get("code");
         if (!code) {
-          router.push("/");
+          router.replace("/");
           return;
         }
         const { error: exchangeError } = await supabase.auth.exchangeCodeForSession(code);
         if (exchangeError) {
           console.error("OAuth exchange error:", exchangeError);
-          setError(exchangeError.message || "Failed to complete sign in");
-          setTimeout(() => router.push("/login"), 3000);
+          showError(exchangeError.message || "Failed to complete sign in");
           return;
         }
         // Initialize preferences now that user is fully confirmed
@@ -46,14 +55,19 @@ function AuthCallbackPageContent() {
         } catch {
           console.warn("Failed to initialize preferences after confirmation");
         }
-        router.push(searchParams.get("redirectTo") || "/dashboard");
-      } catch (err: any) {
+        if (isActive) router.replace(resolveAuthRedirect(searchParams.get("redirectTo")));
+      } catch (err: unknown) {
         console.error("OAuth callback error:", err);
-        setError(err.message || "Failed to complete sign in");
-        setTimeout(() => router.push("/login"), 3000);
+        showError(err instanceof Error ? err.message : "Failed to complete sign in");
       }
     };
-    handleCallback();
+
+    void handleCallback();
+
+    return () => {
+      isActive = false;
+      if (redirectTimer) clearTimeout(redirectTimer);
+    };
   }, [searchParams, router]);
 
   if (!error) {
