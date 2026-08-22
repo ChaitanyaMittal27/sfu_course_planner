@@ -30,6 +30,7 @@
 
 import { createServerClient } from "@supabase/ssr";
 import { cookies } from "next/headers";
+import { supabaseAnonKey, supabaseAuthCookieName, supabasePublicUrl } from "@/lib/supabase/config";
 
 /**
  * Creates a Supabase client for server-side operations
@@ -51,9 +52,10 @@ import { cookies } from "next/headers";
 export async function createClient() {
   const cookieStore = await cookies();
 
-  const supabaseUrl = process.env.SUPABASE_INTERNAL_URL ?? process.env.NEXT_PUBLIC_SUPABASE_URL!;
+  const supabaseUrl = process.env.SUPABASE_INTERNAL_URL ?? supabasePublicUrl;
 
-  return createServerClient(supabaseUrl, process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!, {
+  return createServerClient(supabaseUrl, supabaseAnonKey, {
+    cookieOptions: { name: supabaseAuthCookieName },
     cookies: {
       // Read cookie from request
       getAll() {

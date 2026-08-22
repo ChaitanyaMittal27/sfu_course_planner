@@ -30,6 +30,7 @@
 - Routes live in `frontend/app/`; interactive pages/components are client components. Root layout provides `AuthProvider`, `NuqsAdapter`, navigation, footer, and analytics.
 - Keep normal backend calls in `lib/api.ts` and add matching interfaces to `lib/types.ts`. `fetchAuthAPI` obtains the Supabase session token and attaches it. The public contact form and the admin API-test page are intentional direct-fetch exceptions.
 - Supabase owns browser auth. `proxy.ts` refreshes sessions and protects `/dashboard` and `/admin`; it also gates admin UI by `app_metadata.role`. Backend authorization remains mandatory.
+- Docker may use `SUPABASE_INTERNAL_URL` while the browser uses the public Supabase URL. Keep `lib/supabase/config.ts` as the shared cookie-name source so browser, proxy, and server clients read the same session cookie despite their different network hosts.
 - The manual `/docs` frontend route was removed. Footer API Docs links directly to `${NEXT_PUBLIC_API_URL}/api-docs`; preserve that environment-aware link instead of duplicating endpoint documentation in the frontend.
 - Reuse existing components in `components/` and `components/ui/` (shadcn) before introducing primitives. Use Lucide icons rather than inline SVG paths.
 - The UI is token-based and dark-mode aware. For new UI, use the semantic Tailwind tokens defined in `app/globals.css` and the typography constants in `app/fonts.ts`; do not introduce one-off colors, dark-mode hardcoded palettes, or typography scales. Add a token to both `:root` and `.dark` before using a new semantic color.

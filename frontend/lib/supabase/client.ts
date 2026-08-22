@@ -24,10 +24,7 @@
  */
 
 import { createBrowserClient } from "@supabase/ssr";
-
-// Get Supabase config from environment variables
-const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL!;
-const supabaseAnonKey = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!;
+import { supabaseAnonKey, supabaseAuthCookieName, supabasePublicUrl } from "@/lib/supabase/config";
 
 /**
  * Supabase browser client instance
@@ -45,7 +42,9 @@ const supabaseAnonKey = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!;
  * - supabase.auth.getSession() - Get current session
  * - supabase.auth.getUser() - Get current user
  */
-export const supabase = createBrowserClient(supabaseUrl, supabaseAnonKey);
+export const supabase = createBrowserClient(supabasePublicUrl, supabaseAnonKey, {
+  cookieOptions: { name: supabaseAuthCookieName },
+});
 
 // Export types for convenience
 export type { User, Session } from "@supabase/supabase-js";

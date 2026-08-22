@@ -1,5 +1,6 @@
 import { createServerClient } from "@supabase/ssr";
 import { type NextRequest, NextResponse } from "next/server";
+import { supabaseAnonKey, supabaseAuthCookieName, supabasePublicUrl } from "@/lib/supabase/config";
 
 /**
  * Creates the Supabase client used exclusively by Next's proxy layer.
@@ -9,9 +10,10 @@ import { type NextRequest, NextResponse } from "next/server";
  */
 export function createProxyClient(request: NextRequest) {
   let response = NextResponse.next({ request });
-  const supabaseUrl = process.env.SUPABASE_INTERNAL_URL ?? process.env.NEXT_PUBLIC_SUPABASE_URL!;
+  const supabaseUrl = process.env.SUPABASE_INTERNAL_URL ?? supabasePublicUrl;
 
-  const supabase = createServerClient(supabaseUrl, process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!, {
+  const supabase = createServerClient(supabaseUrl, supabaseAnonKey, {
+    cookieOptions: { name: supabaseAuthCookieName },
     cookies: {
       getAll() {
         return request.cookies.getAll();
