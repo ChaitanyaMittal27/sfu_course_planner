@@ -19,6 +19,7 @@
 - The scheduled digest runs at 00:05 `America/Vancouver` and can also be triggered by an admin endpoint. It fetches external CourseSys data and sends Resend email, so treat changes there and to the admin test endpoint as production-affecting.
 - Backend configuration is environment-only: `DB_URL_NEW`, `DB_USER_NEW`, `DB_PASS_NEW`, `SUPABASE_URL_NEW`, `SUPABASE_KEY_NEW`, and `RESEND_API_KEY`; `SERVER_PORT` defaults to 5000. Never commit values.
 - `backend/.env.local` is an ignored Docker/runtime environment file, not an automatic Spring Boot configuration source. Load its values into the shell for manual Gradle/JAR runs.
+- Springdoc serves the generated public API reference at `/api-docs` and its OpenAPI JSON at `/v3/api-docs`. Keep public/user controller annotations and API DTO schemas accurate; `/api/admin/**` controllers are intentionally `@Hidden` because they are internal operations.
 - Run backend tasks from `backend/` with a Java 17+ runtime: `./gradlew bootRun`, `./gradlew test`, and `./gradlew bootJar`.
 - Dockerfiles are multi-stage: `backend/Dockerfile` has `dev`, `builder`, and `runtime` targets; `frontend/Dockerfile` has `dev`, `build`, and `runtime` targets. Keep build contexts free of `.env*` files.
 - `docker-compose.yaml` is development-only: it runs the frontend and backend `dev` targets. Supabase remains owned by the Supabase CLI, which starts its own local service stack. On Windows, use `scripts/dev.ps1` to start both and `scripts/dev-down.ps1` to stop both; this does not deploy either application.
@@ -29,6 +30,7 @@
 - Routes live in `frontend/app/`; interactive pages/components are client components. Root layout provides `AuthProvider`, `NuqsAdapter`, navigation, footer, and analytics.
 - Keep normal backend calls in `lib/api.ts` and add matching interfaces to `lib/types.ts`. `fetchAuthAPI` obtains the Supabase session token and attaches it. The public contact form and the admin API-test page are intentional direct-fetch exceptions.
 - Supabase owns browser auth. `proxy.ts` refreshes sessions and protects `/dashboard` and `/admin`; it also gates admin UI by `app_metadata.role`. Backend authorization remains mandatory.
+- The manual `/docs` frontend route was removed. Footer API Docs links directly to `${NEXT_PUBLIC_API_URL}/api-docs`; preserve that environment-aware link instead of duplicating endpoint documentation in the frontend.
 - Reuse existing components in `components/` and `components/ui/` (shadcn) before introducing primitives. Use Lucide icons rather than inline SVG paths.
 - The UI is token-based and dark-mode aware. For new UI, use the semantic Tailwind tokens defined in `app/globals.css` and the typography constants in `app/fonts.ts`; do not introduce one-off colors, dark-mode hardcoded palettes, or typography scales. Add a token to both `:root` and `.dark` before using a new semantic color.
 - Prefer the provided animation utilities in `globals.css` and Tailwind spacing over component-level CSS/style values. Type component props and reuse shared types instead of `any`.

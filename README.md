@@ -4,6 +4,7 @@ Course planning and discovery app for Simon Fraser University. Browse department
 
 - **Live app:** [sfucourseplanner.com](https://sfucourseplanner.com)
 - **API:** [api.sfucourseplanner.com](https://api.sfucourseplanner.com)
+- **Interactive API docs:** [api.sfucourseplanner.com/api-docs](https://api.sfucourseplanner.com/api-docs)
 - **License:** MIT
 
 ## Table of Contents
@@ -36,6 +37,7 @@ On top of that, signed-in users can bookmark specific course offerings and opt i
 - **Spring Data JPA** (Hibernate) + **PostgreSQL** hosted on **Supabase**
 - `spring.jpa.hibernate.ddl-auto=validate` — schema is managed manually, Hibernate never auto-migrates
 - **Resend** (`com.resend:resend-java`) for transactional email (contact form, support replies, notification digests)
+- **Springdoc OpenAPI / Swagger UI** for generated public and signed-in-user API documentation
 - Runs on port `5000`, deployed to **AWS Elastic Beanstalk**
 
 ### Frontend
@@ -73,7 +75,7 @@ On top of that, signed-in users can bookmark specific course offerings and opt i
 ├── backend/build.gradle                # Spring Boot config (Java 17, Spring Boot 3.0.0)
 ├── backend/src/main/java/com/example/courseplanner/
 │   ├── Application.java                # Spring Boot entry point (@EnableScheduling for notification cron)
-│   ├── config/CorsConfig.java          # CORS (localhost + sfucourseplanner.com + vercel.app)
+│   ├── config/                         # CORS and OpenAPI configuration
 │   ├── controller/
 │   │   ├── AboutController.java            # GET /api/about, GET /api/terms/enrolling
 │   │   ├── BrowseController.java           # Departments, courses, offerings (public)
@@ -116,7 +118,7 @@ On top of that, signed-in users can bookmark specific course offerings and opt i
 │   │   ├── auth/{callback,reset-password}/  # OAuth callback, password reset
 │   │   ├── admin/                      # Admin dashboard (role-gated)
 │   │   │   ├── health/, support/, terms/, users/[id]/, bookmarks/, test/, unauthorized/
-│   │   └── {about,docs,privacy,termsofservice}/
+│   │   └── {about,privacy,termsofservice}/
 │   ├── components/
 │   │   ├── ui/                         # shadcn components
 │   │   ├── admin/                      # AdminSidebar, AdminPageSkeleton
@@ -199,6 +201,8 @@ Read from `.env.local`:
 > **Note:** never commit real values for these — both `.env` (backend) and `frontend/.env.local` are gitignored. Treat the Supabase service role key and Resend API key as secrets; the service role key in particular bypasses row-level security and should never be exposed client-side or committed.
 
 ## API Reference
+
+The generated interactive reference is available at [`/api-docs`](https://api.sfucourseplanner.com/api-docs). Its machine-readable OpenAPI document is served at [`/v3/api-docs`](https://api.sfucourseplanner.com/v3/api-docs). The generated reference intentionally excludes internal `/api/admin/**` operations.
 
 ### Public (no auth)
 | Method | Path | Description |

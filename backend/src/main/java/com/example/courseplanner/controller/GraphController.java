@@ -7,6 +7,9 @@ import com.example.courseplanner.repository.*;
 import com.example.courseplanner.service.CourseSysClient;
 import com.example.courseplanner.utils.SemesterUtil;
 
+import io.swagger.v3.oas.annotations.Operation;
+import io.swagger.v3.oas.annotations.Parameter;
+import io.swagger.v3.oas.annotations.tags.Tag;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
@@ -35,6 +38,7 @@ import java.util.stream.Collectors;
  */
 @RestController
 @RequestMapping("/api/graph")
+@Tag(name = "Course analytics", description = "Grade-distribution and enrollment-history data")
 public class GraphController {
 
     private final CourseRepository courseRepository;
@@ -69,8 +73,9 @@ public class GraphController {
     // Returns: ApiGradeDistributionDTO
     // =====================================================
     @GetMapping("/grade-distribution")
+    @Operation(summary = "Get a course grade distribution")
     public ResponseEntity<ApiGradeDistributionDTO> getGradeDistribution(
-        @RequestParam Long courseId
+        @Parameter(description = "Database course ID", example = "42") @RequestParam Long courseId
     ) {
         // 1. Validate course exists and fetch with department
         Course course = courseRepository.findByIdWithDepartment(courseId)
@@ -138,10 +143,11 @@ public class GraphController {
     // Returns: List<ApiEnrollmentDataPointDTO>
     // =====================================================
     @GetMapping("/enrollment-history")
+    @Operation(summary = "Get enrollment history", description = "Fetches historical enrollment totals from CourseSys.")
     public ResponseEntity<List<ApiEnrollmentDataPointDTO>> getEnrollmentHistory(
-        @RequestParam Long deptId,
-        @RequestParam Long courseId,
-        @RequestParam(defaultValue = "5yr") String range
+        @Parameter(description = "Database department ID", example = "1") @RequestParam Long deptId,
+        @Parameter(description = "Database course ID", example = "42") @RequestParam Long courseId,
+        @Parameter(description = "History range", example = "5yr") @RequestParam(defaultValue = "5yr") String range
     ) {
         // 1. Validate course
         Course course = courseRepository.findByIdWithDepartment(courseId)

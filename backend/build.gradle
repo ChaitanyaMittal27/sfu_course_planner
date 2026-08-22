@@ -22,6 +22,8 @@ dependencies {
     runtimeOnly 'org.postgresql:postgresql'
     // Resend email SDK
     implementation 'com.resend:resend-java:3.1.0'
+    // Generated OpenAPI specification and Swagger UI (Spring Boot 3.0 compatible)
+    implementation 'org.springdoc:springdoc-openapi-starter-webmvc-ui:2.1.0'
     // testing
     testImplementation 'org.springframework.boot:spring-boot-starter-test'
 }

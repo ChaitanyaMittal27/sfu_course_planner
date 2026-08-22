@@ -4,6 +4,7 @@ import com.example.courseplanner.dto.*;
 import com.example.courseplanner.repository.BookmarkRepository;
 import com.example.courseplanner.service.JwtService;
 
+import io.swagger.v3.oas.annotations.Hidden;
 import org.springframework.http.ResponseEntity;
 import org.springframework.jdbc.core.JdbcTemplate;
 import org.springframework.web.bind.annotation.*;
@@ -12,6 +13,7 @@ import java.util.List;
 
 @RestController
 @RequestMapping("/api/admin/bookmarks")
+@Hidden
 public class BookmarksAdminController {
 
     private final JwtService jwtService;

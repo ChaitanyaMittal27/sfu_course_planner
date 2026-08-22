@@ -5,6 +5,8 @@ import com.example.courseplanner.entity.ContactSubmission;
 import com.example.courseplanner.repository.ContactSubmissionRepository;
 import com.example.courseplanner.service.EmailService;
 
+import io.swagger.v3.oas.annotations.Operation;
+import io.swagger.v3.oas.annotations.tags.Tag;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
@@ -14,6 +16,7 @@ import java.util.Map;
 
 @RestController
 @RequestMapping("/api/contact")
+@Tag(name = "Support", description = "Public support contact submission")
 public class ContactController {
 
     private final EmailService emailService;
@@ -25,6 +28,7 @@ public class ContactController {
     }
 
     @PostMapping
+    @Operation(summary = "Submit a support contact message", description = "Persists the submission and attempts to send a support email.")
     public ResponseEntity<Map<String, String>> submitContactForm(
         @RequestBody ApiContactDTO dto
     ) {

@@ -17,6 +17,9 @@ import com.example.courseplanner.model.*;
 import com.example.courseplanner.service.CourseSysClient;
 import com.example.courseplanner.utils.*;
 
+import io.swagger.v3.oas.annotations.Operation;
+import io.swagger.v3.oas.annotations.Parameter;
+import io.swagger.v3.oas.annotations.tags.Tag;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
@@ -27,6 +30,7 @@ import java.util.stream.Collectors;
 
 @RestController
 @RequestMapping("/api")
+@Tag(name = "Course catalog", description = "Departments, course metadata, and live CourseSys offerings")
 public class BrowseController {
     // inject jpa repositories or services as needed
     private final DepartmentRepository departmentRepository;
@@ -44,6 +48,7 @@ public class BrowseController {
     }
 
     @GetMapping("/departments")
+    @Operation(summary = "List departments")
     public ResponseEntity<List<ApiDepartmentDTO>> getDepartments() {
         List<ApiDepartmentDTO> departmentDTOs = departmentRepository.findAll().stream()
                 .sorted(Comparator.comparing(Department::getDeptCode, String.CASE_INSENSITIVE_ORDER))
@@ -53,7 +58,9 @@ public class BrowseController {
     }
     
     @GetMapping("/departments/{deptId}/courses")
-    public ResponseEntity<List<ApiCourseDTO>> getCourses(@PathVariable Long deptId) {
+    @Operation(summary = "List courses in a department")
+    public ResponseEntity<List<ApiCourseDTO>> getCourses(
+            @Parameter(description = "Database department ID", example = "1") @PathVariable Long deptId) {
         // Validate department exists
         if (!departmentRepository.existsById(deptId)) {
             return ResponseEntity.status(HttpStatus.NOT_FOUND).body(null);
@@ -77,9 +84,10 @@ public class BrowseController {
     }
 
     @GetMapping("/departments/{deptId}/courses/{courseId}/offerings")
+    @Operation(summary = "List recent offerings for a course", description = "Fetches up to 12 semesters of live CourseSys offerings.")
     public ResponseEntity<List<ApiCourseOfferingDTO>> getOfferings(
-            @PathVariable Long deptId,
-            @PathVariable Long courseId
+            @Parameter(description = "Database department ID", example = "1") @PathVariable Long deptId,
+            @Parameter(description = "Database course ID", example = "42") @PathVariable Long courseId
     ) {
         // 1. Validate course
         Course course = courseRepository.findByIdWithDepartment(courseId)
@@ -151,10 +159,11 @@ public class BrowseController {
     }
 
     @GetMapping("/departments/{deptId}/courses/{courseId}/offerings/{semesterCode}")
+    @Operation(summary = "Get offering detail for one semester", description = "Combines live CourseSys sections with available CourseDiggers statistics.")
     public ResponseEntity<ApiOfferingDetailDTO> getOfferingDetail(
-            @PathVariable Long deptId,
-            @PathVariable Long courseId,
-            @PathVariable Long semesterCode
+            @Parameter(description = "Database department ID", example = "1") @PathVariable Long deptId,
+            @Parameter(description = "Database course ID", example = "42") @PathVariable Long courseId,
+            @Parameter(description = "SFU semester code", example = "1257") @PathVariable Long semesterCode
     ) {
 
         // 1. Validate DB entities

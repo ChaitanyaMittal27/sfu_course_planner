@@ -2,6 +2,7 @@ package com.example.courseplanner.controller;
 
 import com.example.courseplanner.service.JwtService;
 
+import io.swagger.v3.oas.annotations.Hidden;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
@@ -10,6 +11,7 @@ import java.util.Map;
 
 @RestController
 @RequestMapping("/api/admin")
+@Hidden
 public class AdminController {
 
     private final JwtService jwtService;

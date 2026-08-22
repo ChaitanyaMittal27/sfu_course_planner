@@ -15,7 +15,7 @@
  * - (Add more protected routes here as needed)
  *
  * Public Routes:
- * - / (landing), /browse, /graph, /compare, /docs, /about
+ * - / (landing), /browse, /graph, /compare, /about
  * - /login (obviously public)
  * - Static files, API routes
  *
