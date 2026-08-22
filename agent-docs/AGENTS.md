@@ -30,6 +30,7 @@
 - Routes live in `frontend/app/`; interactive pages/components are client components. Root layout provides `AuthProvider`, `NuqsAdapter`, navigation, footer, and analytics.
 - Keep normal backend calls in `lib/api.ts` and add matching interfaces to `lib/types.ts`. `fetchAuthAPI` obtains the Supabase session token and attaches it. The public contact form and the admin API-test page are intentional direct-fetch exceptions.
 - Supabase owns browser auth. `proxy.ts` refreshes sessions and protects `/dashboard` and `/admin`; it also gates admin UI by `app_metadata.role`. Backend authorization remains mandatory.
+- Keep frontend auth responsibilities separate: `proxy.ts` is the route guard and session-refresh boundary; `AuthContext` mirrors browser-session state for UI only; login, signup, and callback handlers navigate only after their own successful action. Do not add client-side route guards that compete with the proxy.
 - Docker may use `SUPABASE_INTERNAL_URL` while the browser uses the public Supabase URL. Keep `lib/supabase/config.ts` as the shared cookie-name source so browser, proxy, and server clients read the same session cookie despite their different network hosts.
 - The manual `/docs` frontend route was removed. Footer API Docs links directly to `${NEXT_PUBLIC_API_URL}/api-docs`; preserve that environment-aware link instead of duplicating endpoint documentation in the frontend.
 - Reuse existing components in `components/` and `components/ui/` (shadcn) before introducing primitives. Use Lucide icons rather than inline SVG paths.
@@ -37,6 +38,7 @@
 - Prefer the provided animation utilities in `globals.css` and Tailwind spacing over component-level CSS/style values. Type component props and reuse shared types instead of `any`.
 - Frontend variables belong in `frontend/.env.local`: `NEXT_PUBLIC_API_URL`, `NEXT_PUBLIC_SUPABASE_URL`, `NEXT_PUBLIC_SUPABASE_ANON_KEY`, and `NEXT_PUBLIC_SITE_URL`. They are public-client configuration, not a place for service-role or Resend secrets.
 - Local Supabase schema and catalog seed data live in `supabase/migrations/` and `supabase/seed.sql`. Use the CLI to test migrations locally before a reviewed `db push`; never use `db reset --linked` against production.
+- `npx supabase start` also runs the local Mailpit inbox at `http://127.0.0.1:54324`; use it to verify password-reset and confirmation-email flows without sending real mail.
 - From `frontend/`, use `npm install`, `npm run dev`, `npm run lint`, and `npm run build`.
 
 ## Data scripts and maintenance
