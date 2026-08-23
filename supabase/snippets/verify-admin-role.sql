@@ -1,5 +1,5 @@
 -- Manual operational snippet. Run only in the SQL Editor for the intended Supabase project.
--- This is not a migration or local seed; change the email deliberately before running it.
+-- verifies that the user with email 'admin@test.com' has the role 'admin'.
 select
   email,
   raw_app_meta_data ->> 'role' as role
