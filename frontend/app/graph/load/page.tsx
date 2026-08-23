@@ -136,7 +136,7 @@ function LoadOverTimePageContent() {
     <PageContainer>
       <div className="mb-6">
         <h1 className={`${displayStyles.sm} text-text-primary`}>Load Over Time</h1>
-        <p className={`${bodyStyles.md} text-text-muted mt-1`}>Track enrollment percentage across semesters.</p>
+        <p className={`${bodyStyles.md} text-text-muted mt-1`}>Track enrollment percentage across semesters. Select Department and Course to load.</p>
       </div>
 
       <AnalyticsCourseSelector
