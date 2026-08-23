@@ -157,7 +157,7 @@ public final class SemesterUtil {
      * @return DecodedSemester record
      */
     public static DecodedSemester decodeSemesterCode(long semesterCode) {
-        long year = semesterCode / 10;
+        long year = (semesterCode / 10) + 1900;
         int termDigit = (int) (semesterCode % 10);
 
         String term = switch (termDigit) {
