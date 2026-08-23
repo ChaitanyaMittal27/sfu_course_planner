@@ -31,3 +31,8 @@ export function buildLoginPath(redirectTo: string): string {
   const destination = resolveAuthRedirect(redirectTo);
   return `/login?redirectTo=${encodeURIComponent(destination)}`;
 }
+
+export function buildAuthCallbackUrl(origin: string, redirectTo: string | null | undefined): string {
+  const destination = resolveAuthRedirect(redirectTo);
+  return `${origin}/auth/callback?redirectTo=${encodeURIComponent(destination)}`;
+}
