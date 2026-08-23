@@ -4,7 +4,7 @@ import { Suspense, useEffect, useState } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
 import { XCircle } from "lucide-react";
 import { supabase } from "@/lib/supabase/client";
-import LoadingSpinner from "@/components/LoadingSpinner";
+import LoadingSpinner from "@/components/feedback/LoadingSpinner";
 import { Card, CardContent } from "@/components/ui/card";
 import { bodyStyles, headerStyles } from "@/app/fonts";
 import { api } from "@/lib/api";

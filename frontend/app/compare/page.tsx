@@ -2,8 +2,8 @@
 
 import { Suspense } from "react";
 import { BookOpen, ClipboardList } from "lucide-react";
-import PageContainer from "@/components/PageContainer";
-import LoadingSpinner from "@/components/LoadingSpinner";
+import PageContainer from "@/components/layout/PageContainer";
+import LoadingSpinner from "@/components/feedback/LoadingSpinner";
 import TaskHub from "@/components/TaskHub";
 
 const comparisonActions = [

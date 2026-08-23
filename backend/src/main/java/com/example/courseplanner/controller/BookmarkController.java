@@ -99,11 +99,11 @@ public class BookmarkController {
     // Used to populate offering data on dashboard
     // 
     // Headers: Authorization: Bearer <JWT>
-    // Returns: List<ApiCourseOfferingDTO>
+    // Returns: List<ApiBookmarkOfferingDTO>
     // =====================================================
     @GetMapping("/offerings")
     @Operation(summary = "List live offerings for the current user's bookmarks")
-    public ResponseEntity<List<ApiCourseOfferingDTO>> getBookmarkedOfferings(
+    public ResponseEntity<List<ApiBookmarkOfferingDTO>> getBookmarkedOfferings(
         @Parameter(hidden = true) @RequestHeader("Authorization") String authHeader
     ) {
         // Extract userId from JWT
@@ -122,7 +122,7 @@ public class BookmarkController {
                 .map(t -> SemesterUtil.buildSemesterCode(t.getYear(), t.getTerm()))
                 .orElse(null);
 
-        List<ApiCourseOfferingDTO> results = new ArrayList<>();
+        List<ApiBookmarkOfferingDTO> results = new ArrayList<>();
 
         // Resolve each bookmark → CourseSys offering
         for (Bookmark bookmark : bookmarks) {
@@ -157,7 +157,10 @@ public class BookmarkController {
                         enrollingSemesterCode != null &&
                         enrollingSemesterCode.equals(bookmark.getSemesterCode());
 
-                ApiCourseOfferingDTO dto = new ApiCourseOfferingDTO(
+                ApiBookmarkOfferingDTO dto = new ApiBookmarkOfferingDTO(
+                        bookmark.getBookmarkId(),
+                        bookmark.getDeptId(),
+                        bookmark.getCourseId(),
                         offering.getSection(),
                         offering.getInfoUrl(),
                         term,
@@ -178,7 +181,7 @@ public class BookmarkController {
 
         // Sort newest first (same as Browse)
         results.sort(
-                Comparator.comparing(ApiCourseOfferingDTO::getSemesterCode).reversed()
+                Comparator.comparing(ApiBookmarkOfferingDTO::getSemesterCode).reversed()
         );
 
         return ResponseEntity.ok(results);

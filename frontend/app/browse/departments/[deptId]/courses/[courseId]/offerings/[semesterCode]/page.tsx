@@ -1,40 +1,35 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { useParams, useRouter } from "next/navigation";
-import ErrorMessage from "@/components/ErrorMessage";
-import LoadingSpinner from "@/components/LoadingSpinner";
-import { offeringHref } from "@/lib/course-routes";
+import ErrorMessage from "@/components/feedback/ErrorMessage";
+import LoadingSpinner from "@/components/feedback/LoadingSpinner";
+import { offeringHref, parseLegacyCourseRoute, parsePositiveRouteInteger } from "@/lib/course-routes";
 import { resolveCourseIds } from "@/lib/course-resolver";
-
-function parsePositiveInteger(value: string | string[] | undefined) {
-  if (typeof value !== "string" || !/^\d+$/.test(value)) return null;
-
-  const parsed = Number(value);
-  return Number.isSafeInteger(parsed) && parsed > 0 ? parsed : null;
-}
 
 export default function OfferingDetailPage() {
   const router = useRouter();
   const params = useParams<{ deptId: string; courseId: string; semesterCode: string }>();
-  const deptId = parsePositiveInteger(params.deptId);
-  const courseId = parsePositiveInteger(params.courseId);
-  const semesterCode = parsePositiveInteger(params.semesterCode);
+  const legacyRoute = useMemo(
+    () => parseLegacyCourseRoute(params.deptId, params.courseId),
+    [params.courseId, params.deptId],
+  );
+  const semesterCode = useMemo(() => parsePositiveRouteInteger(params.semesterCode), [params.semesterCode]);
   const [error, setError] = useState<string | null>(null);
-  const canResolve = deptId !== null && courseId !== null && semesterCode !== null;
+  const canResolve = legacyRoute.status === "valid" && semesterCode !== null;
 
   useEffect(() => {
-    if (!canResolve || deptId === null || courseId === null || semesterCode === null) {
+    if (!canResolve || legacyRoute.status !== "valid" || semesterCode === null) {
       return;
     }
 
-    void resolveCourseIds(deptId, courseId)
+    void resolveCourseIds(legacyRoute.deptId, legacyRoute.courseId)
       .then((course) => {
         if (!course) setError("This offering could not be found.");
         else router.replace(offeringHref(course.deptCode, course.courseNumber, semesterCode));
       })
       .catch(() => setError("Failed to resolve this offering link."));
-  }, [canResolve, courseId, deptId, router, semesterCode]);
+  }, [canResolve, legacyRoute, router, semesterCode]);
 
   if (!canResolve) {
     return (

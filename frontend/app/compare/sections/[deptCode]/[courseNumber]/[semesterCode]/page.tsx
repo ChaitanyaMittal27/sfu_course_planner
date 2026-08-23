@@ -1,54 +1,35 @@
 "use client";
 
-import { useEffect, useMemo, useState } from "react";
+import { useMemo } from "react";
 import { useParams, useRouter, useSearchParams } from "next/navigation";
 import { bodyStyles, displayStyles } from "@/app/fonts";
-import BackButton from "@/components/BackButton";
-import ErrorMessage from "@/components/ErrorMessage";
-import LoadingSpinner from "@/components/LoadingSpinner";
-import PageContainer from "@/components/PageContainer";
-import SectionComparisonResults from "@/components/SectionComparisonResults";
-import { normalizeCourseIdentity, sectionComparisonHref } from "@/lib/course-routes";
-import { resolveCourseIdentity, type ResolvedCourseRoute } from "@/lib/course-resolver";
+import BackButton from "@/components/layout/BackButton";
+import ErrorMessage from "@/components/feedback/ErrorMessage";
+import LoadingSpinner from "@/components/feedback/LoadingSpinner";
+import PageContainer from "@/components/layout/PageContainer";
+import SectionComparisonResults from "@/components/course/SectionComparisonResults";
+import { parsePositiveRouteInteger, sectionComparisonHref } from "@/lib/course-routes";
+import { useCourseRouteResolution } from "@/hooks/useCourseRouteResolution";
 
 export default function CanonicalSectionComparisonPage() {
   const params = useParams<{ deptCode: string; courseNumber: string; semesterCode: string }>();
   const router = useRouter();
   const searchParams = useSearchParams();
-  const identity = useMemo(
-    () => normalizeCourseIdentity(params.deptCode, params.courseNumber),
-    [params.courseNumber, params.deptCode],
-  );
-  const semesterCode = Number(params.semesterCode);
-  const [course, setCourse] = useState<ResolvedCourseRoute | null>(null);
-  const [error, setError] = useState<string | null>(null);
+  const route = useCourseRouteResolution(params.deptCode, params.courseNumber);
+  const semesterCode = useMemo(() => parsePositiveRouteInteger(params.semesterCode), [params.semesterCode]);
   const requestedSections = useMemo(
     () => (searchParams.get("sections") ?? "").split(",").filter(Boolean),
     [searchParams],
   );
 
-  useEffect(() => {
-    if (!identity) return;
-    let active = true;
-
-    void resolveCourseIdentity(identity)
-      .then((resolvedCourse) => {
-        if (!active) return;
-        if (!resolvedCourse) setError("This course could not be found.");
-        else setCourse(resolvedCourse);
-      })
-      .catch(() => active && setError("Failed to resolve this course link."));
-
-    return () => {
-      active = false;
-    };
-  }, [identity]);
-
-  if (!identity || !Number.isSafeInteger(semesterCode) || semesterCode <= 0) {
+  if (route.status === "invalid" || semesterCode === null) {
     return <PageContainer><ErrorMessage message="This section comparison link is invalid." /></PageContainer>;
   }
-  if (error) return <PageContainer><ErrorMessage message={error} /></PageContainer>;
-  if (!course) return <LoadingSpinner />;
+  if (route.status === "notFound") return <PageContainer><ErrorMessage message="This course could not be found." /></PageContainer>;
+  if (route.status === "error") return <PageContainer><ErrorMessage message="Failed to resolve this course link." /></PageContainer>;
+  if (route.status === "loading") return <LoadingSpinner />;
+
+  const { course } = route;
 
   const updateSelectedSections = (sections: string[]) => {
     router.replace(sectionComparisonHref(course.deptCode, course.courseNumber, semesterCode, sections));

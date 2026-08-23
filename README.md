@@ -1,305 +1,218 @@
 # SFU Course Planner
 
-Course planning and discovery app for Simon Fraser University. Browse departments and courses, inspect live enrollment/section data, view grade distributions and enrollment trends, compare courses/sections side by side, bookmark offerings, and get daily email digests when a bookmarked section's enrollment changes.
+SFU Course Planner helps Simon Fraser University students research courses, inspect current and historical offerings, compare options, bookmark sections, and receive daily enrollment updates.
 
-- **Live app:** [sfucourseplanner.com](https://sfucourseplanner.com)
-- **API:** [api.sfucourseplanner.com](https://api.sfucourseplanner.com)
-- **Interactive API docs:** [api.sfucourseplanner.com/api-docs](https://api.sfucourseplanner.com/api-docs)
-- **License:** MIT
+- Live site: [sfucourseplanner.com](https://sfucourseplanner.com)
+- Public API reference: [api.sfucourseplanner.com/api-docs](https://api.sfucourseplanner.com/api-docs)
+- License: MIT
 
-## Table of Contents
+## What it does
 
-- [Overview](#overview)
-- [Tech Stack](#tech-stack)
-- [Key Features](#key-features)
-- [Project Structure](#project-structure)
-- [Getting Started](#getting-started)
-- [Environment Variables](#environment-variables)
-- [API Reference](#api-reference)
-- [Architecture Notes](#architecture-notes)
-- [Database Population Scripts](#database-population-scripts)
-- [Deployment](#deployment)
+- Browse SFU departments, courses, and term-specific offerings.
+- Fetch current enrollment, capacity, instructors, and locations from SFU CourseSys when requested.
+- Show stored CourseDiggers grade distributions and enrollment/load history.
+- Compare courses and sections using readable, shareable URLs.
+- Let authenticated users bookmark offerings and receive daily Resend digest emails.
+- Provide a role-gated admin console for health checks, terms, users, bookmarks, and support submissions.
 
-## Overview
+## Architecture
 
-SFU doesn't provide a single place to research a course before enrolling — course outlines, live section enrollment, and historical grade data all live on separate SFU systems. This app pulls all three together:
+| Area | Technology | Responsibility |
+| --- | --- | --- |
+| Frontend | Next.js App Router, React, TypeScript, Tailwind | Public UI, Supabase Auth UI, canonical readable routes |
+| Backend | Java 17, Spring Boot 3.0, Gradle | ID-based REST API, authorization, CourseSys integration, email jobs |
+| Database and Auth | Supabase PostgreSQL and Auth | Persisted catalog, terms, preferences, bookmarks, support data, sessions |
+| External data | SFU CourseSys and CourseDiggers | Live offerings/enrollment and historical grade data |
+| Email | Resend | Support replies and daily bookmark digests |
 
-- **Course outlines** (title, description, units, prerequisites, corequisites, designation) — scraped and stored in the app's own database.
-- **Live section data** (capacity, enrolled count, instructor, campus) — fetched on demand from SFU's [CourseSys](https://coursys.sfu.ca/browse/) system.
-- **Historical grade distributions** — sourced from [CourseDiggers](https://www.coursediggers.com/) and stored in the database.
+The frontend and backend are independently deployed. The browser calls the backend through `NEXT_PUBLIC_API_URL`; Spring Boot does not serve the Next.js app.
 
-On top of that, signed-in users can bookmark specific course offerings and opt into a daily email digest that reports enrollment/capacity status for everything they've bookmarked.
+### Data and authorization boundaries
 
-## Tech Stack
+- PostgreSQL/Supabase is the source of truth for catalog metadata, terms, bookmarks, preferences, and support submissions.
+- CourseSys offering data is fetched on demand and is not persisted as normal offering records.
+- Supabase owns authentication. The frontend proxy refreshes sessions and protects UI routes; the backend independently verifies bearer tokens and enforces ownership/admin permissions.
+- Readable frontend routes such as `/browse/cmpt/125` resolve to internal numeric IDs before calling the existing backend APIs.
 
-### Backend
-- **Java 17**, **Spring Boot 3.0.0**, Gradle
-- **Spring Data JPA** (Hibernate) + **PostgreSQL** hosted on **Supabase**
-- `spring.jpa.hibernate.ddl-auto=validate` — schema is managed manually, Hibernate never auto-migrates
-- **Resend** (`com.resend:resend-java`) for transactional email (contact form, support replies, notification digests)
-- **Springdoc OpenAPI / Swagger UI** for generated public and signed-in-user API documentation
-- Runs on port `5000`, deployed to **AWS Elastic Beanstalk**
+## Repository layout
 
-### Frontend
-- **Next.js 16.2.9** (App Router), **React 19**, **TypeScript 5**
-- **Tailwind CSS v4** with CSS custom properties for theming (light/dark)
-- **shadcn/ui** (built on `@base-ui/react`) for UI primitives
-- **Supabase Auth** (`@supabase/ssr`) — JWT-based auth with httpOnly cookies, session refresh handled in `proxy.ts` (Next.js middleware)
-- **Recharts** for enrollment/grade charts
-- **Lucide React** for icons
-- **nuqs** for URL query state
-- **Vercel Analytics**
-- Deployed on **Vercel**
+```text
+backend/                         Spring Boot API
+  src/main/java/.../
+    controller/                  Public, protected, and admin REST controllers
+    dto/                         API DTOs; controllers do not expose entities
+    entity/, repository/         JPA model and repositories
+    service/                     JWT, CourseSys, and email integrations
+    scheduler/                   Daily bookmark digest
+    utils/                       Semester utilities
+  Dockerfile                     dev, builder, and runtime targets
 
-## Key Features
+frontend/                        Next.js application
+  app/                           App Router pages and layouts
+  components/
+    layout/, course/, feedback/  Shared UI by responsibility
+    dashboard/, analytics/       Feature-specific display components
+    landing/, admin/, ui/        Landing, admin, and shadcn components
+  contexts/                      UI-only auth context
+  hooks/                         Route, retry, theme, and animation hooks
+  lib/                           API client, types, auth, course-route helpers
+  proxy.ts                       Session refresh and route/admin UI gates
+  Dockerfile                     dev, build, and runtime targets
 
-- **Browse** — drill down from department → course → offering, with ~4 years of historical section data pulled live from CourseSys.
-- **Course detail** — description, prerequisites/corequisites, units, designation, grade distribution, and a direct link to the official SFU outline.
-- **Analytics graphs** — enrollment-over-time and load (enrolled/capacity %) charts (1yr/3yr/5yr ranges), plus grade distribution bar charts.
-- **Compare** — side-by-side comparison of courses or specific sections.
-- **Bookmarks / Dashboard** — signed-in users can bookmark a specific course offering (section + semester) and see live status on their dashboard.
-- **Email notifications** — users can opt in to a daily digest email (sent ~00:05 America/Vancouver) summarizing enrollment/capacity for all bookmarked offerings, via Resend.
-- **Auth** — Supabase Auth (email/password + OAuth), JWT verified server-side against Supabase (no local JWT parsing).
-- **Admin dashboard** (`/admin`, role-gated via `app_metadata.role === "admin"`):
-  - **Health** — live status/latency checks for the API, database, CourseSys, CourseDiggers, and Resend.
-  - **Support** — inbox for contact-form submissions (mark read, archive, reply via email).
-  - **Terms** — set which term is "current" vs. "enrolling".
-  - **Users** — user list/detail with signup provider, notification opt-in, last sign-in, and bookmarks.
-  - **Bookmarks analytics** — top bookmarked courses, department rankings, monthly growth.
-  - **Test** — manually trigger the daily notification job on demand.
-- **Contact form** — public contact form that emails the support inbox and is persisted for the admin support view.
-
-## Project Structure
-
-```
-├── backend/build.gradle                # Spring Boot config (Java 17, Spring Boot 3.0.0)
-├── backend/src/main/java/com/example/courseplanner/
-│   ├── Application.java                # Spring Boot entry point (@EnableScheduling for notification cron)
-│   ├── config/                         # CORS and OpenAPI configuration
-│   ├── controller/
-│   │   ├── AboutController.java            # GET /api/about, GET /api/terms/enrolling
-│   │   ├── BrowseController.java           # Departments, courses, offerings (public)
-│   │   ├── GraphController.java            # Grade distribution, enrollment history (public)
-│   │   ├── BookmarkController.java         # CRUD bookmarks (JWT protected)
-│   │   ├── UserPreferenceController.java   # Email notification prefs (JWT protected)
-│   │   ├── ContactController.java          # POST /api/contact (public)
-│   │   ├── AdminController.java            # GET /api/admin (admin status/paths)
-│   │   ├── HealthController.java           # Service health checks (admin)
-│   │   ├── SupportController.java          # Contact submissions inbox (admin)
-│   │   ├── TermsController.java            # Current/enrolling term management (admin)
-│   │   ├── UsersController.java            # User list/detail (admin)
-│   │   ├── BookmarksAdminController.java   # Bookmark analytics (admin)
-│   │   └── TestController.java             # Manually trigger notification job (admin)
-│   ├── dto/                            # All prefixed Api*DTO / Admin*DTO — controllers never return entities
-│   ├── entity/                         # JPA entities: Department, Course, Term, Bookmark, UserPreference,
-│   │                                      ContactSubmission, CourseStats, CourseDiggerMap/Stats
-│   ├── repository/                     # Spring Data JPA interfaces
-│   ├── service/
-│   │   ├── JwtService.java             # JWT verification via Supabase API call + admin role check
-│   │   ├── CourseSysClient.java         # Fetches live section data from SFU's CourseSys
-│   │   └── EmailService.java           # Sends email via Resend (contact, support replies, digests)
-│   ├── scheduler/NotificationScheduler.java  # Daily cron job (00:05 America/Vancouver) — bookmark digest emails
-│   ├── model/                          # CourseSysBrowseResult, CourseSysOffering
-│   ├── exception/                      # GlobalExceptionHandler, ForbiddenException
-│   ├── utils/SemesterUtil.java         # Semester code encode/decode/previous
-│   └── scripts/                        # Python one-off DB population scripts (see scripts_README.md)
-├── backend/src/main/resources/application.properties
-├── frontend/
-│   ├── app/
-│   │   ├── layout.tsx                  # Root layout (AuthProvider, NuqsAdapter, Navigation, Footer, Analytics)
-│   │   ├── page.tsx                    # Landing page with splash screen
-│   │   ├── globals.css                 # ALL design tokens, theme variables, animations
-│   │   ├── fonts.ts                    # Font imports (Inter, Geist) + typography style constants
-│   │   ├── browse/                     # Course browsing and detail view
-│   │   ├── dashboard/                  # User bookmarks/watchlist (auth required)
-│   │   ├── graph/{enrollment,grades,load}/  # Analytics charts
-│   │   ├── compare/{courses,sections}/      # Side-by-side comparison
-│   │   ├── login/                      # Sign in / sign up
-│   │   ├── auth/{callback,reset-password}/  # OAuth callback, password reset
-│   │   ├── admin/                      # Admin dashboard (role-gated)
-│   │   │   ├── health/, support/, terms/, users/[id]/, bookmarks/, unauthorized/
-│   │   └── {about,privacy,termsofservice}/
-│   ├── components/
-│   │   ├── ui/                         # shadcn components
-│   │   ├── admin/                      # Admin shell, navigation, and shared page primitives
-│   │   ├── Navigation.tsx, Footer.tsx
-│   │   ├── BookmarkButton.tsx, BookmarksTable.tsx
-│   │   ├── OfferingsTable.tsx, GradeHistogram.tsx, LoadBar.tsx, StatusBadge.tsx
-│   │   ├── EmailNotificationToggle.tsx
-│   │   ├── ErrorMessage.tsx, LoadingSpinner.tsx, LoadingSkeleton.tsx, PageContainer.tsx
-│   │   ├── ProfileAvatar.tsx, Splash.tsx
-│   │   └── landing/HeroPreview.tsx
-│   ├── lib/
-│   │   ├── api.ts                      # Centralized API client (fetchAPI + fetchAuthAPI)
-│   │   ├── types.ts                    # All TypeScript interfaces
-│   │   ├── utils.ts                    # cn() helper (clsx + tailwind-merge)
-│   │   └── supabase/{client,server}.ts # Supabase browser + server clients
-│   ├── contexts/AuthContext.tsx        # Auth state (user, userId, isLoading, signOut)
-│   ├── hooks/{useTheme,useScrollReveal}.ts
-│   └── proxy.ts                        # Next.js middleware — route protection, admin gate, token refresh
-├── agent-docs/AGENTS.md                # Persistent project and frontend coding guidance
-└── docs/                               # Design/migration notes, sample curl commands
+supabase/                        Local Supabase configuration, migrations, and seed data
+scripts/                         Windows development start/stop helpers
+agent-docs/                      Persistent project guidance and engineering backlog
+docker-compose.yaml              Development frontend and backend only
 ```
 
-## Getting Started
+## Local development
 
 ### Prerequisites
-- Java 17
-- Node.js (compatible with Next.js 16 / React 19)
-- A Supabase project (PostgreSQL database + Auth)
-- A [Resend](https://resend.com) account/API key (for email features)
 
-### Backend
+- Docker Desktop running
+- Node.js 22+ and npm
+- Java 17+ only if running the backend outside Docker
+- Supabase CLI available through `npx supabase@latest`
 
-```bash
-# From the repo root
-cd backend
-./gradlew bootRun      # Starts on port 5000 (or $SERVER_PORT)
-./gradlew bootJar       # Build a runnable JAR (build/libs/application.jar)
+### 1. Create local environment files
+
+Copy the examples and fill them with local Supabase values:
+
+```powershell
+Copy-Item frontend/.env.example frontend/.env.local
+Copy-Item backend/.env.example backend/.env.local
 ```
 
-Configuration is read from environment variables (see below) via `backend/src/main/resources/application.properties`. The database schema is **not** auto-created — `spring.jpa.hibernate.ddl-auto=validate` means the schema must already exist and match the JPA entities.
+Start Supabase once to obtain the local URL, anon key, database user, and password:
 
-### Frontend
+```powershell
+npx supabase@latest start
+npx supabase@latest status
+```
 
-```bash
-cd frontend
+Set these values in `frontend/.env.local`:
+
+```dotenv
+NEXT_PUBLIC_API_URL=http://localhost:5000
+NEXT_PUBLIC_SUPABASE_URL=http://127.0.0.1:54321
+NEXT_PUBLIC_SUPABASE_ANON_KEY=<local-anon-key>
+NEXT_PUBLIC_SITE_URL=http://localhost:3000
+```
+
+Set `backend/.env.local` with the local database credentials shown by `supabase status`. Use the JDBC URL `jdbc:postgresql://host.docker.internal:54322/postgres` when running through Compose. `docker-compose.yaml` supplies the local Supabase URL override automatically.
+
+`backend/.env.local` is read by Docker Compose; Spring Boot does not automatically load it for manual Gradle/JAR commands. Load those variables into your shell first when running the backend outside Docker.
+
+### 2. Start the complete development environment
+
+From the repository root, the helper starts Supabase first and then the frontend and backend containers:
+
+```powershell
+.\scripts\dev.ps1
+```
+
+Equivalent manual commands:
+
+```powershell
+npx supabase@latest start
+docker compose up --build
+```
+
+Open:
+
+- Frontend: <http://localhost:3000>
+- Backend: <http://localhost:5000>
+- Swagger UI: <http://localhost:5000/api-docs>
+- Supabase Studio: <http://127.0.0.1:54323>
+- Mailpit inbox: <http://127.0.0.1:54324>
+
+Stop everything with:
+
+```powershell
+.\scripts\dev-down.ps1
+```
+
+This Docker setup is for development only. It does not deploy the frontend, backend, or database.
+
+### Run applications outside Docker
+
+Frontend:
+
+```powershell
+Set-Location frontend
 npm install
-npm run dev        # Starts on http://localhost:3000
-npm run build       # Production build
-npm run start       # Serve production build
-npm run lint        # ESLint
+npm run dev
 ```
 
-## Environment Variables
+Backend, after loading the required environment variables into the current shell:
 
-### Backend
-Read from the environment by `application.properties`:
+```powershell
+Set-Location backend
+.\gradlew.bat bootRun
+```
 
-| Variable | Purpose |
-|---|---|
-| `SERVER_PORT` | Server port (default `5000`) |
-| `DB_URL_NEW` | Supabase PostgreSQL JDBC URL (session pooler, IPv4) |
-| `DB_USER_NEW` | Database username |
-| `DB_PASS_NEW` | Database password |
-| `SUPABASE_URL_NEW` | Supabase project URL (used for JWT verification calls) |
-| `SUPABASE_KEY_NEW` | Supabase anon key |
-| `RESEND_API_KEY` | Resend API key, injected directly via `@Value("${RESEND_API_KEY}")` in `EmailService`/`HealthController` |
+## Environment variables
 
-The Python population scripts under `backend/src/main/java/com/example/courseplanner/scripts/` have their own connection placeholders and must be configured before use.
+Never commit `.env.local` files or service-role/Resend secrets.
 
-### Frontend
-Read from `.env.local`:
+| File | Variable | Purpose |
+| --- | --- | --- |
+| `frontend/.env.local` | `NEXT_PUBLIC_API_URL` | Browser-visible backend base URL |
+| | `NEXT_PUBLIC_SUPABASE_URL` | Browser-visible Supabase URL |
+| | `NEXT_PUBLIC_SUPABASE_ANON_KEY` | Browser-visible Supabase anon key |
+| | `NEXT_PUBLIC_SITE_URL` | Auth callback origin |
+| `backend/.env.local` | `DB_URL_NEW`, `DB_USER_NEW`, `DB_PASS_NEW` | PostgreSQL connection |
+| | `SUPABASE_URL_NEW`, `SUPABASE_KEY_NEW` | Backend Supabase JWT verification |
+| | `RESEND_API_KEY` | Server-only email credential |
+| | `SERVER_PORT` | Optional backend port; defaults to `5000` |
 
-| Variable | Purpose |
-|---|---|
-| `NEXT_PUBLIC_API_URL` | Backend API base URL (e.g. `http://localhost:5000` in dev) |
-| `NEXT_PUBLIC_SUPABASE_URL` | Supabase project URL |
-| `NEXT_PUBLIC_SUPABASE_ANON_KEY` | Supabase anon key |
-| `NEXT_PUBLIC_SITE_URL` | Site base URL (used for auth redirects) |
+`NEXT_PUBLIC_*` values are intentionally exposed to the browser; they must never contain service-role credentials.
 
-> **Note:** never commit real values for these — both `.env` (backend) and `frontend/.env.local` are gitignored. Treat the Supabase service role key and Resend API key as secrets; the service role key in particular bypasses row-level security and should never be exposed client-side or committed.
+## Validation and builds
 
-## API Reference
+```powershell
+# Frontend
+Set-Location frontend
+npm run lint
+npm run build
 
-The generated interactive reference is available at [`/api-docs`](https://api.sfucourseplanner.com/api-docs). Its machine-readable OpenAPI document is served at [`/v3/api-docs`](https://api.sfucourseplanner.com/v3/api-docs). The generated reference intentionally excludes internal `/api/admin/**` operations.
+# Backend
+Set-Location ../backend
+.\gradlew.bat test
+.\gradlew.bat bootJar
+```
 
-### Public (no auth)
-| Method | Path | Description |
-|---|---|---|
-| GET | `/api/about` | App info |
-| GET | `/api/terms/enrolling` | Current enrolling term |
-| GET | `/api/departments` | All departments (sorted by code) |
-| GET | `/api/departments/{deptId}/courses` | Courses for a department |
-| GET | `/api/departments/{deptId}/courses/{courseId}/offerings` | Offerings for the last ~12 semesters (live, from CourseSys) |
-| GET | `/api/departments/{deptId}/courses/{courseId}/offerings/{semesterCode}` | Single-semester detail incl. grade stats |
-| GET | `/api/graph/grade-distribution?courseId=` | CourseDiggers grade distribution |
-| GET | `/api/graph/enrollment-history?deptId=&courseId=&range=` | Enrollment over time (`1yr`/`3yr`/`5yr`) |
-| POST | `/api/contact` | Submit the contact form |
+The backend currently has no `src/test` suite, so `test` verifies the configured Gradle test task but does not yet provide behavioral coverage.
 
-### Protected (JWT required — `Authorization: Bearer <token>`)
-| Method | Path | Description |
-|---|---|---|
-| GET | `/api/bookmarks` | Current user's bookmarks |
-| GET | `/api/bookmarks/offerings` | Bookmarked offerings with live CourseSys data |
-| POST | `/api/bookmarks` | Create a bookmark (409 if duplicate) |
-| DELETE | `/api/bookmarks/{id}` | Delete a bookmark (403 if not owner) |
-| POST | `/api/preferences` | Initialize notification preferences on signup |
-| GET | `/api/preferences/email-notifications` | Get email notification preference (default `false`) |
-| PUT | `/api/preferences/email-notifications` | Update email notification preference / preferred email (upsert) |
+## Local Supabase workflow
 
-### Admin (JWT + `app_metadata.role === "admin"`)
-| Method | Path | Description |
-|---|---|---|
-| GET | `/api/admin` | Admin status + available admin paths |
-| GET | `/api/admin/health` | Health of API/DB/CourseSys/CourseDiggers/Resend (`?service=` for a single check) |
-| GET | `/api/admin/support/submissions` | Contact submissions (`?filter=all\|unresolved\|archived`) |
-| PATCH | `/api/admin/support/submissions/{id}/read` | Mark a submission read |
-| PATCH | `/api/admin/support/submissions/{id}/archive` | Toggle archive on a submission |
-| POST | `/api/admin/support/submissions/{id}/reply` | Reply to a submission (emails the user) |
-| GET | `/api/admin/terms` | List all terms |
-| PUT | `/api/admin/terms` | Set the current/enrolling term |
-| GET | `/api/admin/users` | User list with stats (signup provider, opt-in, activity) |
-| GET | `/api/admin/users/{id}` | Single user detail + their bookmarks |
-| GET | `/api/admin/bookmarks` | Bookmark analytics (top courses, dept rankings, monthly growth) |
+The local schema is in `supabase/migrations/`; `supabase/seed.sql` seeds catalog data after a local reset.
 
-## Architecture Notes
+```powershell
+# Rebuild the local database from migrations and seed data
+npx supabase@latest db reset
 
-### JWT Authentication Flow
-1. User signs in via Supabase Auth (email/password or OAuth).
-2. Supabase stores the JWT in httpOnly cookies; the frontend reads it via `supabase.auth.getSession()`.
-3. Frontend sends `Authorization: Bearer <JWT>` on protected calls (`fetchAuthAPI` in `lib/api.ts`).
-4. `JwtService` verifies the JWT by calling Supabase's `/auth/v1/user` endpoint — there is **no local JWT parsing/verification**, Supabase is the source of truth.
-5. Admin routes additionally require `app_metadata.role === "admin"` on the Supabase user, checked both client-side (`proxy.ts` middleware) and server-side (`JwtService.verifyAdmin`).
+# Create a new reviewed migration for a schema change
+npx supabase@latest migration new <descriptive_name>
+```
 
-### Semester Code System
-SFU semester codes encode year + term as a single number: `(year - 1900) * 10 + termDigit`, where spring=1, summer=4, fall=7. Example: Fall 2025 = `125 * 10 + 7 = 1257`. See `SemesterUtil.java` for encode/decode/previous logic.
+Test migrations locally before a reviewed `db push`. Never run `db reset --linked` against production.
 
-### Daily Notification Job
-`NotificationScheduler` runs on a cron (`0 5 0 * * *`, `America/Vancouver`) each night:
-1. Fetches all users opted into email notifications.
-2. Batch-loads all their bookmarks and deduplicates by (dept, course, semester) so each unique offering is fetched from CourseSys only once.
-3. Builds a per-user HTML digest table and sends it via `EmailService`/Resend.
-4. Updates `last_notified_at` for all notified users.
+Local auth emails are captured by Mailpit rather than sent externally. Use its inbox to verify signup-confirmation and password-reset flows.
 
+## API and deployment
 
-### Frontend API Client Pattern
-All API calls go through `lib/api.ts`:
-- `fetchAPI<T>()` for public endpoints.
-- `fetchAuthAPI<T>()` for protected endpoints (auto-injects the JWT from the Supabase session).
-- A `401` response surfaces as a "Session expired" error; a `204` response returns `undefined` (used for `DELETE`).
+Springdoc generates the public API specification:
 
-### Backend Controller Pattern
-- Constructor injection for all dependencies (repositories, services).
-- `@RequestHeader("Authorization")` to receive the JWT on protected/admin endpoints.
-- Entities are always mapped to DTOs before being returned — controllers never return JPA entities directly.
-- Ownership checks before mutations (403 Forbidden if not the resource owner).
-- `GlobalExceptionHandler` maps auth-related `IllegalArgumentException`/`RuntimeException` messages to 401, `ForbiddenException` to 403.
+- Swagger UI: `/api-docs`
+- OpenAPI JSON: `/v3/api-docs`
 
-### External Data Sources
-- **CourseSys** (`CourseSysClient`, `coursys.sfu.ca/browse/`) — live section data (enrollment, capacity, instructor, campus), parsed from HTML table responses. Returns an empty result (not `null`) on failure.
-- **CourseDiggers** (`coursediggers.com`) — grade distribution and median grade/fail rate, pre-populated into the database (see below), not fetched live per-request.
+Internal `/api/admin/**` operations are intentionally excluded from the generated public reference.
 
-## Database Population Scripts
+Production deployment is split:
 
-`backend/src/main/java/com/example/courseplanner/scripts/` contains standalone Python scripts used to seed and maintain the `departments`/`courses`/grade-related tables (see `scripts_README.md` for full details). They are stepwise and idempotent — safe to interrupt and re-run:
+- Frontend: Vercel, served from the custom domain.
+- Backend: a Spring Boot JAR on AWS Elastic Beanstalk.
+- Database and Auth: hosted Supabase.
 
-1. `populate_departments.py` — inserts all departments.
-2. `populate_courses_base.py` — inserts course numbers/titles across 2024–2026.
-3. `populate_courses_deep_latest_semester.py` — fills stable metadata (description, units, prereqs, etc.) from the freshest term.
-4. `populate_courses_deep_backfill.py` — backfills any courses missed by step 3 from older terms.
-5. `populate_course_digger_map.py` / `populate_course_digger_stats.py` — link courses to CourseDiggers data and populate grade distribution stats.
-6. `populate_course_stats_from_coursys.py` — populates course-level stats from CourseSys.
-
-The `terms` table (current/enrolling term) is managed separately via the admin **Terms** page rather than a script.
-
-## Deployment
-
-### Frontend — Vercel
-The frontend is deployed on Vercel (`@vercel/analytics` is wired into `layout.tsx`). CORS on the backend explicitly allows `https://sfu-course-planner.vercel.app` and `https://*.vercel.app` in addition to the production domain, so preview deployments work against the live API. Set the frontend environment variables (above) in the Vercel project settings.
-
-### Backend — AWS Elastic Beanstalk
-The backend reads `SERVER_PORT` from the environment (defaulting to `5000`, which is what Elastic Beanstalk expects). Build the deployable artifact from `backend/` with `./gradlew bootJar` (outputs `backend/build/libs/application.jar`) and configure the environment variables listed above in the Elastic Beanstalk environment configuration. `spring.jpa.hibernate.ddl-auto=validate` means database migrations must be applied out-of-band before deploying schema-affecting changes.
-
-### CORS
-Allowed origins are hardcoded in `CorsConfig.java`: `localhost:3000`, `localhost:5000`, `sfu-course-planner.vercel.app`, `*.vercel.app`, `api.sfucourseplanner.com`, `sfucourseplanner.com`, and their `www` variants.
+See [`agent-docs/AGENTS.md`](agent-docs/AGENTS.md) for persistent engineering conventions and [`agent-docs/to-do.md`](agent-docs/to-do.md) for the prioritized hardening backlog.

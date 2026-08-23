@@ -42,6 +42,12 @@ export interface CourseOffering {
   loadPercent: number;
 }
 
+export interface BookmarkOffering extends CourseOffering {
+  bookmarkId: number;
+  deptId: number;
+  courseId: number;
+}
+
 export interface OfferingDetail {
   deptId: number;
   courseId: number;

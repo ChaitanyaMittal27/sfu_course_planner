@@ -1,0 +1,143 @@
+"use client";
+
+import { useEffect, useMemo, useState } from "react";
+import { useParams, useRouter } from "next/navigation";
+import { useQueryState } from "nuqs";
+import { BarChart2, TrendingUp, Users } from "lucide-react";
+import { Line, LineChart, ResponsiveContainer, Tooltip, XAxis, YAxis } from "recharts";
+import AnalyticsCourseSelector from "@/components/analytics/AnalyticsCourseSelector";
+import ErrorMessage from "@/components/feedback/ErrorMessage";
+import GradeHistogram from "@/components/analytics/GradeHistogram";
+import LoadingSpinner from "@/components/feedback/LoadingSpinner";
+import PageContainer from "@/components/layout/PageContainer";
+import TaskEmptyState from "@/components/feedback/TaskEmptyState";
+import { Card, CardContent } from "@/components/ui/card";
+import { bodyStyles, displayStyles, headerStyles, labelStyles } from "@/app/fonts";
+import { api } from "@/lib/api";
+import { graphCourseHref, normalizeCourseIdentity } from "@/lib/course-routes";
+import { resolveCourseIdentity, type ResolvedCourseRoute } from "@/lib/course-resolver";
+import type { Course, Department, EnrollmentDataPoint, GradeDistribution } from "@/lib/types";
+import { useRetryableRequest } from "@/hooks/useRetryableRequest";
+
+type AnalyticsKind = "grades" | "enrollment" | "load";
+
+const content: Record<AnalyticsKind, { title: string; description: string; empty: string }> = {
+  grades: { title: "Grade Distribution", description: "View historical grade breakdowns from CourseDiggers.", empty: "Choose a course to view grade data." },
+  enrollment: { title: "Enrollment vs Capacity", description: "Compare enrolled students to total capacity over time.", empty: "Choose a course to compare enrollment." },
+  load: { title: "Load Over Time", description: "Track enrollment percentage across semesters.", empty: "Choose a course to view enrollment load." },
+};
+
+export default function CanonicalAnalyticsPage({ kind }: { kind: AnalyticsKind }) {
+  const params = useParams<{ deptCode: string; courseNumber: string }>();
+  const router = useRouter();
+  const [range, setRange] = useQueryState("range", { defaultValue: "5yr" });
+  const identity = useMemo(() => normalizeCourseIdentity(params.deptCode, params.courseNumber), [params.courseNumber, params.deptCode]);
+  const [resolved, setResolved] = useState<ResolvedCourseRoute | null>(null);
+  const [departments, setDepartments] = useState<Department[]>([]);
+  const [courses, setCourses] = useState<Course[]>([]);
+  const [selectedDepartmentId, setSelectedDepartmentId] = useState<number | null>(null);
+  const [selectedCourseId, setSelectedCourseId] = useState<number | null>(null);
+  const [isLoadingCourses, setIsLoadingCourses] = useState(false);
+  const [isLoadingData, setIsLoadingData] = useState(false);
+  const [data, setData] = useState<GradeDistribution | EnrollmentDataPoint[] | null>(null);
+  const [error, setError] = useState<string | null>(null);
+  const { requestVersion, retry } = useRetryableRequest();
+
+  useEffect(() => {
+    if (!identity) return;
+    let active = true;
+    setResolved(null);
+    setData(null);
+    setError(null);
+    void Promise.all([resolveCourseIdentity(identity), api.getDepartments()]).then(([course, depts]) => {
+      if (!active) return;
+      if (!course) setError("This course could not be found.");
+      else {
+        setResolved(course);
+        setDepartments(depts);
+        setCourses([course.course]);
+        setSelectedDepartmentId(course.deptId);
+        setSelectedCourseId(course.courseId);
+
+        void api.getCourses(course.deptId).then((loadedCourses) => {
+          if (active) setCourses(loadedCourses);
+        }).catch(() => undefined);
+      }
+    }).catch(() => active && setError("Failed to resolve this course link."));
+    return () => { active = false; };
+  }, [identity, requestVersion]);
+
+  useEffect(() => {
+    if (!resolved) return;
+    let active = true;
+    setData(null);
+    setError(null);
+    setIsLoadingData(true);
+    const request = kind === "grades"
+      ? api.getGradeDistribution(resolved.courseId)
+      : api.getEnrollmentHistory(resolved.deptId, resolved.courseId, range);
+    void request
+      .then((result) => active && setData(result))
+      .catch(() => active && setError(`Failed to load ${content[kind].title.toLowerCase()} data.`))
+      .finally(() => active && setIsLoadingData(false));
+    return () => { active = false; };
+  }, [kind, range, resolved, requestVersion]);
+
+  const selectedDepartment = departments.find((department) => department.deptId === selectedDepartmentId);
+  const selectedCourse = courses.find((course) => course.courseId === selectedCourseId);
+
+  const handleDepartmentChange = async (value: string) => {
+    const deptId = Number(value);
+    const department = departments.find((item) => item.deptId === deptId);
+    if (!department) return;
+
+    setSelectedDepartmentId(deptId);
+    setSelectedCourseId(null);
+    setCourses([]);
+    setIsLoadingCourses(true);
+
+    try {
+      setCourses(await api.getCourses(deptId));
+    } catch {
+      setError("Failed to load courses for this department.");
+    } finally {
+      setIsLoadingCourses(false);
+    }
+  };
+
+  const handleCourseChange = (value: string) => {
+    const course = courses.find((item) => item.courseId === Number(value));
+    const department = departments.find((item) => item.deptId === selectedDepartmentId);
+
+    if (course && department) {
+      setSelectedCourseId(course.courseId);
+      router.push(graphCourseHref(kind, department.deptCode, course.courseNumber, kind === "grades" ? undefined : { range }));
+    }
+  };
+
+  if (!identity) return <PageContainer><ErrorMessage message="This analytics link is invalid." /></PageContainer>;
+  if (error && !resolved) return <PageContainer><ErrorMessage message={error} onRetry={retry} /></PageContainer>;
+  if (!resolved) return <LoadingSpinner />;
+
+  return <PageContainer>
+    <div className="mb-6"><h1 className={`${displayStyles.sm} text-text-primary`}>{content[kind].title}</h1><p className={`${bodyStyles.md} text-text-muted mt-1`}>{content[kind].description}</p></div>
+    <AnalyticsCourseSelector
+      departments={departments}
+      courses={courses}
+      selectedDepartmentId={selectedDepartmentId ? String(selectedDepartmentId) : null}
+      selectedCourseId={selectedCourseId ? String(selectedCourseId) : null}
+      selectedDepartment={selectedDepartment}
+      selectedCourse={selectedCourse}
+      isLoadingCourses={isLoadingCourses}
+      onDepartmentChange={handleDepartmentChange}
+      onCourseChange={handleCourseChange}
+    >
+      {kind !== "grades" && <div className="border-t border-accent/20 pt-4"><span className={`block ${labelStyles.md} text-text-primary mb-2`}>Time range</span><div className="flex gap-2">{["1yr", "3yr", "5yr"].map((value) => <button key={value} onClick={() => setRange(value)} className={`rounded-lg px-4 py-2 ${labelStyles.lg} ${range === value ? "bg-primary text-primary-foreground" : "bg-surface-raised text-text-muted"}`}>{value}</button>)}</div></div>}
+    </AnalyticsCourseSelector>
+    {error && <ErrorMessage message={error} onRetry={retry} />}
+    {!error && isLoadingData && <LoadingSpinner />}
+    {!error && kind === "grades" && data && <Card className="p-6"><CardContent className="p-0"><div className="flex gap-8 mb-6"><div><p className={`${bodyStyles.md} text-text-muted`}>Median Grade</p><p className={`${headerStyles.lg} text-text-primary`}>{(data as GradeDistribution).medianGrade || "N/A"}</p></div><div><p className={`${bodyStyles.md} text-text-muted`}>Fail Rate</p><p className={`${headerStyles.lg} text-text-primary`}>{(data as GradeDistribution).failRate?.toFixed(2) ?? "N/A"}%</p></div></div><GradeHistogram distribution={(data as GradeDistribution).distribution} /></CardContent></Card>}
+    {!error && kind !== "grades" && data && <Card className="p-6"><CardContent className="p-0"><div className="h-96"><ResponsiveContainer width="100%" height="100%"><LineChart data={data as EnrollmentDataPoint[]}><XAxis dataKey="semesterCode" /><YAxis /><Tooltip /><Line type="monotone" dataKey={kind === "load" ? "loadPercent" : "enrolled"} stroke="var(--primary)" /><Line type="monotone" dataKey={kind === "load" ? undefined : "capacity"} stroke="var(--text-subtle)" /></LineChart></ResponsiveContainer></div></CardContent></Card>}
+    {!error && !isLoadingData && !data && <TaskEmptyState icon={kind === "grades" ? BarChart2 : kind === "load" ? TrendingUp : Users} title={content[kind].empty} description="Choose a valid course to continue." />}
+  </PageContainer>;
+}

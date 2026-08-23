@@ -4,7 +4,7 @@ import { useState, useEffect, Suspense } from "react";
 import { useRouter } from "next/navigation";
 import { XCircle, CheckCircle2 } from "lucide-react";
 import { supabase } from "@/lib/supabase/client";
-import LoadingSpinner from "@/components/LoadingSpinner";
+import LoadingSpinner from "@/components/feedback/LoadingSpinner";
 import { Card, CardContent } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";

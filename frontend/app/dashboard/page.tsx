@@ -4,14 +4,14 @@ import { Suspense, useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
 import { offeringHref } from "@/lib/course-routes";
 import { Plus, Eye, TrendingUp, BarChart3, Bell, X, ChevronDown, ChevronUp, Check, Pencil } from "lucide-react";
-import { api, CourseOffering, Bookmark, Course, Department } from "@/lib/api";
+import { api, BookmarkOffering, Bookmark, Course, Department } from "@/lib/api";
 import { supabase } from "@/lib/supabase/client";
 import { useAuth } from "@/contexts/AuthContext";
-import LoadingSpinner from "@/components/LoadingSpinner";
-import ErrorMessage from "@/components/ErrorMessage";
-import ProfileAvatar from "@/components/ProfileAvatar";
-import LoadBar from "@/components/LoadBar";
-import StatusBadge from "@/components/StatusBadge";
+import LoadingSpinner from "@/components/feedback/LoadingSpinner";
+import ErrorMessage from "@/components/feedback/ErrorMessage";
+import ProfileAvatar from "@/components/dashboard/ProfileAvatar";
+import LoadBar from "@/components/dashboard/LoadBar";
+import StatusBadge from "@/components/dashboard/StatusBadge";
 import { Card, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -19,6 +19,7 @@ import { Switch } from "@/components/ui/switch";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { displayStyles, headerStyles, bodyStyles, labelStyles } from "@/app/fonts";
 import { useScrollReveal } from "@/hooks/useScrollReveal";
+import { useRetryableRequest } from "@/hooks/useRetryableRequest";
 
 const formatTerm = (term: string, year: number) =>
   term.charAt(0).toUpperCase() + term.slice(1) + " " + year;
@@ -34,10 +35,11 @@ function DashboardPageContent() {
   const { user, isAuthenticated, isLoading: authLoading } = useAuth();
   const [dataLoading, setDataLoading] = useState(true);
   const [bookmarks, setBookmarks] = useState<Bookmark[]>([]);
-  const [offerings, setOfferings] = useState<CourseOffering[]>([]);
+  const [offerings, setOfferings] = useState<BookmarkOffering[]>([]);
   const [courses, setCourses] = useState<Map<number, Course>>(new Map());
   const [departments, setDepartments] = useState<Map<number, Department>>(new Map());
   const [error, setError] = useState<string | null>(null);
+  const { requestVersion, retry } = useRetryableRequest();
 
   const [isEditingProfile, setIsEditingProfile] = useState(false);
   const [displayName, setDisplayName] = useState("");
@@ -110,18 +112,15 @@ function DashboardPageContent() {
     return () => {
       isActive = false;
     };
-  }, [isAuthenticated, user?.id]);
+  }, [isAuthenticated, requestVersion, user?.id]);
 
   const handleDelete = async (bookmarkId: number) => {
     try {
       await api.deleteBookmark(bookmarkId);
       setBookmarks((prev) => prev.filter((b) => b.bookmarkId !== bookmarkId));
-      const deleted = bookmarks.find((b) => b.bookmarkId === bookmarkId);
-      if (deleted) {
-        setOfferings((prev) =>
-          prev.filter((o) => !(o.semesterCode === deleted.semesterCode && o.section === deleted.section)),
-        );
-      }
+      setOfferings((prev) =>
+        prev.filter((offering) => offering.bookmarkId !== bookmarkId),
+      );
     } catch (err: unknown) {
       console.error("Failed to delete bookmark:", err);
       alert(`Failed to remove bookmark: ${err instanceof Error ? err.message : "Unknown error"}`);
@@ -199,7 +198,7 @@ function DashboardPageContent() {
   };
 
   const getOffering = (bookmark: Bookmark) => {
-    return offerings.find((o) => o.semesterCode === bookmark.semesterCode && o.section === bookmark.section);
+    return offerings.find((offering) => offering.bookmarkId === bookmark.bookmarkId);
   };
 
   const fillingFast = offerings.filter((o) => o.loadPercent >= 90).length;
@@ -407,7 +406,7 @@ function DashboardPageContent() {
                 </div>
 
                 {dataLoading && <LoadingSpinner />}
-                {error && <ErrorMessage message={error} onRetry={() => window.location.reload()} />}
+                {error && <ErrorMessage message={error} onRetry={retry} />}
 
                 {!dataLoading && !error && (
                   <>

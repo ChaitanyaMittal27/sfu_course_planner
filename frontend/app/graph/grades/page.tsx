@@ -5,15 +5,16 @@ import { useQueryState } from "nuqs";
 import { useRouter } from "next/navigation";
 import { graphCourseHref } from "@/lib/course-routes";
 import { BarChart2, Info, AlertCircle, ClipboardList } from "lucide-react";
-import PageContainer from "@/components/PageContainer";
-import LoadingSpinner from "@/components/LoadingSpinner";
-import ErrorMessage from "@/components/ErrorMessage";
-import GradeHistogram from "@/components/GradeHistogram";
+import PageContainer from "@/components/layout/PageContainer";
+import LoadingSpinner from "@/components/feedback/LoadingSpinner";
+import ErrorMessage from "@/components/feedback/ErrorMessage";
+import GradeHistogram from "@/components/analytics/GradeHistogram";
 import AnalyticsCourseSelector from "@/components/analytics/AnalyticsCourseSelector";
-import TaskEmptyState from "@/components/TaskEmptyState";
+import TaskEmptyState from "@/components/feedback/TaskEmptyState";
 import { api, Department, Course, GradeDistribution } from "@/lib/api";
 import { Card, CardContent } from "@/components/ui/card";
 import { displayStyles, headerStyles, bodyStyles } from "@/app/fonts";
+import { useRetryableRequest } from "@/hooks/useRetryableRequest";
 
 function GradeDistributionPageContent() {
   const router = useRouter();
@@ -28,6 +29,7 @@ function GradeDistributionPageContent() {
   const [loadingCourses, setLoadingCourses] = useState(false);
   const [loadingGrades, setLoadingGrades] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const { requestVersion, retry } = useRetryableRequest();
 
   useEffect(() => {
     const fetchDepartments = async () => {
@@ -41,7 +43,7 @@ function GradeDistributionPageContent() {
       }
     };
     fetchDepartments();
-  }, []);
+  }, [requestVersion]);
 
   useEffect(() => {
     if (!selectedDeptId) {
@@ -63,7 +65,7 @@ function GradeDistributionPageContent() {
       }
     };
     fetchCourses();
-  }, [selectedDeptId, setSelectedCourseId]);
+  }, [requestVersion, selectedDeptId, setSelectedCourseId]);
 
   useEffect(() => {
     if (!selectedCourseId) {
@@ -88,7 +90,7 @@ function GradeDistributionPageContent() {
       }
     };
     fetchGrades();
-  }, [selectedCourseId]);
+  }, [requestVersion, selectedCourseId]);
 
   const selectedDept = departments.find((d) => d.deptId === parseInt(selectedDeptId || "0"));
   const selectedCourse = courses.find((c) => c.courseId === parseInt(selectedCourseId || "0"));
@@ -127,10 +129,7 @@ function GradeDistributionPageContent() {
       {error && (
         <ErrorMessage
           message={error}
-          onRetry={() => {
-            setError(null);
-            if (selectedCourseId) window.location.reload();
-          }}
+          onRetry={retry}
         />
       )}
 

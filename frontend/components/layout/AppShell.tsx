@@ -1,8 +1,8 @@
 "use client";
 
 import { usePathname } from "next/navigation";
-import Footer from "@/components/Footer";
-import Navigation from "@/components/Navigation";
+import Footer from "@/components/layout/Footer";
+import Navigation from "@/components/layout/Navigation";
 
 export default function AppShell({ children }: { children: React.ReactNode }) {
   const isAdminRoute = usePathname().startsWith("/admin");

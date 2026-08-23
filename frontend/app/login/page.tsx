@@ -5,12 +5,12 @@ import { useRouter, useSearchParams } from "next/navigation";
 import { CheckCircle2, X } from "lucide-react";
 import { supabase } from "@/lib/supabase/client";
 import { api } from "@/lib/api";
-import LoadingSpinner from "@/components/LoadingSpinner";
+import LoadingSpinner from "@/components/feedback/LoadingSpinner";
 import { Card, CardContent } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import { displayStyles, bodyStyles, labelStyles, headerStyles } from "@/app/fonts";
-import { resolveAuthRedirect } from "@/lib/auth/redirect";
+import { buildAuthCallbackUrl, resolveAuthRedirect } from "@/lib/auth/redirect";
 
 function getErrorMessage(error: unknown, fallback: string) {
   return error instanceof Error ? error.message : fallback;
@@ -67,7 +67,9 @@ function LoginPageContent() {
       const { data, error } = await supabase.auth.signUp({
         email,
         password,
-        options: { emailRedirectTo: `${window.location.origin}/auth/callback` },
+        options: {
+          emailRedirectTo: buildAuthCallbackUrl(window.location.origin, searchParams.get("redirectTo")),
+        },
       });
       if (error) throw error;
 
@@ -97,10 +99,9 @@ function LoginPageContent() {
     setError(null);
     setIsLoading(true);
     try {
-      const redirectTo = resolveAuthRedirect(searchParams.get("redirectTo"));
       const { error } = await supabase.auth.signInWithOAuth({
         provider: "google",
-        options: { redirectTo: `${window.location.origin}/auth/callback?redirectTo=${encodeURIComponent(redirectTo)}` },
+        options: { redirectTo: buildAuthCallbackUrl(window.location.origin, searchParams.get("redirectTo")) },
       });
       if (error) throw error;
     } catch (err: unknown) {

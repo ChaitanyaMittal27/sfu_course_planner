@@ -1,9 +1,9 @@
 "use client";
 
 import { useRouter } from "next/navigation";
-import GradeHistogram from "@/components/GradeHistogram";
-import BookmarkButton from "@/components/BookmarkButton";
-import BackButton from "@/components/BackButton";
+import GradeHistogram from "@/components/analytics/GradeHistogram";
+import BookmarkButton from "@/components/course/BookmarkButton";
+import BackButton from "@/components/layout/BackButton";
 import { Card } from "@/components/ui/card";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import type { OfferingDetail } from "@/lib/types";

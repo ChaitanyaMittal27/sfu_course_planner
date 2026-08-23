@@ -1,23 +1,32 @@
 "use client";
 
-import { Suspense, useEffect, useState } from "react";
+import { Suspense, useEffect, useMemo, useState } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
 import { ClipboardList } from "lucide-react";
-import ErrorMessage from "@/components/ErrorMessage";
-import LoadingSpinner from "@/components/LoadingSpinner";
-import PageContainer from "@/components/PageContainer";
-import TaskEmptyState from "@/components/TaskEmptyState";
+import ErrorMessage from "@/components/feedback/ErrorMessage";
+import LoadingSpinner from "@/components/feedback/LoadingSpinner";
+import PageContainer from "@/components/layout/PageContainer";
+import TaskEmptyState from "@/components/feedback/TaskEmptyState";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
 import { bodyStyles, displayStyles, headerStyles, labelStyles } from "@/app/fonts";
 import { api, type Course, type Department } from "@/lib/api";
-import { sectionCode, sectionComparisonHref } from "@/lib/course-routes";
+import {
+  parseLegacyCourseRoute,
+  parsePositiveRouteInteger,
+  sectionCode,
+  sectionComparisonHref,
+} from "@/lib/course-routes";
 import { resolveCourseIds } from "@/lib/course-resolver";
 
 type Semester = {
   code: number;
   label: string;
 };
+
+type LegacySectionComparisonLink =
+  | { status: "none" | "invalid" }
+  | { status: "valid"; departmentId: number; courseId: number; semesterCode: number };
 
 type SelectFieldProps = {
   id: string;
@@ -56,6 +65,30 @@ function buildSemesterOptions(year: number, term: string): Semester[] {
   return semesters;
 }
 
+function parseLegacySectionComparisonLink(searchParams: Pick<URLSearchParams, "get">): LegacySectionComparisonLink {
+  const departmentIdParam = searchParams.get("deptId");
+  const courseIdParam = searchParams.get("courseId");
+  const semesterCodeParam = searchParams.get("semester");
+
+  if (![departmentIdParam, courseIdParam, semesterCodeParam].some(Boolean)) {
+    return { status: "none" };
+  }
+
+  const legacyCourseRoute = parseLegacyCourseRoute(departmentIdParam, courseIdParam);
+  const semesterCode = parsePositiveRouteInteger(semesterCodeParam);
+
+  if (legacyCourseRoute.status !== "valid" || semesterCode === null) {
+    return { status: "invalid" };
+  }
+
+  return {
+    status: "valid",
+    departmentId: legacyCourseRoute.deptId,
+    courseId: legacyCourseRoute.courseId,
+    semesterCode,
+  };
+}
+
 function SelectField({ id, label, value, disabled, onChange, children }: SelectFieldProps) {
   return (
     <div>
@@ -78,6 +111,7 @@ function SelectField({ id, label, value, disabled, onChange, children }: SelectF
 function SectionComparisonDiscovery() {
   const router = useRouter();
   const searchParams = useSearchParams();
+  const legacyLink = useMemo(() => parseLegacySectionComparisonLink(searchParams), [searchParams]);
   const [departments, setDepartments] = useState<Department[]>([]);
   const [courses, setCourses] = useState<Course[]>([]);
   const [semesters, setSemesters] = useState<Semester[]>([]);
@@ -105,14 +139,10 @@ function SectionComparisonDiscovery() {
   }, []);
 
   useEffect(() => {
-    const departmentId = Number(searchParams.get("deptId"));
-    const courseId = Number(searchParams.get("courseId"));
-    const semesterCode = Number(searchParams.get("semester"));
-
-    if (!Number.isSafeInteger(departmentId) || !Number.isSafeInteger(courseId) || !Number.isSafeInteger(semesterCode)) return;
+    if (legacyLink.status !== "valid") return;
 
     let active = true;
-    void resolveCourseIds(departmentId, courseId)
+    void resolveCourseIds(legacyLink.departmentId, legacyLink.courseId)
       .then((course) => {
         if (!active) return;
         if (!course) {
@@ -120,14 +150,14 @@ function SectionComparisonDiscovery() {
           return;
         }
         const sections = (searchParams.get("sections") ?? "").split(",").map(sectionCode).filter(Boolean);
-        router.replace(sectionComparisonHref(course.deptCode, course.courseNumber, semesterCode, sections));
+        router.replace(sectionComparisonHref(course.deptCode, course.courseNumber, legacyLink.semesterCode, sections));
       })
       .catch(() => active && setError("This section comparison link is invalid."));
 
     return () => {
       active = false;
     };
-  }, [router, searchParams]);
+  }, [legacyLink, router, searchParams]);
 
   const selectedDepartment = departments.find((department) => department.deptId === selectedDepartmentId);
   const selectedCourse = courses.find((course) => course.courseId === selectedCourseId);
@@ -221,8 +251,9 @@ function SectionComparisonDiscovery() {
         </CardContent>
       </Card>
 
+      {legacyLink.status === "invalid" && <ErrorMessage message="This section comparison link is invalid." />}
       {error && <ErrorMessage message={error} onRetry={() => setError(null)} />}
-      {!error && (
+      {!error && legacyLink.status !== "invalid" && (
         <TaskEmptyState
           icon={ClipboardList}
           title="Choose a course and term"

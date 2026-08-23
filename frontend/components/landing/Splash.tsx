@@ -8,15 +8,11 @@ interface SplashProps {
   onComplete: () => void;
 }
 
+const floatingBooks = Array.from({ length: 6 }, (_, index) => index);
+
 export default function Splash({ onComplete }: SplashProps) {
   const [stage, setStage] = useState(0);
   const [progress, setProgress] = useState(0);
-  const [floatingBooks, setFloatingBooks] = useState<number[]>([]);
-
-  useEffect(() => {
-    setFloatingBooks(Array.from({ length: 6 }, (_, i) => i));
-  }, []);
-
   useEffect(() => {
     const timers = [
       setTimeout(() => setStage(1), 300),
