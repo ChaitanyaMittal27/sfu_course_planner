@@ -2,6 +2,8 @@
 
 import { useState, useEffect, Suspense } from "react";
 import { useQueryState } from "nuqs";
+import { useRouter } from "next/navigation";
+import { graphCourseHref } from "@/lib/course-routes";
 import { Users, BarChart2 } from "lucide-react";
 import PageContainer from "@/components/PageContainer";
 import LoadingSpinner from "@/components/LoadingSpinner";
@@ -14,6 +16,7 @@ import { displayStyles, headerStyles, bodyStyles, labelStyles } from "@/app/font
 import { LineChart, Line, XAxis, YAxis, Tooltip, ResponsiveContainer, CartesianGrid, Legend } from "recharts";
 
 function EnrollmentVsCapacityPageContent() {
+  const router = useRouter();
   const [selectedDeptId, setSelectedDeptId] = useQueryState("deptId");
   const [selectedCourseId, setSelectedCourseId] = useQueryState("courseId");
   const [range, setRange] = useQueryState("range", { defaultValue: "5yr" });
@@ -86,6 +89,10 @@ function EnrollmentVsCapacityPageContent() {
 
   const selectedDept = departments.find((d) => d.deptId === parseInt(selectedDeptId || "0"));
   const selectedCourse = courses.find((c) => c.courseId === parseInt(selectedCourseId || "0"));
+
+  useEffect(() => {
+    if (selectedDept && selectedCourse) router.replace(graphCourseHref("enrollment", selectedDept.deptCode, selectedCourse.courseNumber, { range }));
+  }, [range, router, selectedCourse, selectedDept]);
 
   const formatSemester = (semesterCode: number) => {
     const year = Math.floor(semesterCode / 10) - 100;

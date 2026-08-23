@@ -1,12 +1,11 @@
 "use client";
 
-import { useCallback, useEffect, useState } from "react";
-import { useParams } from "next/navigation";
-import OfferingDetailScreen from "@/components/OfferingDetailScreen";
+import { useEffect, useState } from "react";
+import { useParams, useRouter } from "next/navigation";
 import ErrorMessage from "@/components/ErrorMessage";
 import LoadingSpinner from "@/components/LoadingSpinner";
-import { api } from "@/lib/api";
-import type { OfferingDetail } from "@/lib/types";
+import { offeringHref } from "@/lib/course-routes";
+import { resolveCourseIds } from "@/lib/course-resolver";
 
 function parsePositiveInteger(value: string | string[] | undefined) {
   if (typeof value !== "string" || !/^\d+$/.test(value)) return null;
@@ -16,54 +15,42 @@ function parsePositiveInteger(value: string | string[] | undefined) {
 }
 
 export default function OfferingDetailPage() {
+  const router = useRouter();
   const params = useParams<{ deptId: string; courseId: string; semesterCode: string }>();
   const deptId = parsePositiveInteger(params.deptId);
   const courseId = parsePositiveInteger(params.courseId);
   const semesterCode = parsePositiveInteger(params.semesterCode);
-  const [detail, setDetail] = useState<OfferingDetail | null>(null);
   const [error, setError] = useState<string | null>(null);
-  const [isLoading, setIsLoading] = useState(true);
-  const [retryCount, setRetryCount] = useState(0);
+  const canResolve = deptId !== null && courseId !== null && semesterCode !== null;
 
-  const canLoad = deptId !== null && courseId !== null && semesterCode !== null;
-
-  const loadDetail = useCallback(async () => {
-    if (!canLoad || deptId === null || courseId === null || semesterCode === null) {
-      setError("This offering link is invalid.");
-      setIsLoading(false);
+  useEffect(() => {
+    if (!canResolve || deptId === null || courseId === null || semesterCode === null) {
       return;
     }
 
-    setError(null);
-    setIsLoading(true);
+    void resolveCourseIds(deptId, courseId)
+      .then((course) => {
+        if (!course) setError("This offering could not be found.");
+        else router.replace(offeringHref(course.deptCode, course.courseNumber, semesterCode));
+      })
+      .catch(() => setError("Failed to resolve this offering link."));
+  }, [canResolve, courseId, deptId, router, semesterCode]);
 
-    try {
-      const data = await api.getOfferingDetail(deptId, courseId, semesterCode);
-      setDetail(data);
-    } catch {
-      setError("Failed to load offering details.");
-    } finally {
-      setIsLoading(false);
-    }
-  }, [canLoad, courseId, deptId, semesterCode]);
-
-  useEffect(() => {
-    void loadDetail();
-  }, [loadDetail, retryCount]);
-
-  const backHref = canLoad ? `/browse?dept=${deptId}&course=${courseId}` : "/browse";
-
-  if (isLoading) {
-    return <LoadingSpinner />;
-  }
-
-  if (error || !detail) {
+  if (!canResolve) {
     return (
       <main className="max-w-5xl mx-auto px-4 sm:px-6 lg:px-8 py-10">
-        <ErrorMessage message={error ?? "Offering details are unavailable."} onRetry={() => setRetryCount((count) => count + 1)} />
+        <ErrorMessage message="This offering link is invalid." />
       </main>
     );
   }
 
-  return <OfferingDetailScreen detail={detail} backHref={backHref} />;
+  if (error) {
+    return (
+      <main className="max-w-5xl mx-auto px-4 sm:px-6 lg:px-8 py-10">
+        <ErrorMessage message={error} />
+      </main>
+    );
+  }
+
+  return <LoadingSpinner />;
 }

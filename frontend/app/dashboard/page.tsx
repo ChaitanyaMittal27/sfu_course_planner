@@ -2,6 +2,7 @@
 
 import { Suspense, useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
+import { offeringHref } from "@/lib/course-routes";
 import { Plus, Eye, TrendingUp, BarChart3, Bell, X, ChevronDown, ChevronUp, Check, Pencil } from "lucide-react";
 import { api, CourseOffering, Bookmark, Course, Department } from "@/lib/api";
 import { supabase } from "@/lib/supabase/client";
@@ -129,7 +130,13 @@ function DashboardPageContent() {
 
   const handleRowClick = (bookmark: Bookmark) => {
     const { deptId, courseId, semesterCode } = bookmark;
-    router.push(`/browse/departments/${deptId}/courses/${courseId}/offerings/${semesterCode}`);
+    const course = courses.get(courseId);
+    const department = departments.get(deptId);
+    router.push(
+      course && department
+        ? offeringHref(department.deptCode, course.courseNumber, semesterCode)
+        : `/browse/departments/${deptId}/courses/${courseId}/offerings/${semesterCode}`,
+    );
   };
 
   const handleSaveProfile = async () => {
