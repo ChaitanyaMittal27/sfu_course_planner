@@ -9,6 +9,7 @@ import { Card } from "@/components/ui/card";
 import { bodyStyles, headerStyles } from "@/app/fonts";
 import { api } from "@/lib/api";
 import { offeringHref, type CourseRouteReference } from "@/lib/course-routes";
+import { useRetryableRequest } from "@/hooks/useRetryableRequest";
 import type { Course, CourseOffering, Department, TermInfo } from "@/lib/types";
 
 interface CourseOfferingsPanelProps {
@@ -23,6 +24,7 @@ export default function CourseOfferingsPanel({ reference, department, course }: 
   const [enrollingTerm, setEnrollingTerm] = useState<TermInfo | null>(null);
   const [error, setError] = useState<string | null>(null);
   const [isLoading, setIsLoading] = useState(true);
+  const { requestVersion, retry } = useRetryableRequest();
 
   useEffect(() => {
     let isActive = true;
@@ -47,7 +49,7 @@ export default function CourseOfferingsPanel({ reference, department, course }: 
     return () => {
       isActive = false;
     };
-  }, [reference.courseId, reference.deptId]);
+  }, [reference.courseId, reference.deptId, requestVersion]);
 
   return (
     <Card className="p-5 sm:p-6 rounded-2xl min-h-64">
@@ -60,7 +62,7 @@ export default function CourseOfferingsPanel({ reference, department, course }: 
         </div>
       </div>
 
-      {error && <ErrorMessage message={error} onRetry={() => window.location.reload()} />}
+      {error && <ErrorMessage message={error} onRetry={retry} />}
       {isLoading && <LoadingSpinner />}
       {!isLoading && !error && offerings.length === 0 && <div className={`${bodyStyles.md} text-text-muted`}>No offerings found.</div>}
       {!isLoading && !error && (

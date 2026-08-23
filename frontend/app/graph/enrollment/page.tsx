@@ -13,6 +13,7 @@ import TaskEmptyState from "@/components/TaskEmptyState";
 import { api, Department, Course, EnrollmentDataPoint } from "@/lib/api";
 import { Card, CardContent } from "@/components/ui/card";
 import { displayStyles, headerStyles, bodyStyles, labelStyles } from "@/app/fonts";
+import { useRetryableRequest } from "@/hooks/useRetryableRequest";
 import { LineChart, Line, XAxis, YAxis, Tooltip, ResponsiveContainer, CartesianGrid, Legend } from "recharts";
 
 function EnrollmentVsCapacityPageContent() {
@@ -29,6 +30,7 @@ function EnrollmentVsCapacityPageContent() {
   const [loadingCourses, setLoadingCourses] = useState(false);
   const [loadingChart, setLoadingChart] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const { requestVersion, retry } = useRetryableRequest();
 
   useEffect(() => {
     const fetchDepartments = async () => {
@@ -42,7 +44,7 @@ function EnrollmentVsCapacityPageContent() {
       }
     };
     fetchDepartments();
-  }, []);
+  }, [requestVersion]);
 
   useEffect(() => {
     if (!selectedDeptId) {
@@ -64,7 +66,7 @@ function EnrollmentVsCapacityPageContent() {
       }
     };
     fetchCourses();
-  }, [selectedDeptId, setSelectedCourseId]);
+  }, [requestVersion, selectedDeptId, setSelectedCourseId]);
 
   useEffect(() => {
     if (!selectedDeptId || !selectedCourseId) {
@@ -85,7 +87,7 @@ function EnrollmentVsCapacityPageContent() {
       }
     };
     fetchChartData();
-  }, [selectedDeptId, selectedCourseId, range]);
+  }, [range, requestVersion, selectedCourseId, selectedDeptId]);
 
   const selectedDept = departments.find((d) => d.deptId === parseInt(selectedDeptId || "0"));
   const selectedCourse = courses.find((c) => c.courseId === parseInt(selectedCourseId || "0"));
@@ -149,7 +151,7 @@ function EnrollmentVsCapacityPageContent() {
         </div>
       </AnalyticsCourseSelector>
 
-      {error && <ErrorMessage message={error} onRetry={() => window.location.reload()} />}
+      {error && <ErrorMessage message={error} onRetry={retry} />}
 
       {loadingChart && (
         <Card className="p-8">

@@ -19,6 +19,7 @@ import { Switch } from "@/components/ui/switch";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { displayStyles, headerStyles, bodyStyles, labelStyles } from "@/app/fonts";
 import { useScrollReveal } from "@/hooks/useScrollReveal";
+import { useRetryableRequest } from "@/hooks/useRetryableRequest";
 
 const formatTerm = (term: string, year: number) =>
   term.charAt(0).toUpperCase() + term.slice(1) + " " + year;
@@ -38,6 +39,7 @@ function DashboardPageContent() {
   const [courses, setCourses] = useState<Map<number, Course>>(new Map());
   const [departments, setDepartments] = useState<Map<number, Department>>(new Map());
   const [error, setError] = useState<string | null>(null);
+  const { requestVersion, retry } = useRetryableRequest();
 
   const [isEditingProfile, setIsEditingProfile] = useState(false);
   const [displayName, setDisplayName] = useState("");
@@ -110,7 +112,7 @@ function DashboardPageContent() {
     return () => {
       isActive = false;
     };
-  }, [isAuthenticated, user?.id]);
+  }, [isAuthenticated, requestVersion, user?.id]);
 
   const handleDelete = async (bookmarkId: number) => {
     try {
@@ -404,7 +406,7 @@ function DashboardPageContent() {
                 </div>
 
                 {dataLoading && <LoadingSpinner />}
-                {error && <ErrorMessage message={error} onRetry={() => window.location.reload()} />}
+                {error && <ErrorMessage message={error} onRetry={retry} />}
 
                 {!dataLoading && !error && (
                   <>
