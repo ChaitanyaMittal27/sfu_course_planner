@@ -3,20 +3,11 @@
 import { useState } from "react";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
-import { Activity, ArrowLeft, Calendar, Eye, FlaskConical, Menu, MessageSquare, Users, X } from "lucide-react";
+import { ArrowLeft, Menu, X } from "lucide-react";
 import { bodyStyles, labelStyles } from "@/app/fonts";
 import { useAuth } from "@/contexts/AuthContext";
 import { Button } from "@/components/ui/button";
-
-const navigationItems = [
-  { label: "Overview", href: "/admin", icon: Activity },
-  { label: "Health", href: "/admin/health", icon: Activity },
-  { label: "Support", href: "/admin/support", icon: MessageSquare },
-  { label: "Terms", href: "/admin/terms", icon: Calendar },
-  { label: "Users", href: "/admin/users", icon: Users },
-  { label: "Bookmarks", href: "/admin/bookmarks", icon: Eye },
-  { label: "Diagnostics", href: "/admin/test", icon: FlaskConical },
-];
+import { adminNavigationItems } from "@/components/admin/navigation";
 
 function isActive(pathname: string, href: string) {
   return href === "/admin" ? pathname === href : pathname.startsWith(href);
@@ -41,7 +32,7 @@ function AdminNavigationLinks({ onNavigate }: { onNavigate?: () => void }) {
 
   return (
     <nav aria-label="Admin navigation" className="flex flex-col gap-0.5">
-      {navigationItems.map(({ label, href, icon: Icon }) => {
+      {adminNavigationItems.map(({ label, href, icon: Icon }) => {
         const active = isActive(pathname, href);
 
         return (
