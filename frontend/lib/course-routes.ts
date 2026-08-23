@@ -58,6 +58,15 @@ export function sectionComparisonHref(
   return selectedSections.length > 0 ? `${basePath}?sections=${encodeURIComponent(selectedSections.join(","))}` : basePath;
 }
 
+/**
+ * CourseSys returns a display label such as "CMPT 125 D100" for a section.
+ * URLs should contain only the stable, human-readable section code.
+ */
+export function sectionCode(value: string) {
+  const parts = value.trim().split(/\s+/);
+  return parts.at(-1)?.toUpperCase() ?? "";
+}
+
 export function serializeComparedCourses(courses: CourseRouteIdentity[]) {
   return courses
     .map((course) => normalizeCourseIdentity(course.deptCode, course.courseNumber))
