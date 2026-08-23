@@ -6,44 +6,36 @@ import ErrorMessage from "@/components/ErrorMessage";
 import LoadingSpinner from "@/components/LoadingSpinner";
 import OfferingDetailScreen from "@/components/OfferingDetailScreen";
 import { api } from "@/lib/api";
-import { courseHref, normalizeCourseIdentity } from "@/lib/course-routes";
-import { resolveCourseIdentity, type ResolvedCourseRoute } from "@/lib/course-resolver";
+import { courseHref, parsePositiveRouteInteger } from "@/lib/course-routes";
+import { useCourseRouteResolution } from "@/hooks/useCourseRouteResolution";
 import type { OfferingDetail } from "@/lib/types";
-
-function parseSemesterCode(value: string | string[] | undefined) {
-  if (typeof value !== "string" || !/^\d+$/.test(value)) return null;
-  const parsed = Number(value);
-  return Number.isSafeInteger(parsed) && parsed > 0 ? parsed : null;
-}
 
 export default function CanonicalOfferingDetailPage() {
   const params = useParams<{ deptCode: string; courseNumber: string; semesterCode: string }>();
-  const identity = useMemo(
-    () => normalizeCourseIdentity(params.deptCode, params.courseNumber),
-    [params.courseNumber, params.deptCode],
-  );
-  const semesterCode = parseSemesterCode(params.semesterCode);
-  const [course, setCourse] = useState<ResolvedCourseRoute | null>(null);
-  const [detail, setDetail] = useState<OfferingDetail | null>(null);
+  const route = useCourseRouteResolution(params.deptCode, params.courseNumber);
+  const semesterCode = useMemo(() => parsePositiveRouteInteger(params.semesterCode), [params.semesterCode]);
+  const [detail, setDetail] = useState<{ routeKey: string; offering: OfferingDetail } | null>(null);
   const [error, setError] = useState<string | null>(null);
+  const resolvedCourse = route.status === "resolved" ? route.course : null;
+  const routeKey = resolvedCourse && semesterCode !== null
+    ? `${resolvedCourse.deptId}/${resolvedCourse.courseId}/${semesterCode}`
+    : null;
 
   useEffect(() => {
     let isActive = true;
-    const routeIdentity = identity;
-    const routeSemesterCode = semesterCode;
-    if (!routeIdentity || routeSemesterCode === null) return;
+    if (!resolvedCourse || semesterCode === null || routeKey === null) return;
+    const courseToLoad = resolvedCourse;
+    const semesterToLoad = semesterCode;
+    const detailRouteKey = routeKey;
 
     async function loadOffering() {
       try {
-        const resolvedCourse = await resolveCourseIdentity(routeIdentity!);
-        if (!resolvedCourse) throw new Error("not-found");
-        const offering = await api.getOfferingDetail(resolvedCourse.deptId, resolvedCourse.courseId, routeSemesterCode!);
+        const offering = await api.getOfferingDetail(courseToLoad.deptId, courseToLoad.courseId, semesterToLoad);
         if (!isActive) return;
-        setCourse(resolvedCourse);
-        setDetail(offering);
-      } catch (cause) {
+        setDetail({ routeKey: detailRouteKey, offering });
+      } catch {
         if (!isActive) return;
-        setError(cause instanceof Error && cause.message === "not-found" ? "This offering could not be found." : "Failed to load offering details.");
+        setError("Failed to load offering details.");
       }
     }
 
@@ -51,13 +43,18 @@ export default function CanonicalOfferingDetailPage() {
     return () => {
       isActive = false;
     };
-  }, [identity, semesterCode]);
+  }, [resolvedCourse, routeKey, semesterCode]);
 
-  if (error) return <main className="max-w-5xl mx-auto px-4 sm:px-6 lg:px-8 py-10"><ErrorMessage message={error} /></main>;
-  if (!identity || semesterCode === null) {
+  if (route.status === "invalid" || semesterCode === null) {
     return <main className="max-w-5xl mx-auto px-4 sm:px-6 lg:px-8 py-10"><ErrorMessage message="This offering link is invalid." /></main>;
   }
-  if (!course || !detail) return <LoadingSpinner />;
+  if (route.status === "notFound") {
+    return <main className="max-w-5xl mx-auto px-4 sm:px-6 lg:px-8 py-10"><ErrorMessage message="This offering could not be found." /></main>;
+  }
+  if (route.status === "error" || error) {
+    return <main className="max-w-5xl mx-auto px-4 sm:px-6 lg:px-8 py-10"><ErrorMessage message={error ?? "Failed to resolve this offering link."} /></main>;
+  }
+  if (route.status !== "resolved" || !detail || detail.routeKey !== routeKey) return <LoadingSpinner />;
 
-  return <OfferingDetailScreen detail={detail} backHref={courseHref(course.deptCode, course.courseNumber)} />;
+  return <OfferingDetailScreen detail={detail.offering} backHref={courseHref(route.course.deptCode, route.course.courseNumber)} />;
 }

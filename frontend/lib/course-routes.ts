@@ -8,8 +8,32 @@ export interface CourseRouteReference extends CourseRouteIdentity {
   courseId: number;
 }
 
+export type LegacyCourseRoute =
+  | { status: "none" | "invalid" }
+  | { status: "valid"; deptId: number; courseId: number };
+
 function normalizeSegment(value: string) {
   return value.trim().toLowerCase();
+}
+
+export function parsePositiveRouteInteger(value: string | string[] | null | undefined) {
+  if (typeof value !== "string" || !/^\d+$/.test(value)) return null;
+
+  const parsed = Number(value);
+  return Number.isSafeInteger(parsed) && parsed > 0 ? parsed : null;
+}
+
+export function parseLegacyCourseRoute(
+  deptIdValue: string | null,
+  courseIdValue: string | null,
+): LegacyCourseRoute {
+  if (!deptIdValue && !courseIdValue) return { status: "none" };
+
+  const deptId = parsePositiveRouteInteger(deptIdValue);
+  const courseId = parsePositiveRouteInteger(courseIdValue);
+  return deptId !== null && courseId !== null
+    ? { status: "valid", deptId, courseId }
+    : { status: "invalid" };
 }
 
 export function normalizeCourseIdentity(deptCode: string, courseNumber: string): CourseRouteIdentity | null {

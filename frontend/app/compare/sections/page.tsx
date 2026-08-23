@@ -11,7 +11,12 @@ import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
 import { bodyStyles, displayStyles, headerStyles, labelStyles } from "@/app/fonts";
 import { api, type Course, type Department } from "@/lib/api";
-import { sectionCode, sectionComparisonHref } from "@/lib/course-routes";
+import {
+  parseLegacyCourseRoute,
+  parsePositiveRouteInteger,
+  sectionCode,
+  sectionComparisonHref,
+} from "@/lib/course-routes";
 import { resolveCourseIds } from "@/lib/course-resolver";
 
 type Semester = {
@@ -69,22 +74,19 @@ function parseLegacySectionComparisonLink(searchParams: Pick<URLSearchParams, "g
     return { status: "none" };
   }
 
-  const departmentId = Number(departmentIdParam);
-  const courseId = Number(courseIdParam);
-  const semesterCode = Number(semesterCodeParam);
+  const legacyCourseRoute = parseLegacyCourseRoute(departmentIdParam, courseIdParam);
+  const semesterCode = parsePositiveRouteInteger(semesterCodeParam);
 
-  if (
-    !Number.isSafeInteger(departmentId) ||
-    !Number.isSafeInteger(courseId) ||
-    !Number.isSafeInteger(semesterCode) ||
-    departmentId <= 0 ||
-    courseId <= 0 ||
-    semesterCode <= 0
-  ) {
+  if (legacyCourseRoute.status !== "valid" || semesterCode === null) {
     return { status: "invalid" };
   }
 
-  return { status: "valid", departmentId, courseId, semesterCode };
+  return {
+    status: "valid",
+    departmentId: legacyCourseRoute.deptId,
+    courseId: legacyCourseRoute.courseId,
+    semesterCode,
+  };
 }
 
 function SelectField({ id, label, value, disabled, onChange, children }: SelectFieldProps) {
