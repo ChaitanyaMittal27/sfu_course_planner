@@ -1,87 +1,123 @@
 "use client";
 
+import { useState } from "react";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
-import { Activity, MessageSquare, Calendar, Users, Eye, FlaskConical } from "lucide-react";
+import { ArrowLeft, Menu, X } from "lucide-react";
+import { bodyStyles, labelStyles } from "@/app/fonts";
 import { useAuth } from "@/contexts/AuthContext";
-import { labelStyles, bodyStyles } from "@/app/fonts";
+import { Button } from "@/components/ui/button";
+import { adminNavigationItems } from "@/components/admin/navigation";
 
-const navItems = [
-  { label: "Health", href: "/admin/health", icon: Activity },
-  { label: "Support", href: "/admin/support", icon: MessageSquare },
-  { label: "Terms", href: "/admin/terms", icon: Calendar },
-  { label: "Users", href: "/admin/users", icon: Users },
-  { label: "Bookmarks", href: "/admin/bookmarks", icon: Eye },
-  { label: "Test", href: "/admin/test", icon: FlaskConical },
-];
+function isActive(pathname: string, href: string) {
+  return href === "/admin" ? pathname === href : pathname.startsWith(href);
+}
 
-export default function AdminSidebar() {
+function AdminBrand() {
+  return (
+    <Link href="/admin" className="flex min-w-0 items-center gap-2.5">
+      <div className="flex size-8 shrink-0 items-center justify-center rounded-md bg-primary text-primary-foreground">
+        <span className={`font-display ${labelStyles.sm} font-bold`}>SFU</span>
+      </div>
+      <div className="min-w-0">
+        <p className={`${labelStyles.lg} truncate text-sidebar-foreground`}>Course Planner</p>
+        <p className={`${labelStyles.sm} uppercase tracking-widest text-accent`}>Administration</p>
+      </div>
+    </Link>
+  );
+}
+
+function AdminNavigationLinks({ onNavigate }: { onNavigate?: () => void }) {
   const pathname = usePathname();
+
+  return (
+    <nav aria-label="Admin navigation" className="flex flex-col gap-0.5">
+      {adminNavigationItems.map(({ label, href, icon: Icon }) => {
+        const active = isActive(pathname, href);
+
+        return (
+          <Link
+            key={href}
+            href={href}
+            onClick={onNavigate}
+            aria-current={active ? "page" : undefined}
+            className={`relative flex items-center gap-3 rounded-lg px-3 py-2 ${labelStyles.lg} transition-colors ${
+              active
+                ? "bg-sidebar-accent font-semibold text-sidebar-foreground"
+                : "text-text-muted hover:bg-sidebar-accent hover:text-sidebar-foreground"
+            }`}
+          >
+            {active && <span className="absolute -left-3 h-5 w-1 rounded-r-sm bg-primary" />}
+            <Icon className="size-4 shrink-0" />
+            {label}
+          </Link>
+        );
+      })}
+    </nav>
+  );
+}
+
+function AdminUserSummary() {
   const { user } = useAuth();
-
-  const isActive = (href: string) => pathname === href || (href !== "/admin" && pathname.startsWith(href + "/"));
-
   const initial = (user?.email?.trim()[0] || "A").toUpperCase();
 
   return (
-    <aside className="hidden lg:flex w-[248px] flex-none sticky top-0 h-screen bg-sidebar border-r border-sidebar-border flex-col">
-      {/* Brand */}
-      <div className="px-4 pt-[18px] pb-4 border-b border-sidebar-border">
-        <div className="flex items-center gap-2.5">
-          <div className="w-[30px] h-[30px] rounded-[7px] bg-primary flex items-center justify-center flex-none">
-            <span className="font-display font-bold text-[12px] text-primary-foreground tracking-tight">SFU</span>
-          </div>
-          <Link href="/admin">
-            <div className="min-w-0">
-              <div className="font-display font-semibold text-[13.5px] text-sidebar-foreground leading-tight">
-                Course Planner
-              </div>
-              <span className={`${labelStyles.sm} uppercase tracking-widest text-accent`}>Admin Dashboard</span>
-            </div>
+    <div className="flex min-w-0 items-center gap-2">
+      <div className="flex size-7 shrink-0 items-center justify-center rounded-full bg-primary text-primary-foreground">
+        <span className={`font-display ${labelStyles.sm} font-bold`}>{initial}</span>
+      </div>
+      <span className={`${bodyStyles.sm} truncate text-sidebar-foreground`}>{user?.email || "Administrator"}</span>
+    </div>
+  );
+}
+
+export default function AdminSidebar() {
+  const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
+
+  return (
+    <>
+      <aside className="fixed bottom-0 left-0 top-[var(--app-nav-height)] z-20 hidden w-60 flex-col border-r border-sidebar-border bg-sidebar lg:flex">
+        <div className="border-b border-sidebar-border p-4"><AdminBrand /></div>
+        <div className="flex-1 overflow-y-auto p-3">
+          <p className={`${labelStyles.sm} mb-2 px-3 uppercase tracking-widest text-text-subtle`}>Operations</p>
+          <AdminNavigationLinks />
+        </div>
+        <div className="border-t border-sidebar-border p-3">
+          <AdminUserSummary />
+          <Link href="/" className={`mt-3 flex items-center gap-2 px-1 text-text-muted hover:text-text-primary ${labelStyles.md}`}>
+            <ArrowLeft className="size-3.5" />
+            View course planner
           </Link>
         </div>
-      </div>
+      </aside>
 
-      {/* Nav */}
-      <nav className="flex-1 overflow-y-auto py-3.5 px-3">
-        <div className={`${labelStyles.sm} uppercase tracking-widest text-text-subtle px-2.5 pb-2`}>Operations</div>
-        <div className="flex flex-col gap-0.5">
-          {navItems.map(({ label, href, icon: Icon }) => {
-            const active = isActive(href);
-            return (
-              <Link
-                key={href}
-                href={href}
-                className={`relative flex items-center gap-[11px] w-full px-2.5 py-2 rounded-lg ${labelStyles.lg} transition-colors ${
-                  active
-                    ? "bg-sidebar-accent text-sidebar-foreground font-semibold"
-                    : "text-text-muted hover:bg-sidebar-accent hover:text-sidebar-foreground"
-                }`}
-              >
-                {active && (
-                  <span className="absolute -left-3 top-1/2 -translate-y-1/2 w-[3px] h-[17px] rounded-r-sm bg-primary" />
-                )}
-                <Icon className="w-[18px] h-[18px] flex-none" />
-                <span>{label}</span>
-              </Link>
-            );
-          })}
-        </div>
-      </nav>
+      <header className="sticky top-[var(--app-nav-height)] z-20 flex h-[var(--admin-mobile-header-height)] items-center justify-between border-b border-sidebar-border bg-sidebar px-4 lg:hidden">
+        <AdminBrand />
+        <Button
+          type="button"
+          variant="ghost"
+          size="icon"
+          onClick={() => setMobileMenuOpen((open) => !open)}
+          aria-label="Toggle admin navigation"
+          aria-expanded={mobileMenuOpen}
+          aria-controls="admin-mobile-navigation"
+        >
+          {mobileMenuOpen ? <X /> : <Menu />}
+        </Button>
+      </header>
 
-      {/* Footer */}
-      <div className="px-3 py-3 border-t border-sidebar-border">
-        <div className="flex items-center justify-between gap-2">
-          <div className="flex items-center gap-2 min-w-0">
-            <div className="w-7 h-7 rounded-full bg-gradient-to-br from-primary to-accent flex items-center justify-center font-display font-bold text-[12px] text-primary-foreground flex-none">
-              {initial}
-            </div>
-            <span className={`${bodyStyles.sm} font-semibold text-sidebar-foreground truncate`}>
-              {user?.email || "admin"}
-            </span>
+      {mobileMenuOpen && (
+        <div id="admin-mobile-navigation" className="fixed inset-x-0 top-[calc(var(--app-nav-height)+var(--admin-mobile-header-height))] z-20 border-b border-sidebar-border bg-sidebar p-4 shadow-lg lg:hidden">
+          <AdminNavigationLinks onNavigate={() => setMobileMenuOpen(false)} />
+          <div className="mt-4 border-t border-sidebar-border pt-4">
+            <AdminUserSummary />
+            <Link href="/" onClick={() => setMobileMenuOpen(false)} className={`mt-3 flex items-center gap-2 text-text-muted hover:text-text-primary ${labelStyles.md}`}>
+              <ArrowLeft className="size-3.5" />
+              View course planner
+            </Link>
           </div>
         </div>
-      </div>
-    </aside>
+      )}
+    </>
   );
 }

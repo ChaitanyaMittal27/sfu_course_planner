@@ -34,8 +34,7 @@ public class AdminController {
                 "/api/admin/support",
                 "/api/admin/terms",
                 "/api/admin/users",
-                "/api/admin/bookmarks",
-                "/api/admin/test"
+                "/api/admin/bookmarks"
             )
         ));
     }

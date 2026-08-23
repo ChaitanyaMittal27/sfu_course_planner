@@ -1,55 +1,45 @@
 "use client";
 
-import { useEffect, useState, useCallback } from "react";
-import { Server, Database, GraduationCap, BarChart3, Mail, RefreshCw } from "lucide-react";
+import { useCallback, useEffect, useState } from "react";
+import { RefreshCw } from "lucide-react";
 import { api, ServiceHealthCheck } from "@/lib/api";
 import { Card, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
+import { AdminPage, AdminPageHeader } from "@/components/admin/AdminPage";
 import AdminPageSkeleton from "@/components/admin/AdminPageSkeleton";
 import ErrorMessage from "@/components/ErrorMessage";
-import { displayStyles, headerStyles, bodyStyles, labelStyles } from "@/app/fonts";
-
-const serviceIcons: Record<string, typeof Server> = {
-  api: Server,
-  database: Database,
-  coursesys: GraduationCap,
-  coursediggers: BarChart3,
-  resend: Mail,
-};
-
-const serviceLabels: Record<string, string> = {
-  api: "API",
-  database: "Database",
-  coursesys: "CourseSys",
-  coursediggers: "CourseDiggers",
-  resend: "Resend",
-};
+import { healthServicePresentation } from "@/components/admin/health-services";
+import { bodyStyles, headerStyles, labelStyles } from "@/app/fonts";
 
 function formatTime(date: Date): string {
   return date.toLocaleTimeString("en-US", { hour: "2-digit", minute: "2-digit", second: "2-digit" });
 }
 
+function errorMessage(error: unknown, fallback: string) {
+  return error instanceof Error ? error.message : fallback;
+}
+
 export default function AdminHealthPage() {
   const [checks, setChecks] = useState<ServiceHealthCheck[]>([]);
-  const [lastChecked, setLastChecked] = useState<Record<string, Date>>({});
+  const [lastRefreshed, setLastRefreshed] = useState<Record<string, Date>>({});
   const [loading, setLoading] = useState(true);
   const [refreshingAll, setRefreshingAll] = useState(false);
   const [refreshingService, setRefreshingService] = useState<string | null>(null);
   const [error, setError] = useState<string | null>(null);
+  const [serviceErrors, setServiceErrors] = useState<Record<string, string>>({});
 
   const fetchAll = useCallback(async () => {
     try {
       setError(null);
       const results = await api.getHealthStatus();
+      const refreshedAt = new Date();
+
       setChecks(results);
-      const now = new Date();
-      const timestamps: Record<string, Date> = {};
-      results.forEach((r) => { timestamps[r.service] = now; });
-      setLastChecked(timestamps);
-    } catch (err: unknown) {
-      const message = err instanceof Error ? err.message : "Failed to fetch health status";
-      setError(message);
+      setLastRefreshed(Object.fromEntries(results.map((result) => [result.service, refreshedAt])));
+      setServiceErrors({});
+    } catch (requestError: unknown) {
+      setError(errorMessage(requestError, "Failed to fetch health status"));
     }
   }, []);
 
@@ -65,14 +55,21 @@ export default function AdminHealthPage() {
 
   const handleRefreshService = async (service: string) => {
     setRefreshingService(service);
+    setServiceErrors((current) => ({ ...current, [service]: "" }));
+
     try {
-      const results = await api.getServiceHealth(service);
-      if (results.length > 0) {
-        setChecks((prev) => prev.map((c) => (c.service === service ? results[0] : c)));
-        setLastChecked((prev) => ({ ...prev, [service]: new Date() }));
+      const [result] = await api.getServiceHealth(service);
+      if (!result) {
+        throw new Error("The health service returned no result.");
       }
-    } catch (err) {
-      console.error(`Failed to recheck ${service}:`, err);
+
+      setChecks((current) => current.map((check) => (check.service === service ? result : check)));
+      setLastRefreshed((current) => ({ ...current, [service]: new Date() }));
+    } catch (requestError: unknown) {
+      setServiceErrors((current) => ({
+        ...current,
+        [service]: errorMessage(requestError, `Failed to recheck ${service}`),
+      }));
     } finally {
       setRefreshingService(null);
     }
@@ -82,101 +79,87 @@ export default function AdminHealthPage() {
     return <AdminPageSkeleton hasTable tableRows={5} />;
   }
 
+  const actions = (
+    <Button type="button" onClick={handleRefreshAll} disabled={refreshingAll} className="gap-2">
+      <RefreshCw className={refreshingAll ? "animate-spin" : ""} />
+      Refresh all
+    </Button>
+  );
+
   if (error && checks.length === 0) {
     return (
-      <div className="flex-1 p-8 max-w-[1180px]">
+      <AdminPage>
+        <AdminPageHeader title="System health" description="Live status checks for external services and infrastructure." actions={actions} />
         <ErrorMessage message={error} onRetry={handleRefreshAll} />
-      </div>
+      </AdminPage>
     );
   }
 
   return (
-    <div className="flex-1 p-8 max-w-[1180px]">
-      {/* Header */}
-      <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between mb-6">
-        <div>
-          <h1 className={`${displayStyles.sm} text-text-primary mb-1`}>System Health</h1>
-          <p className={`${bodyStyles.md} text-text-muted`}>
-            Live status checks for all external services and infrastructure.
-          </p>
-        </div>
-        <Button
-          onClick={handleRefreshAll}
-          disabled={refreshingAll}
-          className="gap-2 mt-4 sm:mt-0 shrink-0"
-        >
-          <RefreshCw className={`w-4 h-4 ${refreshingAll ? "animate-spin" : ""}`} />
-          Refresh All
-        </Button>
-      </div>
+    <AdminPage>
+      <AdminPageHeader title="System health" description="Live status checks for external services and infrastructure." actions={actions} />
 
-      {/* Service cards */}
-      <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-3.5">
-        {checks.map((check) => {
-          const Icon = serviceIcons[check.service] || Server;
-          const label = serviceLabels[check.service] || check.service;
-          const isUp = check.status === "up";
-          const isRefreshing = refreshingService === check.service;
-          const checkedAt = lastChecked[check.service];
+      {error && <div className="mb-6"><ErrorMessage message={error} onRetry={handleRefreshAll} /></div>}
 
-          return (
-            <Card key={check.service} className="p-5">
-              <CardContent className="p-0">
-                {/* Icon + status row */}
-                <div className="flex items-center justify-between mb-3">
-                  <div className={`w-9 h-9 rounded-[9px] border flex items-center justify-center ${
-                    isUp
-                      ? "text-success bg-success/10 border-success/20"
-                      : "text-destructive bg-destructive/10 border-destructive/20"
-                  }`}>
-                    <Icon className="w-[17px] h-[17px]" />
-                  </div>
-                  <Badge className={
-                    isUp
-                      ? "bg-success/15 text-success border-transparent"
-                      : "bg-destructive/15 text-destructive border-transparent"
-                  }>
-                    {isUp ? "Operational" : "Down"}
-                  </Badge>
-                </div>
+      {checks.length === 0 ? (
+        <Card className="p-6">
+          <CardContent className="p-0">
+            <h2 className={`${headerStyles.sm} text-text-primary`}>No health checks configured</h2>
+            <p className={`${bodyStyles.md} mt-1 text-text-muted`}>No service checks were returned by the API.</p>
+          </CardContent>
+        </Card>
+      ) : (
+        <div className="grid grid-cols-1 gap-3.5 md:grid-cols-2 xl:grid-cols-3">
+          {checks.map((check) => {
+            const { icon: Icon, label } = healthServicePresentation(check.service);
+            const isUp = check.status === "up";
+            const isRefreshing = refreshingService === check.service;
+            const refreshedAt = lastRefreshed[check.service];
+            const serviceError = serviceErrors[check.service];
 
-                {/* Service name */}
-                <h3 className={`${headerStyles.xs} text-text-primary mb-3`}>{label}</h3>
-
-                {/* Details */}
-                <div className="space-y-1.5 mb-4">
-                  <div className="flex items-center justify-between">
-                    <span className={`${labelStyles.md} text-text-muted`}>Latency</span>
-                    <span className={`${labelStyles.md} font-mono text-text-primary`}>{check.latencyMs}ms</span>
-                  </div>
-                  <div className="flex items-center justify-between">
-                    <span className={`${labelStyles.md} text-text-muted`}>Endpoint</span>
-                    <span className={`${labelStyles.sm} font-mono text-text-subtle`}>{check.url}</span>
-                  </div>
-                  {checkedAt && (
-                    <div className="flex items-center justify-between">
-                      <span className={`${labelStyles.md} text-text-muted`}>Checked</span>
-                      <span className={`${labelStyles.sm} font-mono text-text-subtle`}>{formatTime(checkedAt)}</span>
+            return (
+              <Card key={check.service} className="p-5">
+                <CardContent className="p-0">
+                  <div className="mb-3 flex items-center justify-between">
+                    <div className={`flex size-9 items-center justify-center rounded-lg border ${isUp ? "border-success/20 bg-success/10 text-success" : "border-destructive/20 bg-destructive/10 text-destructive"}`}>
+                      <Icon className="size-4" />
                     </div>
-                  )}
-                </div>
+                    <Badge className={isUp ? "border-transparent bg-success/15 text-success" : "border-transparent bg-destructive/15 text-destructive"}>
+                      {isUp ? "Operational" : "Down"}
+                    </Badge>
+                  </div>
 
-                {/* Recheck button */}
-                <Button
-                  variant="outline"
-                  size="sm"
-                  onClick={() => handleRefreshService(check.service)}
-                  disabled={isRefreshing}
-                  className="w-full gap-1.5"
-                >
-                  <RefreshCw className={`w-3.5 h-3.5 ${isRefreshing ? "animate-spin" : ""}`} />
-                  Recheck
-                </Button>
-              </CardContent>
-            </Card>
-          );
-        })}
-      </div>
-    </div>
+                  <h2 className={`${headerStyles.xs} mb-3 text-text-primary`}>{label}</h2>
+
+                  <dl className="mb-4 space-y-1.5">
+                    <div className="flex items-center justify-between gap-4">
+                      <dt className={`${labelStyles.md} text-text-muted`}>Latency</dt>
+                      <dd className={`${labelStyles.md} font-mono text-text-primary`}>{check.latencyMs}ms</dd>
+                    </div>
+                    <div className="flex items-center justify-between gap-4">
+                      <dt className={`${labelStyles.md} text-text-muted`}>Endpoint</dt>
+                      <dd className={`${labelStyles.sm} truncate font-mono text-text-subtle`}>{check.url}</dd>
+                    </div>
+                    {refreshedAt && (
+                      <div className="flex items-center justify-between gap-4">
+                        <dt className={`${labelStyles.md} text-text-muted`}>Last refreshed</dt>
+                        <dd className={`${labelStyles.sm} font-mono text-text-subtle`}>{formatTime(refreshedAt)}</dd>
+                      </div>
+                    )}
+                  </dl>
+
+                  {serviceError && <p className={`${bodyStyles.sm} mb-3 text-destructive`} role="status">{serviceError}</p>}
+
+                  <Button type="button" variant="outline" size="sm" onClick={() => handleRefreshService(check.service)} disabled={isRefreshing} className="w-full gap-1.5">
+                    <RefreshCw className={isRefreshing ? "animate-spin" : ""} />
+                    Recheck
+                  </Button>
+                </CardContent>
+              </Card>
+            );
+          })}
+        </div>
+      )}
+    </AdminPage>
   );
 }

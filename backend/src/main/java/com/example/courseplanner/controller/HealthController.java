@@ -6,6 +6,7 @@ import com.example.courseplanner.service.JwtService;
 import io.swagger.v3.oas.annotations.Hidden;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.http.*;
+import org.springframework.http.client.SimpleClientHttpRequestFactory;
 import org.springframework.web.bind.annotation.*;
 import org.springframework.web.client.HttpClientErrorException;
 import org.springframework.web.client.RestTemplate;
@@ -31,7 +32,10 @@ public class HealthController {
     public HealthController(JwtService jwtService, DataSource dataSource) {
         this.jwtService = jwtService;
         this.dataSource = dataSource;
-        this.restTemplate = new RestTemplate();
+        SimpleClientHttpRequestFactory requestFactory = new SimpleClientHttpRequestFactory();
+        requestFactory.setConnectTimeout(5000);
+        requestFactory.setReadTimeout(5000);
+        this.restTemplate = new RestTemplate(requestFactory);
     }
 
     @GetMapping

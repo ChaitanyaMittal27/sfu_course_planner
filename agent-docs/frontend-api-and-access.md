@@ -10,7 +10,7 @@ The Next.js application uses the App Router. The root layout wraps every page in
 
 `frontend/lib/api.ts` is the ordinary frontend-to-backend boundary and `lib/types.ts` is its companion type contract. Add or change a regular API operation in both places, then update the Spring DTO/controller mapping in the same change. `fetchAuthAPI` obtains the current access token on each call, adds `Authorization: Bearer <token>`, and handles 204 responses for deletes.
 
-The two intentional direct-fetch sites are the public contact form in `app/about/page.tsx` and the admin API testing page. Do not use those exceptions as a new general pattern.
+The public contact form in `app/about/page.tsx` is the intentional direct-fetch exception. Do not use it as a new general pattern.
 
 Backend controllers generally return `Api*DTO` or `Admin*DTO`, rather than JPA entities. Exact shapes and nullability are contractual: browsing, compare/graph pages, dashboard components, and admin pages consume those TypeScript types directly.
 

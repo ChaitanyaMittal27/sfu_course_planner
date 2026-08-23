@@ -117,11 +117,11 @@ On top of that, signed-in users can bookmark specific course offerings and opt i
 │   │   ├── login/                      # Sign in / sign up
 │   │   ├── auth/{callback,reset-password}/  # OAuth callback, password reset
 │   │   ├── admin/                      # Admin dashboard (role-gated)
-│   │   │   ├── health/, support/, terms/, users/[id]/, bookmarks/, test/, unauthorized/
+│   │   │   ├── health/, support/, terms/, users/[id]/, bookmarks/, unauthorized/
 │   │   └── {about,privacy,termsofservice}/
 │   ├── components/
 │   │   ├── ui/                         # shadcn components
-│   │   ├── admin/                      # AdminSidebar, AdminPageSkeleton
+│   │   ├── admin/                      # Admin shell, navigation, and shared page primitives
 │   │   ├── Navigation.tsx, Footer.tsx
 │   │   ├── BookmarkButton.tsx, BookmarksTable.tsx
 │   │   ├── OfferingsTable.tsx, GradeHistogram.tsx, LoadBar.tsx, StatusBadge.tsx
@@ -242,7 +242,6 @@ The generated interactive reference is available at [`/api-docs`](https://api.sf
 | GET | `/api/admin/users` | User list with stats (signup provider, opt-in, activity) |
 | GET | `/api/admin/users/{id}` | Single user detail + their bookmarks |
 | GET | `/api/admin/bookmarks` | Bookmark analytics (top courses, dept rankings, monthly growth) |
-| POST | `/api/admin/test/trigger-notifications` | Manually run the daily notification job |
 
 ## Architecture Notes
 
@@ -263,7 +262,6 @@ SFU semester codes encode year + term as a single number: `(year - 1900) * 10 + 
 3. Builds a per-user HTML digest table and sends it via `EmailService`/Resend.
 4. Updates `last_notified_at` for all notified users.
 
-It can also be triggered manually via `POST /api/admin/test/trigger-notifications`.
 
 ### Frontend API Client Pattern
 All API calls go through `lib/api.ts`:

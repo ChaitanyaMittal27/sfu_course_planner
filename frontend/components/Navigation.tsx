@@ -41,6 +41,7 @@ export default function Navigation() {
   const router = useRouter();
   const { theme, toggleTheme, setThemeTo, mounted } = useTheme();
   const { user, isLoading: authLoading, signOut } = useAuth();
+  const isAdmin = user?.app_metadata?.role === "admin";
 
   const isActive = (href: string) => pathname === href;
 
@@ -55,7 +56,7 @@ export default function Navigation() {
 
   return (
     <nav className="sticky top-0 z-30 bg-nav-bg border-t-2 border-t-nav-border-top shadow-[0_1px_0_var(--border)]">
-      <div className="max-w-[1180px] mx-auto px-4 sm:px-7 h-[60px] flex items-center justify-between gap-6">
+      <div className="max-w-[1180px] mx-auto px-4 sm:px-7 h-[var(--app-nav-height)] flex items-center justify-between gap-6">
         {/* Logo */}
         <Link href="/" className="flex items-center gap-2.5 shrink-0">
           <div className="w-[30px] h-[30px] rounded-[7px] bg-primary-foreground flex items-center justify-center">
@@ -156,6 +157,15 @@ export default function Navigation() {
                   <p className={`${labelStyles.lg} text-text-primary truncate`}>{user.email}</p>
                 </div>
                 <DropdownMenuSeparator className="bg-border" />
+                {isAdmin && (
+                  <DropdownMenuItem
+                    onClick={() => router.push("/admin")}
+                    className="flex items-center gap-2 text-text-muted cursor-pointer"
+                  >
+                    <LayoutDashboard className="w-4 h-4" />
+                    Admin
+                  </DropdownMenuItem>
+                )}
                 <DropdownMenuItem
                   onClick={() => router.push("/dashboard")}
                   className="flex items-center gap-2 text-text-muted cursor-pointer"
@@ -255,6 +265,16 @@ export default function Navigation() {
                     <LayoutDashboard className="w-5 h-5" />
                     Dashboard
                   </Link>
+                  {isAdmin && (
+                    <Link
+                      href="/admin"
+                      onClick={() => setMobileMenuOpen(false)}
+                      className={`${labelStyles.lg} px-3 py-2 text-nav-text hover:bg-nav-text/10 flex items-center gap-2 rounded`}
+                    >
+                      <LayoutDashboard className="w-5 h-5" />
+                      Admin
+                    </Link>
+                  )}
                   <button
                     type="button"
                     onClick={() => {

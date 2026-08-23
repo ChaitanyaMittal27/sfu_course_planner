@@ -1,4 +1,5 @@
 import { Skeleton } from "@/components/ui/skeleton";
+import { AdminPage, AdminStatGrid } from "@/components/admin/AdminPage";
 
 interface AdminPageSkeletonProps {
   statCards?: number;
@@ -15,13 +16,8 @@ export default function AdminPageSkeleton({
   tableRows = 8,
   hasSecondTable,
 }: AdminPageSkeletonProps) {
-  const gridCols =
-    statCards === 5 ? "grid-cols-2 lg:grid-cols-5"
-    : statCards === 4 ? "grid-cols-2 lg:grid-cols-4"
-    : "grid-cols-2";
-
   return (
-    <div className="flex-1 p-8 max-w-[1180px]">
+    <AdminPage>
       {/* Heading */}
       <div className="mb-6">
         <Skeleton className="h-8 w-52 mb-2" />
@@ -30,11 +26,11 @@ export default function AdminPageSkeleton({
 
       {/* Stat cards */}
       {statCards && (
-        <div className={`grid ${gridCols} gap-3.5 mb-8`}>
+        <AdminStatGrid columns={statCards === 5 ? 5 : statCards === 4 ? 4 : 2}>
           {Array.from({ length: statCards }).map((_, i) => (
             <Skeleton key={i} className="h-24 rounded-xl" />
           ))}
-        </div>
+        </AdminStatGrid>
       )}
 
       {/* Chart */}
@@ -49,6 +45,6 @@ export default function AdminPageSkeleton({
       {hasSecondTable && (
         <Skeleton className="rounded-xl" style={{ height: tableRows * 40 }} />
       )}
-    </div>
+    </AdminPage>
   );
 }

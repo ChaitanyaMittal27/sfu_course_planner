@@ -1,37 +1,48 @@
 "use client";
 
-import { useEffect, useState, useCallback } from "react";
-import { Calendar, Pencil, X, Check } from "lucide-react";
+import { type FormEvent, useCallback, useEffect, useState } from "react";
+import { Calendar, Check, Pencil, X } from "lucide-react";
 import { api, AdminTerm } from "@/lib/api";
+import { formatTerm, isTermName, semesterCode, TERM_OPTIONS, type TermName } from "@/lib/semester";
 import { Card, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
+import { Badge } from "@/components/ui/badge";
+import { Input } from "@/components/ui/input";
+import { AdminPage, AdminPageHeader, AdminStatGrid, AdminTable } from "@/components/admin/AdminPage";
 import AdminPageSkeleton from "@/components/admin/AdminPageSkeleton";
 import ErrorMessage from "@/components/ErrorMessage";
-import { displayStyles, headerStyles, bodyStyles, labelStyles } from "@/app/fonts";
+import { bodyStyles, headerStyles, labelStyles } from "@/app/fonts";
 
-const TERM_OPTIONS = ["spring", "summer", "fall"] as const;
-const TERM_DIGIT: Record<string, number> = { spring: 1, summer: 4, fall: 7 };
-
-function capitalize(s: string) {
-  return s.charAt(0).toUpperCase() + s.slice(1);
+function errorMessage(error: unknown, fallback: string) {
+  return error instanceof Error ? error.message : fallback;
 }
 
-function semesterCode(year: number, term: string): number {
-  return (year - 1900) * 10 + (TERM_DIGIT[term] ?? 0);
+function formatUpdatedAt(updatedAt: string | null) {
+  return updatedAt
+    ? new Date(updatedAt).toLocaleDateString("en-US", { month: "short", day: "numeric", year: "numeric" })
+    : "—";
+}
+
+function statusBadge(label: string) {
+  return (
+    <Badge className="border-transparent bg-success/15 text-success">
+      <span className="size-1.5 rounded-full bg-current" />
+      {label}
+    </Badge>
+  );
 }
 
 export default function AdminTermsPage() {
   const [terms, setTerms] = useState<AdminTerm[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
-
   const [formOpen, setFormOpen] = useState(false);
   const [currentYear, setCurrentYear] = useState("");
-  const [currentTerm, setCurrentTerm] = useState("spring");
+  const [currentTerm, setCurrentTerm] = useState<TermName>("spring");
   const [enrollingYear, setEnrollingYear] = useState("");
-  const [enrollingTerm, setEnrollingTerm] = useState("summer");
+  const [enrollingTerm, setEnrollingTerm] = useState<TermName>("summer");
   const [formError, setFormError] = useState<string | null>(null);
-  const [saved, setSaved] = useState(false);
+  const [saveMessage, setSaveMessage] = useState<string | null>(null);
   const [submitting, setSubmitting] = useState(false);
 
   const fetchTerms = useCallback(async () => {
@@ -40,19 +51,18 @@ export default function AdminTermsPage() {
       const data = await api.getAdminTerms();
       setTerms(data);
 
-      const cur = data.find((t) => t.isCurrent);
-      const enr = data.find((t) => t.isEnrolling);
-      if (cur) {
-        setCurrentYear(String(cur.year));
-        setCurrentTerm(cur.term);
+      const current = data.find((term) => term.isCurrent);
+      const enrolling = data.find((term) => term.isEnrolling);
+      if (current && isTermName(current.term)) {
+        setCurrentYear(String(current.year));
+        setCurrentTerm(current.term);
       }
-      if (enr) {
-        setEnrollingYear(String(enr.year));
-        setEnrollingTerm(enr.term);
+      if (enrolling && isTermName(enrolling.term)) {
+        setEnrollingYear(String(enrolling.year));
+        setEnrollingTerm(enrolling.term);
       }
-    } catch (err: unknown) {
-      const message = err instanceof Error ? err.message : "Failed to load terms";
-      setError(message);
+    } catch (requestError: unknown) {
+      setError(errorMessage(requestError, "Failed to load terms"));
     }
   }, []);
 
@@ -60,337 +70,247 @@ export default function AdminTermsPage() {
     fetchTerms().finally(() => setLoading(false));
   }, [fetchTerms]);
 
-  const handleSubmit = async () => {
+  const openForm = () => {
+    setFormError(null);
+    setSaveMessage(null);
+    setFormOpen(true);
+  };
+
+  const handleSubmit = async (event: FormEvent<HTMLFormElement>) => {
+    event.preventDefault();
     setFormError(null);
 
-    const cy = parseInt(currentYear, 10);
-    const ey = parseInt(enrollingYear, 10);
+    const parsedCurrentYear = Number.parseInt(currentYear, 10);
+    const parsedEnrollingYear = Number.parseInt(enrollingYear, 10);
+    const currentCode = semesterCode(parsedCurrentYear, currentTerm);
+    const enrollingCode = semesterCode(parsedEnrollingYear, enrollingTerm);
 
-    if (!currentYear || !enrollingYear || isNaN(cy) || isNaN(ey)) {
-      setFormError("Both year fields are required");
+    if (!currentYear || !enrollingYear || Number.isNaN(parsedCurrentYear) || Number.isNaN(parsedEnrollingYear)) {
+      setFormError("Both year fields are required.");
       return;
     }
-
-    if (cy === ey && currentTerm === enrollingTerm) {
-      setFormError("Current and enrolling cannot be the same term");
+    if (parsedCurrentYear === parsedEnrollingYear && currentTerm === enrollingTerm) {
+      setFormError("Current and enrolling terms cannot be the same.");
       return;
     }
-
-    if (semesterCode(ey, enrollingTerm) <= semesterCode(cy, currentTerm)) {
-      setFormError("Enrolling term must be chronologically after current term");
+    if (currentCode === null || enrollingCode === null || enrollingCode <= currentCode) {
+      setFormError("The enrolling term must be chronologically after the current term.");
       return;
     }
 
     setSubmitting(true);
     try {
-      const updated = await api.updateTerms({
-        currentYear: cy,
-        currentTerm: currentTerm,
-        enrollingYear: ey,
-        enrollingTerm: enrollingTerm,
+      const updatedTerms = await api.updateTerms({
+        currentYear: parsedCurrentYear,
+        currentTerm,
+        enrollingYear: parsedEnrollingYear,
+        enrollingTerm,
       });
-      setTerms(updated);
+      setTerms(updatedTerms);
       setFormOpen(false);
-      setSaved(true);
-      setTimeout(() => setSaved(false), 2200);
-    } catch (err: unknown) {
-      const message = err instanceof Error ? err.message : "Failed to update terms";
-      setFormError(message);
+      setSaveMessage(`Saved: current ${formatTerm(currentTerm)} ${parsedCurrentYear}; enrolling ${formatTerm(enrollingTerm)} ${parsedEnrollingYear}.`);
+    } catch (requestError: unknown) {
+      setFormError(errorMessage(requestError, "Failed to update terms"));
     } finally {
       setSubmitting(false);
     }
   };
 
-  const openForm = () => {
-    setFormError(null);
-    setSaved(false);
-    setFormOpen(true);
-  };
-
-  const enrollingTermObj = terms.find((t) => t.isEnrolling);
-  const currentTermObj = terms.find((t) => t.isCurrent);
-  const currentCode = currentTermObj ? semesterCode(currentTermObj.year, currentTermObj.term) : 0;
+  const currentTermRecord = terms.find((term) => term.isCurrent);
+  const enrollingTermRecord = terms.find((term) => term.isEnrolling);
+  const currentCode = currentTermRecord ? semesterCode(currentTermRecord.year, currentTermRecord.term) : null;
 
   if (loading) {
     return <AdminPageSkeleton statCards={2} hasTable tableRows={4} />;
   }
 
+  const headerActions = (
+    <Button type="button" variant="outline" onClick={() => (formOpen ? setFormOpen(false) : openForm())} className="gap-2">
+      <Pencil />
+      {formOpen ? "Cancel" : "Update terms"}
+    </Button>
+  );
+
   if (error && terms.length === 0) {
     return (
-      <div className="flex-1 p-8 max-w-[1180px]">
+      <AdminPage>
+        <AdminPageHeader title="Terms management" description="Control the current and enrolling academic terms." actions={headerActions} />
         <ErrorMessage message={error} onRetry={fetchTerms} />
-      </div>
+      </AdminPage>
     );
   }
 
   return (
-    <div className="flex-1 p-8 max-w-[1180px]">
-      {/* Heading */}
-      <div className="mb-6">
-        <h1 className={`${displayStyles.sm} text-text-primary mb-1`}>Terms management</h1>
-        <p className={`${bodyStyles.md} text-text-muted`}>
-          Control which academic term is active and open for enrollment.
-        </p>
-      </div>
+    <AdminPage>
+      <AdminPageHeader title="Terms management" description="Control the current and enrolling academic terms." actions={headerActions} />
 
-      {/* Status summary cards */}
-      <div className="grid grid-cols-1 sm:grid-cols-2 gap-3.5 mb-7">
-        <Card className="p-4 border-success/20">
+      {error && <div className="mb-6"><ErrorMessage message={error} onRetry={fetchTerms} /></div>}
+
+      {saveMessage && (
+        <p className={`${bodyStyles.sm} mb-6 flex items-center gap-1.5 text-success`} role="status">
+          <Check className="size-3.5" />
+          {saveMessage}
+        </p>
+      )}
+
+      <AdminStatGrid columns={2}>
+        <Card className="border-success/20 p-4">
           <CardContent className="p-0">
-            <div className={`${labelStyles.sm} uppercase tracking-widest text-text-subtle mb-2.5`}>Enrolling Term</div>
-            <div className="flex items-center gap-3">
-              <span className="font-display font-semibold text-[20px] tracking-tight text-text-primary">
-                {enrollingTermObj ? `${capitalize(enrollingTermObj.term)} ${enrollingTermObj.year}` : "Not set"}
+            <p className={`${labelStyles.sm} mb-2 uppercase tracking-widest text-text-subtle`}>Enrolling term</p>
+            <div className="flex flex-wrap items-center gap-3">
+              <span className={`${headerStyles.md} text-text-primary`}>
+                {enrollingTermRecord ? `${formatTerm(enrollingTermRecord.term)} ${enrollingTermRecord.year}` : "Not set"}
               </span>
-              {enrollingTermObj && (
-                <span className="inline-flex items-center gap-1.5 text-[11px] font-semibold px-2.5 py-0.5 rounded-full bg-success/15 text-success">
-                  <span className="w-[5px] h-[5px] rounded-full bg-current" />
-                  Enrolling
-                </span>
-              )}
+              {enrollingTermRecord && statusBadge("Enrolling")}
             </div>
           </CardContent>
         </Card>
-        <Card className="p-4 border-accent/20">
+        <Card className="border-accent/20 p-4">
           <CardContent className="p-0">
-            <div className={`${labelStyles.sm} uppercase tracking-widest text-text-subtle mb-2.5`}>Current Term</div>
-            <span className="font-display font-semibold text-[20px] tracking-tight text-text-primary">
-              {currentTermObj ? `${capitalize(currentTermObj.term)} ${currentTermObj.year}` : "Not set"}
-            </span>
+            <p className={`${labelStyles.sm} mb-2 uppercase tracking-widest text-text-subtle`}>Current term</p>
+            <div className="flex flex-wrap items-center gap-3">
+              <span className={`${headerStyles.md} text-text-primary`}>
+                {currentTermRecord ? `${formatTerm(currentTermRecord.term)} ${currentTermRecord.year}` : "Not set"}
+              </span>
+              {currentTermRecord && statusBadge("Current")}
+            </div>
           </CardContent>
         </Card>
-      </div>
+      </AdminStatGrid>
 
-      {/* Table toolbar */}
-      <div className="flex items-center justify-between mb-3">
+      <div className="mb-3.5 flex items-center justify-between">
         <h2 className={`${headerStyles.xs} text-text-primary`}>All terms</h2>
-        <div className="flex items-center gap-2.5">
-          {saved && (
-            <span className="inline-flex items-center gap-1.5 text-[12px] font-semibold text-success animate-fade-in">
-              <Check className="w-3.5 h-3.5" />
-              Saved
-            </span>
-          )}
-          <Button variant="outline" onClick={() => (formOpen ? setFormOpen(false) : openForm())} className="gap-2">
-            <Pencil className="w-3.5 h-3.5" />
-            {formOpen ? "Cancel" : "Update Terms"}
-          </Button>
-        </div>
+        <span className={`${labelStyles.sm} font-mono text-text-subtle`}>{terms.length} configured</span>
       </div>
 
-      {/* Terms table */}
-      <Card className="overflow-hidden mb-3.5">
-        <CardContent className="p-0">
-          {/* Header */}
-          <div className="grid grid-cols-[1fr_108px_120px_1fr] px-[18px] py-2.5 bg-surface-raised border-b border-border">
-            <span className={`${labelStyles.sm} uppercase tracking-wider text-text-subtle`}>Term</span>
-            <span className={`${labelStyles.sm} uppercase tracking-wider text-text-subtle text-center`}>
-              Is Enrolling
-            </span>
-            <span className={`${labelStyles.sm} uppercase tracking-wider text-text-subtle text-center`}>
-              Is Current
-            </span>
-            <span className={`${labelStyles.sm} uppercase tracking-wider text-text-subtle text-right`}>
-              Updated At
-            </span>
-          </div>
-          {/* Rows */}
-          {terms.map((t, i) => {
-            const code = semesterCode(t.year, t.term);
-            const isPast = currentCode > 0 && code < currentCode;
-            return (
-              <div
-                key={t.termId}
-                className={`grid grid-cols-[1fr_108px_120px_1fr] px-[18px] py-3 items-center hover:bg-surface-raised transition-colors ${
-                  i < terms.length - 1 ? "border-b border-border" : ""
-                }`}
-              >
-                <div className="flex items-center gap-2.5">
-                  <Calendar
-                    className={`w-3.5 h-3.5 flex-none ${isPast ? "text-text-subtle" : "text-text-muted"}`}
-                  />
-                  <span
-                    className={`${labelStyles.lg} ${isPast ? "text-text-muted font-normal" : "text-text-primary font-medium"}`}
-                  >
-                    {capitalize(t.term)} {t.year}
-                  </span>
-                </div>
-                <div className="flex items-center justify-center">
-                  {t.isEnrolling ? (
-                    <span className="inline-flex items-center gap-1.5 text-[11px] font-semibold px-2 py-0.5 rounded-full bg-success/15 text-success">
-                      <span className="w-[5px] h-[5px] rounded-full bg-current" />
-                      Enrolling
-                    </span>
-                  ) : (
-                    <span className="text-text-subtle text-[16px]">—</span>
-                  )}
-                </div>
-                <div className="flex items-center justify-center">
-                  {t.isCurrent ? (
-                    <span className="inline-flex items-center gap-1.5 text-[11px] font-semibold px-2 py-0.5 rounded-full bg-success/15 text-success">
-                      <span className="w-[5px] h-[5px] rounded-full bg-current" />
-                      Active
-                    </span>
-                  ) : (
-                    <span className="text-text-subtle text-[16px]">—</span>
-                  )}
-                </div>
-                <div className="text-right">
-                  <span className={`${labelStyles.sm} font-mono text-text-subtle`}>
-                    {t.updatedAt
-                      ? new Date(t.updatedAt).toLocaleDateString("en-US", { month: "short", day: "numeric", year: "numeric" })
-                      : "—"}
-                  </span>
-                </div>
-              </div>
-            );
-          })}
-          {terms.length === 0 && (
-            <div className={`${bodyStyles.md} text-text-muted text-center py-8`}>No terms found</div>
-          )}
-        </CardContent>
-      </Card>
+      <AdminTable className="mb-3.5">
+        <div className="overflow-x-auto">
+          <table className="w-full text-left">
+            <thead className="border-b border-border bg-surface-raised">
+              <tr>
+                <th className={`${labelStyles.sm} px-4 py-2.5 uppercase tracking-wider text-text-subtle`}>Term</th>
+                <th className={`${labelStyles.sm} px-4 py-2.5 text-center uppercase tracking-wider text-text-subtle`}>Enrolling</th>
+                <th className={`${labelStyles.sm} px-4 py-2.5 text-center uppercase tracking-wider text-text-subtle`}>Current</th>
+                <th className={`${labelStyles.sm} px-4 py-2.5 text-right uppercase tracking-wider text-text-subtle`}>Updated</th>
+              </tr>
+            </thead>
+            <tbody>
+              {terms.map((term) => {
+                const code = semesterCode(term.year, term.term);
+                const isPast = currentCode !== null && code !== null && code < currentCode;
 
-      {/* Inline form */}
+                return (
+                  <tr key={term.termId} className="border-b border-border last:border-b-0 hover:bg-surface-raised">
+                    <td className="px-4 py-3">
+                      <div className="flex items-center gap-2.5">
+                        <Calendar className={`size-3.5 shrink-0 ${isPast ? "text-text-subtle" : "text-text-muted"}`} />
+                        <span className={`${labelStyles.lg} ${isPast ? "font-normal text-text-muted" : "font-medium text-text-primary"}`}>
+                          {formatTerm(term.term)} {term.year}
+                        </span>
+                      </div>
+                    </td>
+                    <td className="px-4 py-3 text-center">{term.isEnrolling ? statusBadge("Enrolling") : <span className="text-text-subtle">—</span>}</td>
+                    <td className="px-4 py-3 text-center">{term.isCurrent ? statusBadge("Current") : <span className="text-text-subtle">—</span>}</td>
+                    <td className={`${labelStyles.sm} px-4 py-3 text-right font-mono text-text-subtle`}>{formatUpdatedAt(term.updatedAt)}</td>
+                  </tr>
+                );
+              })}
+              {terms.length === 0 && (
+                <tr>
+                  <td colSpan={4} className={`${bodyStyles.md} px-4 py-8 text-center text-text-muted`}>No terms found.</td>
+                </tr>
+              )}
+            </tbody>
+          </table>
+        </div>
+      </AdminTable>
+
       {formOpen && (
-        <Card className="overflow-hidden animate-fade-in border-border-strong">
-          <div className="h-0.5 bg-primary" />
+        <Card className="animate-fade-in border-border-strong">
           <CardContent className="p-6">
-            {/* Form header */}
-            <div className="flex items-start justify-between gap-5 mb-5">
+            <div className="mb-5 flex items-start justify-between gap-5">
               <div>
-                <h3 className={`${headerStyles.xs} text-text-primary mb-1`}>Update term settings</h3>
+                <h2 className={`${headerStyles.xs} mb-1 text-text-primary`}>Update term settings</h2>
                 <p className={`${bodyStyles.sm} text-text-muted`}>
-                  Select the current and enrolling terms. Changes apply immediately on save.
+                  Changes apply immediately and change the default term used by Browse, Graph, and bookmark status.
                 </p>
               </div>
-              <Button variant="outline" size="icon-xs" onClick={() => setFormOpen(false)}>
-                <X className="w-3.5 h-3.5" />
+              <Button type="button" variant="outline" size="icon-xs" onClick={() => setFormOpen(false)} aria-label="Close term settings">
+                <X />
               </Button>
             </div>
 
-            {/* Form fields */}
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-6 mb-5">
-              {/* Current term */}
-              <div>
-                <label className={`${labelStyles.sm} uppercase tracking-wider text-text-muted block mb-2`}>
-                  Current term
-                </label>
-                <div className="flex gap-2">
-                  <div className="relative flex-1">
-                    <select
-                      value={currentTerm}
-                      onChange={(e) => setCurrentTerm(e.target.value)}
-                      aria-label="Current term semester"
-                      className="w-full py-2.5 pl-3 pr-8 rounded-lg bg-surface-raised border border-border text-text-primary text-[13.5px] cursor-pointer outline-none focus:border-primary focus:ring-2 focus:ring-primary/15 hover:border-border-strong appearance-none"
-                    >
-                      {TERM_OPTIONS.map((t) => (
-                        <option key={t} value={t}>
-                          {capitalize(t)}
-                        </option>
-                      ))}
-                    </select>
-                    <span className="absolute right-2.5 top-1/2 -translate-y-1/2 pointer-events-none text-text-muted">
-                      <svg
-                        width="12"
-                        height="12"
-                        viewBox="0 0 24 24"
-                        fill="none"
-                        stroke="currentColor"
-                        strokeWidth="2.5"
-                        strokeLinecap="round"
-                        strokeLinejoin="round"
-                      >
-                        <polyline points="6 9 12 15 18 9" />
-                      </svg>
-                    </span>
-                  </div>
-                  <input
-                    type="number"
-                    value={currentYear}
-                    onChange={(e) => setCurrentYear(e.target.value)}
-                    placeholder="Year"
-                    min={2020}
-                    max={2035}
-                    className="w-[78px] py-2.5 px-3 rounded-lg bg-surface-raised border border-border text-text-primary font-mono text-[13.5px] font-medium outline-none focus:border-primary focus:ring-2 focus:ring-primary/15 hover:border-border-strong [appearance:textfield] [&::-webkit-outer-spin-button]:appearance-none [&::-webkit-inner-spin-button]:appearance-none"
-                  />
-                </div>
-                <div className={`${labelStyles.sm} text-text-subtle mt-1.5`}>
-                  Preview:{" "}
-                  <span className="text-text-primary font-medium">
-                    {capitalize(currentTerm)} {currentYear}
-                  </span>
-                </div>
+            <form onSubmit={handleSubmit}>
+              <div className="mb-5 grid grid-cols-1 gap-6 md:grid-cols-2">
+                <TermFields
+                  id="current"
+                  label="Current term"
+                  term={currentTerm}
+                  year={currentYear}
+                  onTermChange={setCurrentTerm}
+                  onYearChange={setCurrentYear}
+                />
+                <TermFields
+                  id="enrolling"
+                  label="Enrolling term"
+                  term={enrollingTerm}
+                  year={enrollingYear}
+                  onTermChange={setEnrollingTerm}
+                  onYearChange={setEnrollingYear}
+                />
               </div>
 
-              {/* Enrolling term */}
-              <div>
-                <label className={`${labelStyles.sm} uppercase tracking-wider text-text-muted block mb-2`}>
-                  Enrolling term
-                </label>
-                <div className="flex gap-2">
-                  <div className="relative flex-1">
-                    <select
-                      value={enrollingTerm}
-                      onChange={(e) => setEnrollingTerm(e.target.value)}
-                      aria-label="Enrolling term semester"
-                      className="w-full py-2.5 pl-3 pr-8 rounded-lg bg-surface-raised border border-border text-text-primary text-[13.5px] cursor-pointer outline-none focus:border-primary focus:ring-2 focus:ring-primary/15 hover:border-border-strong appearance-none"
-                    >
-                      {TERM_OPTIONS.map((t) => (
-                        <option key={t} value={t}>
-                          {capitalize(t)}
-                        </option>
-                      ))}
-                    </select>
-                    <span className="absolute right-2.5 top-1/2 -translate-y-1/2 pointer-events-none text-text-muted">
-                      <svg
-                        width="12"
-                        height="12"
-                        viewBox="0 0 24 24"
-                        fill="none"
-                        stroke="currentColor"
-                        strokeWidth="2.5"
-                        strokeLinecap="round"
-                        strokeLinejoin="round"
-                      >
-                        <polyline points="6 9 12 15 18 9" />
-                      </svg>
-                    </span>
-                  </div>
-                  <input
-                    type="number"
-                    value={enrollingYear}
-                    onChange={(e) => setEnrollingYear(e.target.value)}
-                    placeholder="Year"
-                    min={2020}
-                    max={2035}
-                    className="w-[78px] py-2.5 px-3 rounded-lg bg-surface-raised border border-border text-text-primary font-mono text-[13.5px] font-medium outline-none focus:border-primary focus:ring-2 focus:ring-primary/15 hover:border-border-strong [appearance:textfield] [&::-webkit-outer-spin-button]:appearance-none [&::-webkit-inner-spin-button]:appearance-none"
-                  />
-                </div>
-                <div className={`${labelStyles.sm} text-text-subtle mt-1.5`}>
-                  Preview:{" "}
-                  <span className="text-text-primary font-medium">
-                    {capitalize(enrollingTerm)} {enrollingYear}
-                  </span>
-                </div>
+              {formError && <p className={`${bodyStyles.md} mb-4 text-destructive`} role="alert">{formError}</p>}
+
+              <div className="flex items-center gap-2.5 border-t border-border pt-4">
+                <Button type="submit" disabled={submitting}>{submitting ? "Saving…" : "Save changes"}</Button>
+                <Button type="button" variant="outline" onClick={() => setFormOpen(false)}>Cancel</Button>
               </div>
-            </div>
-
-            {/* Error */}
-            {formError && <div className={`${bodyStyles.md} text-destructive mb-4`}>{formError}</div>}
-
-            {/* Actions */}
-            <div className="flex items-center gap-2.5 pt-4 border-t border-border">
-              <Button onClick={handleSubmit} disabled={submitting}>
-                {submitting ? "Saving…" : "Save changes"}
-              </Button>
-              <Button variant="outline" onClick={() => setFormOpen(false)}>
-                Cancel
-              </Button>
-            </div>
+            </form>
           </CardContent>
         </Card>
       )}
+    </AdminPage>
+  );
+}
+
+type TermFieldsProps = {
+  id: string;
+  label: string;
+  term: TermName;
+  year: string;
+  onTermChange: (term: TermName) => void;
+  onYearChange: (year: string) => void;
+};
+
+function TermFields({ id, label, term, year, onTermChange, onYearChange }: TermFieldsProps) {
+  return (
+    <div>
+      <label htmlFor={`${id}-term`} className={`${labelStyles.sm} mb-2 block uppercase tracking-wider text-text-muted`}>{label}</label>
+      <div className="flex gap-2">
+        <select
+          id={`${id}-term`}
+          value={term}
+          onChange={(event) => onTermChange(event.target.value as TermName)}
+          className="h-8 min-w-0 flex-1 rounded-lg border border-border bg-surface-raised px-2.5 text-text-primary outline-none focus-visible:border-ring focus-visible:ring-3 focus-visible:ring-ring/50"
+        >
+          {TERM_OPTIONS.map((option) => <option key={option} value={option}>{formatTerm(option)}</option>)}
+        </select>
+        <Input
+          id={`${id}-year`}
+          type="number"
+          value={year}
+          onChange={(event) => onYearChange(event.target.value)}
+          placeholder="Year"
+          min={2020}
+          max={2035}
+          className="w-24 font-mono"
+          aria-label={`${label} year`}
+        />
+      </div>
+      <p className={`${labelStyles.sm} mt-1.5 text-text-subtle`}>
+        Preview: <span className="font-medium text-text-primary">{formatTerm(term)} {year || "year"}</span>
+      </p>
     </div>
   );
 }
