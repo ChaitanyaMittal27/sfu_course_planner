@@ -34,6 +34,9 @@ export default function CanonicalAnalyticsPage({ kind }: { kind: AnalyticsKind }
   const [resolved, setResolved] = useState<ResolvedCourseRoute | null>(null);
   const [departments, setDepartments] = useState<Department[]>([]);
   const [courses, setCourses] = useState<Course[]>([]);
+  const [selectedDepartmentId, setSelectedDepartmentId] = useState<number | null>(null);
+  const [selectedCourseId, setSelectedCourseId] = useState<number | null>(null);
+  const [isLoadingCourses, setIsLoadingCourses] = useState(false);
   const [data, setData] = useState<GradeDistribution | EnrollmentDataPoint[] | null>(null);
   const [error, setError] = useState<string | null>(null);
 
@@ -47,6 +50,12 @@ export default function CanonicalAnalyticsPage({ kind }: { kind: AnalyticsKind }
         setResolved(course);
         setDepartments(depts);
         setCourses([course.course]);
+        setSelectedDepartmentId(course.deptId);
+        setSelectedCourseId(course.courseId);
+
+        void api.getCourses(course.deptId).then((loadedCourses) => {
+          if (active) setCourses(loadedCourses);
+        }).catch(() => undefined);
       }
     }).catch(() => active && setError("Failed to resolve this course link."));
     return () => { active = false; };
@@ -62,20 +71,36 @@ export default function CanonicalAnalyticsPage({ kind }: { kind: AnalyticsKind }
     return () => { active = false; };
   }, [kind, range, resolved]);
 
-  const selectedDepartment = resolved?.department;
-  const selectedCourse = resolved?.course;
+  const selectedDepartment = departments.find((department) => department.deptId === selectedDepartmentId);
+  const selectedCourse = courses.find((course) => course.courseId === selectedCourseId);
+
   const handleDepartmentChange = async (value: string) => {
     const deptId = Number(value);
     const department = departments.find((item) => item.deptId === deptId);
     if (!department) return;
-    setCourses(await api.getCourses(deptId));
-    setResolved(null);
-    setData(null);
+
+    setSelectedDepartmentId(deptId);
+    setSelectedCourseId(null);
+    setCourses([]);
+    setIsLoadingCourses(true);
+
+    try {
+      setCourses(await api.getCourses(deptId));
+    } catch {
+      setError("Failed to load courses for this department.");
+    } finally {
+      setIsLoadingCourses(false);
+    }
   };
+
   const handleCourseChange = (value: string) => {
     const course = courses.find((item) => item.courseId === Number(value));
-    const department = departments.find((item) => item.deptId === course?.deptId);
-    if (course && department) router.push(graphCourseHref(kind, department.deptCode, course.courseNumber, kind === "grades" ? undefined : { range }));
+    const department = departments.find((item) => item.deptId === selectedDepartmentId);
+
+    if (course && department) {
+      setSelectedCourseId(course.courseId);
+      router.push(graphCourseHref(kind, department.deptCode, course.courseNumber, kind === "grades" ? undefined : { range }));
+    }
   };
 
   if (!identity) return <PageContainer><ErrorMessage message="This analytics link is invalid." /></PageContainer>;
@@ -84,7 +109,17 @@ export default function CanonicalAnalyticsPage({ kind }: { kind: AnalyticsKind }
 
   return <PageContainer>
     <div className="mb-6"><h1 className={`${displayStyles.sm} text-text-primary`}>{content[kind].title}</h1><p className={`${bodyStyles.md} text-text-muted mt-1`}>{content[kind].description}</p></div>
-    <AnalyticsCourseSelector departments={departments} courses={courses} selectedDepartmentId={String(resolved.deptId)} selectedCourseId={String(resolved.courseId)} selectedDepartment={selectedDepartment} selectedCourse={selectedCourse} isLoadingCourses={false} onDepartmentChange={handleDepartmentChange} onCourseChange={handleCourseChange}>
+    <AnalyticsCourseSelector
+      departments={departments}
+      courses={courses}
+      selectedDepartmentId={selectedDepartmentId ? String(selectedDepartmentId) : null}
+      selectedCourseId={selectedCourseId ? String(selectedCourseId) : null}
+      selectedDepartment={selectedDepartment}
+      selectedCourse={selectedCourse}
+      isLoadingCourses={isLoadingCourses}
+      onDepartmentChange={handleDepartmentChange}
+      onCourseChange={handleCourseChange}
+    >
       {kind !== "grades" && <div className="border-t border-accent/20 pt-4"><span className={`block ${labelStyles.md} text-text-primary mb-2`}>Time range</span><div className="flex gap-2">{["1yr", "3yr", "5yr"].map((value) => <button key={value} onClick={() => setRange(value)} className={`rounded-lg px-4 py-2 ${labelStyles.lg} ${range === value ? "bg-primary text-primary-foreground" : "bg-surface-raised text-text-muted"}`}>{value}</button>)}</div></div>}
     </AnalyticsCourseSelector>
     {!data && <LoadingSpinner />}
