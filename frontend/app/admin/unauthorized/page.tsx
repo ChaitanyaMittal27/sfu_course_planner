@@ -1,14 +1,12 @@
 "use client";
 
-import { useRouter } from "next/navigation";
+import Link from "next/link";
 import { ShieldAlert, Home } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
 import { displayStyles, bodyStyles } from "@/app/fonts";
 
 export default function AdminUnauthorizedPage() {
-  const router = useRouter();
-
   return (
     <div className="min-h-screen flex items-center justify-center px-4">
       <Card className="max-w-md w-full p-8 text-center">
@@ -18,17 +16,15 @@ export default function AdminUnauthorizedPage() {
           </div>
 
           <div>
-            <h1 className={`${displayStyles.sm} text-text-primary mb-2`}>
-              🚨 STOP RIGHT THERE!
-            </h1>
+            <h1 className={`${displayStyles.sm} text-text-primary mb-2`}>Access denied</h1>
             <p className={`${bodyStyles.lg} text-text-muted`}>
-              You didn&apos;t say the magic word. This area is for admins only.
+              Your account does not have permission to access the administration area.
             </p>
           </div>
 
-          <Button size="lg" className="gap-2" onClick={() => router.push("/")}>
-            <Home className="w-4 h-4" />
-            Take me home
+          <Button size="lg" className="gap-2" render={<Link href="/" />}>
+            <Home />
+            Return to course planner
           </Button>
         </CardContent>
       </Card>
