@@ -1,0 +1,75 @@
+/**
+ * =============================================================================
+ * SUPABASE SERVER CLIENT
+ * =============================================================================
+ *
+ * Purpose:
+ * Creates a Supabase client for SERVER-SIDE usage (middleware, server components).
+ * Unlike the browser client, this reads cookies from the request context.
+ *
+ * Usage:
+ * - Import in Server Components (app router)
+ * - Import in Server Actions
+ * - Call createClient() to get authenticated instance
+ *
+ * Why Factory Function?
+ * - Each request needs its own client instance
+ * - Cannot share one instance (unlike browser client)
+ * - Each client reads cookies from its specific request
+ *
+ * Cookie Handling:
+ * - Reads session cookies from incoming request
+ * - Writes updated cookies to response (token refresh)
+ * - Can write cookies when the calling server context permits it
+ *
+ * Note:
+ * - DO NOT use in client components
+ * - For client-side, use lib/supabase/client.ts instead
+ * =============================================================================
+ */
+
+import { createServerClient } from "@supabase/ssr";
+import { cookies } from "next/headers";
+import { supabaseAnonKey, supabaseAuthCookieName, supabasePublicUrl } from "@/lib/supabase/config";
+
+/**
+ * Creates a Supabase client for server-side operations
+ *
+ * How it works:
+ * 1. Reads Supabase session from request cookies
+ * 2. Creates authenticated client if session exists
+ * 3. Handles token refresh automatically
+ * 4. Writes updated cookies back to response
+ *
+ * @returns Authenticated Supabase client instance
+ *
+ * Example usage in Server Component:
+ * ```typescript
+ * const supabase = createClient();
+ * const { data: { session } } = await supabase.auth.getSession();
+ * ```
+ */
+export async function createClient() {
+  const cookieStore = await cookies();
+
+  const supabaseUrl = process.env.SUPABASE_INTERNAL_URL ?? supabasePublicUrl;
+
+  return createServerClient(supabaseUrl, supabaseAnonKey, {
+    cookieOptions: { name: supabaseAuthCookieName },
+    cookies: {
+      // Read cookie from request
+      getAll() {
+        return cookieStore.getAll();
+      },
+      // Write cookie to response
+      setAll(cookiesToSet) {
+        try {
+          cookiesToSet.forEach(({ name, value, options }) => cookieStore.set(name, value, options));
+        } catch {
+          // Cookie setting can fail in Server Components.
+          // Proxy code uses lib/supabase/proxy.ts instead.
+        }
+      },
+    },
+  });
+}

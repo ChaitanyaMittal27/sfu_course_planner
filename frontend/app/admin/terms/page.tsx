@@ -1,0 +1,316 @@
+"use client";
+
+import { type FormEvent, useCallback, useEffect, useState } from "react";
+import { Calendar, Check, Pencil, X } from "lucide-react";
+import { api, AdminTerm } from "@/lib/api";
+import { formatTerm, isTermName, semesterCode, TERM_OPTIONS, type TermName } from "@/lib/semester";
+import { Card, CardContent } from "@/components/ui/card";
+import { Button } from "@/components/ui/button";
+import { Badge } from "@/components/ui/badge";
+import { Input } from "@/components/ui/input";
+import { AdminPage, AdminPageHeader, AdminStatGrid, AdminTable } from "@/components/admin/AdminPage";
+import AdminPageSkeleton from "@/components/admin/AdminPageSkeleton";
+import ErrorMessage from "@/components/feedback/ErrorMessage";
+import { bodyStyles, headerStyles, labelStyles } from "@/app/fonts";
+
+function errorMessage(error: unknown, fallback: string) {
+  return error instanceof Error ? error.message : fallback;
+}
+
+function formatUpdatedAt(updatedAt: string | null) {
+  return updatedAt
+    ? new Date(updatedAt).toLocaleDateString("en-US", { month: "short", day: "numeric", year: "numeric" })
+    : "—";
+}
+
+function statusBadge(label: string) {
+  return (
+    <Badge className="border-transparent bg-success/15 text-success">
+      <span className="size-1.5 rounded-full bg-current" />
+      {label}
+    </Badge>
+  );
+}
+
+export default function AdminTermsPage() {
+  const [terms, setTerms] = useState<AdminTerm[]>([]);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
+  const [formOpen, setFormOpen] = useState(false);
+  const [currentYear, setCurrentYear] = useState("");
+  const [currentTerm, setCurrentTerm] = useState<TermName>("spring");
+  const [enrollingYear, setEnrollingYear] = useState("");
+  const [enrollingTerm, setEnrollingTerm] = useState<TermName>("summer");
+  const [formError, setFormError] = useState<string | null>(null);
+  const [saveMessage, setSaveMessage] = useState<string | null>(null);
+  const [submitting, setSubmitting] = useState(false);
+
+  const fetchTerms = useCallback(async () => {
+    try {
+      setError(null);
+      const data = await api.getAdminTerms();
+      setTerms(data);
+
+      const current = data.find((term) => term.isCurrent);
+      const enrolling = data.find((term) => term.isEnrolling);
+      if (current && isTermName(current.term)) {
+        setCurrentYear(String(current.year));
+        setCurrentTerm(current.term);
+      }
+      if (enrolling && isTermName(enrolling.term)) {
+        setEnrollingYear(String(enrolling.year));
+        setEnrollingTerm(enrolling.term);
+      }
+    } catch (requestError: unknown) {
+      setError(errorMessage(requestError, "Failed to load terms"));
+    }
+  }, []);
+
+  useEffect(() => {
+    fetchTerms().finally(() => setLoading(false));
+  }, [fetchTerms]);
+
+  const openForm = () => {
+    setFormError(null);
+    setSaveMessage(null);
+    setFormOpen(true);
+  };
+
+  const handleSubmit = async (event: FormEvent<HTMLFormElement>) => {
+    event.preventDefault();
+    setFormError(null);
+
+    const parsedCurrentYear = Number.parseInt(currentYear, 10);
+    const parsedEnrollingYear = Number.parseInt(enrollingYear, 10);
+    const currentCode = semesterCode(parsedCurrentYear, currentTerm);
+    const enrollingCode = semesterCode(parsedEnrollingYear, enrollingTerm);
+
+    if (!currentYear || !enrollingYear || Number.isNaN(parsedCurrentYear) || Number.isNaN(parsedEnrollingYear)) {
+      setFormError("Both year fields are required.");
+      return;
+    }
+    if (parsedCurrentYear === parsedEnrollingYear && currentTerm === enrollingTerm) {
+      setFormError("Current and enrolling terms cannot be the same.");
+      return;
+    }
+    if (currentCode === null || enrollingCode === null || enrollingCode <= currentCode) {
+      setFormError("The enrolling term must be chronologically after the current term.");
+      return;
+    }
+
+    setSubmitting(true);
+    try {
+      const updatedTerms = await api.updateTerms({
+        currentYear: parsedCurrentYear,
+        currentTerm,
+        enrollingYear: parsedEnrollingYear,
+        enrollingTerm,
+      });
+      setTerms(updatedTerms);
+      setFormOpen(false);
+      setSaveMessage(`Saved: current ${formatTerm(currentTerm)} ${parsedCurrentYear}; enrolling ${formatTerm(enrollingTerm)} ${parsedEnrollingYear}.`);
+    } catch (requestError: unknown) {
+      setFormError(errorMessage(requestError, "Failed to update terms"));
+    } finally {
+      setSubmitting(false);
+    }
+  };
+
+  const currentTermRecord = terms.find((term) => term.isCurrent);
+  const enrollingTermRecord = terms.find((term) => term.isEnrolling);
+  const currentCode = currentTermRecord ? semesterCode(currentTermRecord.year, currentTermRecord.term) : null;
+
+  if (loading) {
+    return <AdminPageSkeleton statCards={2} hasTable tableRows={4} />;
+  }
+
+  const headerActions = (
+    <Button type="button" variant="outline" onClick={() => (formOpen ? setFormOpen(false) : openForm())} className="gap-2">
+      <Pencil />
+      {formOpen ? "Cancel" : "Update terms"}
+    </Button>
+  );
+
+  if (error && terms.length === 0) {
+    return (
+      <AdminPage>
+        <AdminPageHeader title="Terms management" description="Control the current and enrolling academic terms." actions={headerActions} />
+        <ErrorMessage message={error} onRetry={fetchTerms} />
+      </AdminPage>
+    );
+  }
+
+  return (
+    <AdminPage>
+      <AdminPageHeader title="Terms management" description="Control the current and enrolling academic terms." actions={headerActions} />
+
+      {error && <div className="mb-6"><ErrorMessage message={error} onRetry={fetchTerms} /></div>}
+
+      {saveMessage && (
+        <p className={`${bodyStyles.sm} mb-6 flex items-center gap-1.5 text-success`} role="status">
+          <Check className="size-3.5" />
+          {saveMessage}
+        </p>
+      )}
+
+      <AdminStatGrid columns={2}>
+        <Card className="border-success/20 p-4">
+          <CardContent className="p-0">
+            <p className={`${labelStyles.sm} mb-2 uppercase tracking-widest text-text-subtle`}>Enrolling term</p>
+            <div className="flex flex-wrap items-center gap-3">
+              <span className={`${headerStyles.md} text-text-primary`}>
+                {enrollingTermRecord ? `${formatTerm(enrollingTermRecord.term)} ${enrollingTermRecord.year}` : "Not set"}
+              </span>
+              {enrollingTermRecord && statusBadge("Enrolling")}
+            </div>
+          </CardContent>
+        </Card>
+        <Card className="border-accent/20 p-4">
+          <CardContent className="p-0">
+            <p className={`${labelStyles.sm} mb-2 uppercase tracking-widest text-text-subtle`}>Current term</p>
+            <div className="flex flex-wrap items-center gap-3">
+              <span className={`${headerStyles.md} text-text-primary`}>
+                {currentTermRecord ? `${formatTerm(currentTermRecord.term)} ${currentTermRecord.year}` : "Not set"}
+              </span>
+              {currentTermRecord && statusBadge("Current")}
+            </div>
+          </CardContent>
+        </Card>
+      </AdminStatGrid>
+
+      <div className="mb-3.5 flex items-center justify-between">
+        <h2 className={`${headerStyles.xs} text-text-primary`}>All terms</h2>
+        <span className={`${labelStyles.sm} font-mono text-text-subtle`}>{terms.length} configured</span>
+      </div>
+
+      <AdminTable className="mb-3.5">
+        <div className="overflow-x-auto">
+          <table className="w-full text-left">
+            <thead className="border-b border-border bg-surface-raised">
+              <tr>
+                <th className={`${labelStyles.sm} px-4 py-2.5 uppercase tracking-wider text-text-subtle`}>Term</th>
+                <th className={`${labelStyles.sm} px-4 py-2.5 text-center uppercase tracking-wider text-text-subtle`}>Enrolling</th>
+                <th className={`${labelStyles.sm} px-4 py-2.5 text-center uppercase tracking-wider text-text-subtle`}>Current</th>
+                <th className={`${labelStyles.sm} px-4 py-2.5 text-right uppercase tracking-wider text-text-subtle`}>Updated</th>
+              </tr>
+            </thead>
+            <tbody>
+              {terms.map((term) => {
+                const code = semesterCode(term.year, term.term);
+                const isPast = currentCode !== null && code !== null && code < currentCode;
+
+                return (
+                  <tr key={term.termId} className="border-b border-border last:border-b-0 hover:bg-surface-raised">
+                    <td className="px-4 py-3">
+                      <div className="flex items-center gap-2.5">
+                        <Calendar className={`size-3.5 shrink-0 ${isPast ? "text-text-subtle" : "text-text-muted"}`} />
+                        <span className={`${labelStyles.lg} ${isPast ? "font-normal text-text-muted" : "font-medium text-text-primary"}`}>
+                          {formatTerm(term.term)} {term.year}
+                        </span>
+                      </div>
+                    </td>
+                    <td className="px-4 py-3 text-center">{term.isEnrolling ? statusBadge("Enrolling") : <span className="text-text-subtle">—</span>}</td>
+                    <td className="px-4 py-3 text-center">{term.isCurrent ? statusBadge("Current") : <span className="text-text-subtle">—</span>}</td>
+                    <td className={`${labelStyles.sm} px-4 py-3 text-right font-mono text-text-subtle`}>{formatUpdatedAt(term.updatedAt)}</td>
+                  </tr>
+                );
+              })}
+              {terms.length === 0 && (
+                <tr>
+                  <td colSpan={4} className={`${bodyStyles.md} px-4 py-8 text-center text-text-muted`}>No terms found.</td>
+                </tr>
+              )}
+            </tbody>
+          </table>
+        </div>
+      </AdminTable>
+
+      {formOpen && (
+        <Card className="animate-fade-in border-border-strong">
+          <CardContent className="p-6">
+            <div className="mb-5 flex items-start justify-between gap-5">
+              <div>
+                <h2 className={`${headerStyles.xs} mb-1 text-text-primary`}>Update term settings</h2>
+                <p className={`${bodyStyles.sm} text-text-muted`}>
+                  Changes apply immediately and change the default term used by Browse, Graph, and bookmark status.
+                </p>
+              </div>
+              <Button type="button" variant="outline" size="icon-xs" onClick={() => setFormOpen(false)} aria-label="Close term settings">
+                <X />
+              </Button>
+            </div>
+
+            <form onSubmit={handleSubmit}>
+              <div className="mb-5 grid grid-cols-1 gap-6 md:grid-cols-2">
+                <TermFields
+                  id="current"
+                  label="Current term"
+                  term={currentTerm}
+                  year={currentYear}
+                  onTermChange={setCurrentTerm}
+                  onYearChange={setCurrentYear}
+                />
+                <TermFields
+                  id="enrolling"
+                  label="Enrolling term"
+                  term={enrollingTerm}
+                  year={enrollingYear}
+                  onTermChange={setEnrollingTerm}
+                  onYearChange={setEnrollingYear}
+                />
+              </div>
+
+              {formError && <p className={`${bodyStyles.md} mb-4 text-destructive`} role="alert">{formError}</p>}
+
+              <div className="flex items-center gap-2.5 border-t border-border pt-4">
+                <Button type="submit" disabled={submitting}>{submitting ? "Saving…" : "Save changes"}</Button>
+                <Button type="button" variant="outline" onClick={() => setFormOpen(false)}>Cancel</Button>
+              </div>
+            </form>
+          </CardContent>
+        </Card>
+      )}
+    </AdminPage>
+  );
+}
+
+type TermFieldsProps = {
+  id: string;
+  label: string;
+  term: TermName;
+  year: string;
+  onTermChange: (term: TermName) => void;
+  onYearChange: (year: string) => void;
+};
+
+function TermFields({ id, label, term, year, onTermChange, onYearChange }: TermFieldsProps) {
+  return (
+    <div>
+      <label htmlFor={`${id}-term`} className={`${labelStyles.sm} mb-2 block uppercase tracking-wider text-text-muted`}>{label}</label>
+      <div className="flex gap-2">
+        <select
+          id={`${id}-term`}
+          value={term}
+          onChange={(event) => onTermChange(event.target.value as TermName)}
+          className="h-8 min-w-0 flex-1 rounded-lg border border-border bg-surface-raised px-2.5 text-text-primary outline-none focus-visible:border-ring focus-visible:ring-3 focus-visible:ring-ring/50"
+        >
+          {TERM_OPTIONS.map((option) => <option key={option} value={option}>{formatTerm(option)}</option>)}
+        </select>
+        <Input
+          id={`${id}-year`}
+          type="number"
+          value={year}
+          onChange={(event) => onYearChange(event.target.value)}
+          placeholder="Year"
+          min={2020}
+          max={2035}
+          className="w-24 font-mono"
+          aria-label={`${label} year`}
+        />
+      </div>
+      <p className={`${labelStyles.sm} mt-1.5 text-text-subtle`}>
+        Preview: <span className="font-medium text-text-primary">{formatTerm(term)} {year || "year"}</span>
+      </p>
+    </div>
+  );
+}
