@@ -17,6 +17,7 @@
 - Keep authorization checks server-side on every mutation. Bookmarks are scoped to the authenticated UUID and their DB uniqueness is `(dept_id, user_id, course_id, semester_code, section)`.
 - Terms drive the current/enrolling semester and CourseSys history. Use `SemesterUtil` rather than duplicating SFU semester-code arithmetic (spring/summer/fall digits 1/4/7).
 - The scheduled digest runs at 00:05 `America/Vancouver` and can also be triggered by an admin endpoint. It fetches external CourseSys data and sends Resend email, so treat changes there and to the admin test endpoint as production-affecting.
+- Admin health checks are authenticated reachability checks for the database and external services; keep their outbound requests bounded with explicit timeouts. They are not delivery verification for Resend.
 - Backend configuration is environment-only: `DB_URL_NEW`, `DB_USER_NEW`, `DB_PASS_NEW`, `SUPABASE_URL_NEW`, `SUPABASE_KEY_NEW`, and `RESEND_API_KEY`; `SERVER_PORT` defaults to 5000. Never commit values.
 - `backend/.env.local` is an ignored Docker/runtime environment file, not an automatic Spring Boot configuration source. Load its values into the shell for manual Gradle/JAR runs.
 - Springdoc serves the generated public API reference at `/api-docs` and its OpenAPI JSON at `/v3/api-docs`. Keep public/user controller annotations and API DTO schemas accurate; `/api/admin/**` controllers are intentionally `@Hidden` because they are internal operations.
