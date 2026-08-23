@@ -6,6 +6,8 @@
 
 package com.example.courseplanner.dto;
 
+import com.fasterxml.jackson.annotation.JsonProperty;
+
 public class ApiCourseOfferingDTO {
     // Section identity
     private String section;        // D100
@@ -75,6 +77,7 @@ public class ApiCourseOfferingDTO {
     public void setSemesterCode(Long semesterCode) {
         this.semesterCode = semesterCode;
     }
+    @JsonProperty("isEnrolling")
     public boolean isEnrolling() {
         return isEnrolling;
     }
