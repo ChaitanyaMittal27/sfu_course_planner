@@ -2,6 +2,7 @@
 
 This is a product-hardening backlog derived from the repository audit. It is ordered by expected risk reduction and enabling value; it is not a release plan.
 
+0. ratemyprof integration
 1. Add automated backend tests for semesters, authorization, bookmarks, terms, CourseSys parsing, and notifications.
 2. Upgrade the backend to Java 21 LTS and Spring Boot 3.5.x after core tests exist; align local, Docker, and Elastic Beanstalk runtimes.
 3. Audit end-to-end frontend/backend logic flows—especially authentication, redirects, authorization, and duplicated state ownership—and add regression coverage for the inconsistencies found.
