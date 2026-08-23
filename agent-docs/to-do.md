@@ -16,8 +16,8 @@ This is a product-hardening backlog derived from the repository audit. It is ord
 11. Decide and implement inbound support-email handling: a managed mailbox workflow or inbound-email/webhook ingestion into the matching ticket thread.
 12. Track support and digest email outcomes explicitly; do not equate an attempted Resend call with successful delivery.
 13. Add an explicit, role-aware Admin navigation link for administrators while retaining backend role checks.
+14. Complete a frontend accessibility and responsive-design pass: keyboard-operable interactive rows, reduced-motion support, breakpoint coverage, and manual testing on narrow/mobile layouts.
 15. Decide whether the backend remains JAR-on-Elastic-Beanstalk or becomes Docker-on-Elastic-Beanstalk/ECR.
-16. Document the final Docker, Supabase, and local-development workflow in `README.md` after the local Dashboard flow is verified.
 17. Add frontend component tests and a small end-to-end suite for critical user flows.
 18. Standardize Python ingestion-script configuration, credential handling, execution instructions, and data-safety expectations.
 19. Review and test the Supabase `auth.users` SQL dependency used by admin reporting, including required database permissions.
