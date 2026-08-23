@@ -4,7 +4,7 @@ import "./globals.css";
 import { NuqsAdapter } from "nuqs/adapters/next/app";
 import { AuthProvider } from "@/contexts/AuthContext";
 import { Analytics } from "@vercel/analytics/react";
-import AppShell from "@/components/AppShell";
+import AppShell from "@/components/layout/AppShell";
 
 export const metadata: Metadata = {
   title: "SFU Course Planner — Plan Properly. Regret Less.",

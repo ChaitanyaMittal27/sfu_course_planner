@@ -3,8 +3,8 @@
 /* Legal copy intentionally preserves its original punctuation and wording. */
 /* eslint-disable react/no-unescaped-entities */
 
-import LoadingSpinner from "@/components/LoadingSpinner";
-import PageContainer from "@/components/PageContainer";
+import LoadingSpinner from "@/components/feedback/LoadingSpinner";
+import PageContainer from "@/components/layout/PageContainer";
 import { Suspense } from "react";
 import { Card } from "@/components/ui/card";
 import { displayStyles, headerStyles, bodyStyles } from "@/app/fonts";

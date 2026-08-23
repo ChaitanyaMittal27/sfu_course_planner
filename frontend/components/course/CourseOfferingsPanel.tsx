@@ -2,9 +2,9 @@
 
 import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
-import ErrorMessage from "@/components/ErrorMessage";
-import LoadingSpinner from "@/components/LoadingSpinner";
-import OfferingsTable from "@/components/OfferingsTable";
+import ErrorMessage from "@/components/feedback/ErrorMessage";
+import LoadingSpinner from "@/components/feedback/LoadingSpinner";
+import OfferingsTable from "@/components/course/OfferingsTable";
 import { Card } from "@/components/ui/card";
 import { bodyStyles, headerStyles } from "@/app/fonts";
 import { api } from "@/lib/api";

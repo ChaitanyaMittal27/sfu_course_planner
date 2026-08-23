@@ -1,52 +1,68 @@
 "use client";
 
-import { useState, useEffect } from "react";
+import { useEffect, useSyncExternalStore } from "react";
+
+type Theme = "light" | "dark";
+
+const THEME_EVENT = "sfu-theme-change";
+
+function applyTheme(theme: Theme) {
+  const root = document.documentElement;
+  root.classList.toggle("dark", theme === "dark");
+  root.classList.toggle("light", theme === "light");
+}
+
+function subscribeToTheme(listener: () => void) {
+  window.addEventListener("storage", listener);
+  window.addEventListener(THEME_EVENT, listener);
+
+  return () => {
+    window.removeEventListener("storage", listener);
+    window.removeEventListener(THEME_EVENT, listener);
+  };
+}
+
+function getThemeSnapshot(): Theme {
+  return localStorage.getItem("theme") === "light" ? "light" : "dark";
+}
+
+function getServerThemeSnapshot(): Theme {
+  return "dark";
+}
+
+function subscribeToMount() {
+  return () => undefined;
+}
+
+function getMountedSnapshot() {
+  return true;
+}
+
+function getServerMountedSnapshot() {
+  return false;
+}
+
+function saveTheme(theme: Theme) {
+  localStorage.setItem("theme", theme);
+  window.dispatchEvent(new Event(THEME_EVENT));
+}
 
 export function useTheme() {
-  const [theme, setTheme] = useState<"light" | "dark">("dark");
-  const [mounted, setMounted] = useState(false);
+  const theme = useSyncExternalStore(subscribeToTheme, getThemeSnapshot, getServerThemeSnapshot);
+  const mounted = useSyncExternalStore(subscribeToMount, getMountedSnapshot, getServerMountedSnapshot);
 
   useEffect(() => {
-    // Mark as mounted
-    setMounted(true);
-
-    // Get saved theme or default to dark
-    const savedTheme = localStorage.getItem("theme") as "light" | "dark" | null;
-    const initialTheme = savedTheme || "dark";
-
-    setTheme(initialTheme);
-
-    // Apply theme immediately
-    applyTheme(initialTheme);
-  }, []);
-
-  const applyTheme = (newTheme: "light" | "dark") => {
-    const root = document.documentElement;
-
-    // For Tailwind v4, we need to be more explicit
-    if (newTheme === "dark") {
-      root.classList.add("dark");
-      root.classList.remove("light");
-    } else {
-      root.classList.add("light");
-      root.classList.remove("dark");
-    }
-  };
+    applyTheme(theme);
+  }, [theme]);
 
   const toggleTheme = () => {
     if (!mounted) return;
-
-    const newTheme = theme === "light" ? "dark" : "light";
-    setTheme(newTheme);
-    localStorage.setItem("theme", newTheme);
-    applyTheme(newTheme);
+    saveTheme(theme === "light" ? "dark" : "light");
   };
 
-  const setThemeTo = (newTheme: "light" | "dark") => {
+  const setThemeTo = (newTheme: Theme) => {
     if (!mounted) return;
-    setTheme(newTheme);
-    localStorage.setItem("theme", newTheme);
-    applyTheme(newTheme);
+    saveTheme(newTheme);
   };
 
   return { theme, toggleTheme, setThemeTo, mounted };

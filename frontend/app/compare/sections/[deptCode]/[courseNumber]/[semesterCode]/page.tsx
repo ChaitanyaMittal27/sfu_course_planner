@@ -3,11 +3,11 @@
 import { useMemo } from "react";
 import { useParams, useRouter, useSearchParams } from "next/navigation";
 import { bodyStyles, displayStyles } from "@/app/fonts";
-import BackButton from "@/components/BackButton";
-import ErrorMessage from "@/components/ErrorMessage";
-import LoadingSpinner from "@/components/LoadingSpinner";
-import PageContainer from "@/components/PageContainer";
-import SectionComparisonResults from "@/components/SectionComparisonResults";
+import BackButton from "@/components/layout/BackButton";
+import ErrorMessage from "@/components/feedback/ErrorMessage";
+import LoadingSpinner from "@/components/feedback/LoadingSpinner";
+import PageContainer from "@/components/layout/PageContainer";
+import SectionComparisonResults from "@/components/course/SectionComparisonResults";
 import { parsePositiveRouteInteger, sectionComparisonHref } from "@/lib/course-routes";
 import { useCourseRouteResolution } from "@/hooks/useCourseRouteResolution";
 

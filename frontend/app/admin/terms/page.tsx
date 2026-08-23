@@ -10,7 +10,7 @@ import { Badge } from "@/components/ui/badge";
 import { Input } from "@/components/ui/input";
 import { AdminPage, AdminPageHeader, AdminStatGrid, AdminTable } from "@/components/admin/AdminPage";
 import AdminPageSkeleton from "@/components/admin/AdminPageSkeleton";
-import ErrorMessage from "@/components/ErrorMessage";
+import ErrorMessage from "@/components/feedback/ErrorMessage";
 import { bodyStyles, headerStyles, labelStyles } from "@/app/fonts";
 
 function errorMessage(error: unknown, fallback: string) {

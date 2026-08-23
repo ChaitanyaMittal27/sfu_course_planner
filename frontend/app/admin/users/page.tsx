@@ -16,7 +16,7 @@ import { api, AdminUsersResponse } from "@/lib/api";
 import { bodyStyles, headerStyles, labelStyles } from "@/app/fonts";
 import { AdminPage, AdminPageHeader, AdminStatGrid, AdminTable } from "@/components/admin/AdminPage";
 import AdminPageSkeleton from "@/components/admin/AdminPageSkeleton";
-import ErrorMessage from "@/components/ErrorMessage";
+import ErrorMessage from "@/components/feedback/ErrorMessage";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";

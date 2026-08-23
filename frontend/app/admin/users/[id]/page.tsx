@@ -9,7 +9,7 @@ import { bodyStyles, headerStyles, labelStyles } from "@/app/fonts";
 import { formatSemesterCode } from "@/lib/semester";
 import { AdminPage, AdminPageHeader, AdminTable } from "@/components/admin/AdminPage";
 import AdminPageSkeleton from "@/components/admin/AdminPageSkeleton";
-import ErrorMessage from "@/components/ErrorMessage";
+import ErrorMessage from "@/components/feedback/ErrorMessage";
 import { Badge } from "@/components/ui/badge";
 import { Card, CardContent } from "@/components/ui/card";
 

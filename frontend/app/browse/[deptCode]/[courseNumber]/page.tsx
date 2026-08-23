@@ -1,10 +1,10 @@
 "use client";
 
 import { useParams, useRouter } from "next/navigation";
-import BackButton from "@/components/BackButton";
-import CourseOfferingsPanel from "@/components/CourseOfferingsPanel";
-import ErrorMessage from "@/components/ErrorMessage";
-import LoadingSpinner from "@/components/LoadingSpinner";
+import BackButton from "@/components/layout/BackButton";
+import CourseOfferingsPanel from "@/components/course/CourseOfferingsPanel";
+import ErrorMessage from "@/components/feedback/ErrorMessage";
+import LoadingSpinner from "@/components/feedback/LoadingSpinner";
 import { bodyStyles, displayStyles } from "@/app/fonts";
 import { useCourseRouteResolution } from "@/hooks/useCourseRouteResolution";
 

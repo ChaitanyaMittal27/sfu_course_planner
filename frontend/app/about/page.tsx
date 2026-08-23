@@ -3,8 +3,8 @@
 import { useState, Suspense } from "react";
 import Link from "next/link";
 import { ChevronDown, BookOpen, TrendingUp, Eye, LayoutGrid, CheckCircle2, Loader2 } from "lucide-react";
-import PageContainer from "@/components/PageContainer";
-import LoadingSpinner from "@/components/LoadingSpinner";
+import PageContainer from "@/components/layout/PageContainer";
+import LoadingSpinner from "@/components/feedback/LoadingSpinner";
 import { Card, CardContent } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";

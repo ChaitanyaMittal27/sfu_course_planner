@@ -2,9 +2,9 @@
 
 import { useEffect, useMemo, useState } from "react";
 import { useParams } from "next/navigation";
-import ErrorMessage from "@/components/ErrorMessage";
-import LoadingSpinner from "@/components/LoadingSpinner";
-import OfferingDetailScreen from "@/components/OfferingDetailScreen";
+import ErrorMessage from "@/components/feedback/ErrorMessage";
+import LoadingSpinner from "@/components/feedback/LoadingSpinner";
+import OfferingDetailScreen from "@/components/course/OfferingDetailScreen";
 import { api } from "@/lib/api";
 import { courseHref, parsePositiveRouteInteger } from "@/lib/course-routes";
 import { useCourseRouteResolution } from "@/hooks/useCourseRouteResolution";

@@ -3,9 +3,9 @@
 import { useEffect, useMemo, useState } from "react";
 import { ClipboardList } from "lucide-react";
 import { bodyStyles, headerStyles, labelStyles } from "@/app/fonts";
-import ErrorMessage from "@/components/ErrorMessage";
-import LoadingSpinner from "@/components/LoadingSpinner";
-import TaskEmptyState from "@/components/TaskEmptyState";
+import ErrorMessage from "@/components/feedback/ErrorMessage";
+import LoadingSpinner from "@/components/feedback/LoadingSpinner";
+import TaskEmptyState from "@/components/feedback/TaskEmptyState";
 import { Card, CardContent } from "@/components/ui/card";
 import { Table, TableBody, TableCell, TableRow } from "@/components/ui/table";
 import { api, type CourseOffering } from "@/lib/api";

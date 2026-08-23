@@ -3,11 +3,11 @@
 import { useState, useEffect, Suspense } from "react";
 import { useQueryState } from "nuqs";
 import { ClipboardList, X } from "lucide-react";
-import PageContainer from "@/components/PageContainer";
-import LoadingSpinner from "@/components/LoadingSpinner";
-import ErrorMessage from "@/components/ErrorMessage";
-import GradeHistogram from "@/components/GradeHistogram";
-import TaskEmptyState from "@/components/TaskEmptyState";
+import PageContainer from "@/components/layout/PageContainer";
+import LoadingSpinner from "@/components/feedback/LoadingSpinner";
+import ErrorMessage from "@/components/feedback/ErrorMessage";
+import GradeHistogram from "@/components/analytics/GradeHistogram";
+import TaskEmptyState from "@/components/feedback/TaskEmptyState";
 import { api, Department, Course, OfferingDetail } from "@/lib/api";
 import Link from "next/link";
 import { courseHref, parseComparedCourses, serializeComparedCourses } from "@/lib/course-routes";

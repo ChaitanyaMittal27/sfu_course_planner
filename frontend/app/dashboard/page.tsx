@@ -7,11 +7,11 @@ import { Plus, Eye, TrendingUp, BarChart3, Bell, X, ChevronDown, ChevronUp, Chec
 import { api, BookmarkOffering, Bookmark, Course, Department } from "@/lib/api";
 import { supabase } from "@/lib/supabase/client";
 import { useAuth } from "@/contexts/AuthContext";
-import LoadingSpinner from "@/components/LoadingSpinner";
-import ErrorMessage from "@/components/ErrorMessage";
-import ProfileAvatar from "@/components/ProfileAvatar";
-import LoadBar from "@/components/LoadBar";
-import StatusBadge from "@/components/StatusBadge";
+import LoadingSpinner from "@/components/feedback/LoadingSpinner";
+import ErrorMessage from "@/components/feedback/ErrorMessage";
+import ProfileAvatar from "@/components/dashboard/ProfileAvatar";
+import LoadBar from "@/components/dashboard/LoadBar";
+import StatusBadge from "@/components/dashboard/StatusBadge";
 import { Card, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";

@@ -3,10 +3,10 @@
 import { Suspense, useEffect, useMemo, useState } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
 import { ClipboardList } from "lucide-react";
-import ErrorMessage from "@/components/ErrorMessage";
-import LoadingSpinner from "@/components/LoadingSpinner";
-import PageContainer from "@/components/PageContainer";
-import TaskEmptyState from "@/components/TaskEmptyState";
+import ErrorMessage from "@/components/feedback/ErrorMessage";
+import LoadingSpinner from "@/components/feedback/LoadingSpinner";
+import PageContainer from "@/components/layout/PageContainer";
+import TaskEmptyState from "@/components/feedback/TaskEmptyState";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
 import { bodyStyles, displayStyles, headerStyles, labelStyles } from "@/app/fonts";

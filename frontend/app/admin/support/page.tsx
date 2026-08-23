@@ -8,7 +8,7 @@ import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Textarea } from "@/components/ui/textarea";
 import AdminPageSkeleton from "@/components/admin/AdminPageSkeleton";
-import ErrorMessage from "@/components/ErrorMessage";
+import ErrorMessage from "@/components/feedback/ErrorMessage";
 import { displayStyles, headerStyles, bodyStyles, labelStyles } from "@/app/fonts";
 
 type FilterTab = "all" | "unresolved" | "archived";

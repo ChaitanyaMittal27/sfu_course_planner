@@ -2,8 +2,8 @@
 
 import { useEffect, useMemo, useState } from "react";
 import { useParams, useRouter } from "next/navigation";
-import ErrorMessage from "@/components/ErrorMessage";
-import LoadingSpinner from "@/components/LoadingSpinner";
+import ErrorMessage from "@/components/feedback/ErrorMessage";
+import LoadingSpinner from "@/components/feedback/LoadingSpinner";
 import { offeringHref, parseLegacyCourseRoute, parsePositiveRouteInteger } from "@/lib/course-routes";
 import { resolveCourseIds } from "@/lib/course-resolver";
 

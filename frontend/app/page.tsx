@@ -1,9 +1,9 @@
 "use client";
 
-import { useState, useEffect } from "react";
+import { useEffect, useState, useSyncExternalStore } from "react";
 import Link from "next/link";
 import { Search, TrendingUp, ClipboardList, Bell, ArrowRight } from "lucide-react";
-import Splash from "@/components/Splash";
+import Splash from "@/components/landing/Splash";
 import HeroPreview from "@/components/landing/HeroPreview";
 import { displayStyles, bodyStyles, labelStyles, headerStyles } from "@/app/fonts";
 import { useScrollReveal } from "@/hooks/useScrollReveal";
@@ -11,6 +11,25 @@ import { api } from "@/lib/api";
 import type { TermInfo } from "@/lib/types";
 
 const SPLASH_KEY = "sfu-splash-shown";
+const SPLASH_EVENT = "sfu-splash-status-change";
+
+function subscribeToSplashStatus(listener: () => void) {
+  window.addEventListener("storage", listener);
+  window.addEventListener(SPLASH_EVENT, listener);
+
+  return () => {
+    window.removeEventListener("storage", listener);
+    window.removeEventListener(SPLASH_EVENT, listener);
+  };
+}
+
+function getSplashStatus() {
+  return !sessionStorage.getItem(SPLASH_KEY);
+}
+
+function getServerSplashStatus() {
+  return false;
+}
 
 // ── Feature rows data ─────────────────────────────────
 // TODO: replace hardcoded demo data with API data from /api/courses
@@ -133,8 +152,7 @@ const features = [
 
 // ── Page ──────────────────────────────────────────────
 export default function LandingPage() {
-  const [showSplash, setShowSplash] = useState(false);
-  const [splashChecked, setSplashChecked] = useState(false);
+  const showSplash = useSyncExternalStore(subscribeToSplashStatus, getSplashStatus, getServerSplashStatus);
   const [enrollingTerm, setEnrollingTerm] = useState<TermInfo | null>(null);
 
   const formatTerm = (term: string, year: number) => `${term.charAt(0).toUpperCase() + term.slice(1)} ${year}`;
@@ -146,14 +164,6 @@ export default function LandingPage() {
       .catch(() => null);
   }, []);
 
-  useEffect(() => {
-    const shown = sessionStorage.getItem(SPLASH_KEY);
-    if (!shown) {
-      setShowSplash(true);
-    }
-    setSplashChecked(true);
-  }, []);
-
   const heroRef = useScrollReveal({ threshold: 0.1 });
   const feat0Ref = useScrollReveal({ delay: 0 });
   const feat1Ref = useScrollReveal({ delay: 100 });
@@ -161,14 +171,12 @@ export default function LandingPage() {
   const feat3Ref = useScrollReveal({ delay: 300 });
   const featureRefs = [feat0Ref, feat1Ref, feat2Ref, feat3Ref];
 
-  if (!splashChecked) return null;
-
   if (showSplash) {
     return (
       <Splash
         onComplete={() => {
           sessionStorage.setItem(SPLASH_KEY, "1");
-          setShowSplash(false);
+          window.dispatchEvent(new Event(SPLASH_EVENT));
         }}
       />
     );

@@ -8,7 +8,7 @@ import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { AdminPage, AdminPageHeader } from "@/components/admin/AdminPage";
 import AdminPageSkeleton from "@/components/admin/AdminPageSkeleton";
-import ErrorMessage from "@/components/ErrorMessage";
+import ErrorMessage from "@/components/feedback/ErrorMessage";
 import { healthServicePresentation } from "@/components/admin/health-services";
 import { bodyStyles, headerStyles, labelStyles } from "@/app/fonts";
 
