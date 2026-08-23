@@ -117,11 +117,11 @@ On top of that, signed-in users can bookmark specific course offerings and opt i
 │   │   ├── login/                      # Sign in / sign up
 │   │   ├── auth/{callback,reset-password}/  # OAuth callback, password reset
 │   │   ├── admin/                      # Admin dashboard (role-gated)
-│   │   │   ├── health/, support/, terms/, users/[id]/, bookmarks/, test/, unauthorized/
+│   │   │   ├── health/, support/, terms/, users/[id]/, bookmarks/, unauthorized/
 │   │   └── {about,privacy,termsofservice}/
 │   ├── components/
 │   │   ├── ui/                         # shadcn components
-│   │   ├── admin/                      # AdminSidebar, AdminPageSkeleton
+│   │   ├── admin/                      # Admin shell, navigation, and shared page primitives
 │   │   ├── Navigation.tsx, Footer.tsx
 │   │   ├── BookmarkButton.tsx, BookmarksTable.tsx
 │   │   ├── OfferingsTable.tsx, GradeHistogram.tsx, LoadBar.tsx, StatusBadge.tsx
