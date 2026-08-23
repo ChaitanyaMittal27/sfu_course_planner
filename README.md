@@ -21,7 +21,7 @@ SFU Course Planner helps Simon Fraser University students research courses, insp
 | --- | --- | --- |
 | Frontend | Next.js App Router, React, TypeScript, Tailwind | Public UI, Supabase Auth UI, canonical readable routes |
 | Backend | Java 17, Spring Boot 3.0, Gradle | ID-based REST API, authorization, CourseSys integration, email jobs |
-| Database and Auth | Supabase PostgreSQL and Auth | Persisted catalog, terms, preferences, bookmarks, support data, sessions |
+| Database and Auth | Supabase PostgreSQL and Auth | Persisted catalog, terms, preferences, bookmarks, support data, and email/password, Google, or Microsoft sessions |
 | External data | SFU CourseSys and CourseDiggers | Live offerings/enrollment and historical grade data |
 | Email | Resend | Support replies and daily bookmark digests |
 
