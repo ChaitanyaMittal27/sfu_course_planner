@@ -56,7 +56,7 @@ export default function Navigation() {
 
   return (
     <nav className="sticky top-0 z-30 bg-nav-bg border-t-2 border-t-nav-border-top shadow-[0_1px_0_var(--border)]">
-      <div className="max-w-[1180px] mx-auto px-4 sm:px-7 h-[60px] flex items-center justify-between gap-6">
+      <div className="max-w-[1180px] mx-auto px-4 sm:px-7 h-[var(--app-nav-height)] flex items-center justify-between gap-6">
         {/* Logo */}
         <Link href="/" className="flex items-center gap-2.5 shrink-0">
           <div className="w-[30px] h-[30px] rounded-[7px] bg-primary-foreground flex items-center justify-center">

@@ -85,7 +85,7 @@ export default function AdminSidebar() {
 
   return (
     <>
-      <aside className="fixed inset-y-0 left-0 z-30 hidden w-60 flex-col border-r border-sidebar-border bg-sidebar lg:flex">
+      <aside className="fixed bottom-0 left-0 top-[var(--app-nav-height)] z-20 hidden w-60 flex-col border-r border-sidebar-border bg-sidebar lg:flex">
         <div className="border-b border-sidebar-border p-4"><AdminBrand /></div>
         <div className="flex-1 overflow-y-auto p-3">
           <p className={`${labelStyles.sm} mb-2 px-3 uppercase tracking-widest text-text-subtle`}>Operations</p>
@@ -100,7 +100,7 @@ export default function AdminSidebar() {
         </div>
       </aside>
 
-      <header className="sticky top-0 z-30 flex h-14 items-center justify-between border-b border-sidebar-border bg-sidebar px-4 lg:hidden">
+      <header className="sticky top-[var(--app-nav-height)] z-20 flex h-[var(--admin-mobile-header-height)] items-center justify-between border-b border-sidebar-border bg-sidebar px-4 lg:hidden">
         <AdminBrand />
         <Button
           type="button"
@@ -116,7 +116,7 @@ export default function AdminSidebar() {
       </header>
 
       {mobileMenuOpen && (
-        <div id="admin-mobile-navigation" className="fixed inset-x-0 top-14 z-30 border-b border-sidebar-border bg-sidebar p-4 shadow-lg lg:hidden">
+        <div id="admin-mobile-navigation" className="fixed inset-x-0 top-[calc(var(--app-nav-height)+var(--admin-mobile-header-height))] z-20 border-b border-sidebar-border bg-sidebar p-4 shadow-lg lg:hidden">
           <AdminNavigationLinks onNavigate={() => setMobileMenuOpen(false)} />
           <div className="mt-4 border-t border-sidebar-border pt-4">
             <AdminUserSummary />
