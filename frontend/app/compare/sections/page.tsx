@@ -1,6 +1,6 @@
 "use client";
 
-import { Suspense, useEffect, useState } from "react";
+import { Suspense, useEffect, useMemo, useState } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
 import { ClipboardList } from "lucide-react";
 import ErrorMessage from "@/components/ErrorMessage";
@@ -18,6 +18,10 @@ type Semester = {
   code: number;
   label: string;
 };
+
+type LegacySectionComparisonLink =
+  | { status: "none" | "invalid" }
+  | { status: "valid"; departmentId: number; courseId: number; semesterCode: number };
 
 type SelectFieldProps = {
   id: string;
@@ -56,6 +60,33 @@ function buildSemesterOptions(year: number, term: string): Semester[] {
   return semesters;
 }
 
+function parseLegacySectionComparisonLink(searchParams: Pick<URLSearchParams, "get">): LegacySectionComparisonLink {
+  const departmentIdParam = searchParams.get("deptId");
+  const courseIdParam = searchParams.get("courseId");
+  const semesterCodeParam = searchParams.get("semester");
+
+  if (![departmentIdParam, courseIdParam, semesterCodeParam].some(Boolean)) {
+    return { status: "none" };
+  }
+
+  const departmentId = Number(departmentIdParam);
+  const courseId = Number(courseIdParam);
+  const semesterCode = Number(semesterCodeParam);
+
+  if (
+    !Number.isSafeInteger(departmentId) ||
+    !Number.isSafeInteger(courseId) ||
+    !Number.isSafeInteger(semesterCode) ||
+    departmentId <= 0 ||
+    courseId <= 0 ||
+    semesterCode <= 0
+  ) {
+    return { status: "invalid" };
+  }
+
+  return { status: "valid", departmentId, courseId, semesterCode };
+}
+
 function SelectField({ id, label, value, disabled, onChange, children }: SelectFieldProps) {
   return (
     <div>
@@ -78,6 +109,7 @@ function SelectField({ id, label, value, disabled, onChange, children }: SelectF
 function SectionComparisonDiscovery() {
   const router = useRouter();
   const searchParams = useSearchParams();
+  const legacyLink = useMemo(() => parseLegacySectionComparisonLink(searchParams), [searchParams]);
   const [departments, setDepartments] = useState<Department[]>([]);
   const [courses, setCourses] = useState<Course[]>([]);
   const [semesters, setSemesters] = useState<Semester[]>([]);
@@ -105,14 +137,10 @@ function SectionComparisonDiscovery() {
   }, []);
 
   useEffect(() => {
-    const departmentId = Number(searchParams.get("deptId"));
-    const courseId = Number(searchParams.get("courseId"));
-    const semesterCode = Number(searchParams.get("semester"));
-
-    if (!Number.isSafeInteger(departmentId) || !Number.isSafeInteger(courseId) || !Number.isSafeInteger(semesterCode)) return;
+    if (legacyLink.status !== "valid") return;
 
     let active = true;
-    void resolveCourseIds(departmentId, courseId)
+    void resolveCourseIds(legacyLink.departmentId, legacyLink.courseId)
       .then((course) => {
         if (!active) return;
         if (!course) {
@@ -120,14 +148,14 @@ function SectionComparisonDiscovery() {
           return;
         }
         const sections = (searchParams.get("sections") ?? "").split(",").map(sectionCode).filter(Boolean);
-        router.replace(sectionComparisonHref(course.deptCode, course.courseNumber, semesterCode, sections));
+        router.replace(sectionComparisonHref(course.deptCode, course.courseNumber, legacyLink.semesterCode, sections));
       })
       .catch(() => active && setError("This section comparison link is invalid."));
 
     return () => {
       active = false;
     };
-  }, [router, searchParams]);
+  }, [legacyLink, router, searchParams]);
 
   const selectedDepartment = departments.find((department) => department.deptId === selectedDepartmentId);
   const selectedCourse = courses.find((course) => course.courseId === selectedCourseId);
@@ -221,8 +249,9 @@ function SectionComparisonDiscovery() {
         </CardContent>
       </Card>
 
+      {legacyLink.status === "invalid" && <ErrorMessage message="This section comparison link is invalid." />}
       {error && <ErrorMessage message={error} onRetry={() => setError(null)} />}
-      {!error && (
+      {!error && legacyLink.status !== "invalid" && (
         <TaskEmptyState
           icon={ClipboardList}
           title="Choose a course and term"
