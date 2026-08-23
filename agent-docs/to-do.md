@@ -16,7 +16,6 @@ This is a product-hardening backlog derived from the repository audit. It is ord
 11. Decide and implement inbound support-email handling: a managed mailbox workflow or inbound-email/webhook ingestion into tickets.
 12. Track email outcomes explicitly; do not equate an attempted Resend call with successful delivery.
 13. Add an explicit, role-aware Admin navigation link for administrators while retaining backend role checks.
-14. Redesign the admin Test page into a safer operations/diagnostics area, with confirmation for consequential actions.
 15. Decide whether the backend remains JAR-on-Elastic-Beanstalk or becomes Docker-on-Elastic-Beanstalk/ECR.
 16. Document the final Docker, Supabase, and local-development workflow in `README.md` after the local Dashboard flow is verified.
 17. Add frontend component tests and a small end-to-end suite for critical user flows.

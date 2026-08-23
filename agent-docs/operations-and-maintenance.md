@@ -2,7 +2,7 @@
 
 ## Email and scheduler side effects
 
-Spring scheduling is enabled by `Application`. `NotificationScheduler` runs at 00:05 in `America/Vancouver`; an administrator can invoke the same work through `POST /api/admin/test/trigger-notifications`.
+Spring scheduling is enabled by `Application`. `NotificationScheduler` runs at 00:05 in `America/Vancouver`.
 
 For each opted-in `UserPreference`, a run:
 
@@ -11,7 +11,7 @@ For each opted-in `UserPreference`, a run:
 3. builds an HTML digest per user using the matching saved section;
 4. calls Resend and records `last_notified_at` for all opted-in users after the loop.
 
-The manual trigger is production-impacting: it attempts sends to all opted-in users, not a test recipient. `EmailService` catches and logs all send exceptions rather than rethrowing. Consequently, support replies and digest runs can persist their “sent/replied/notified” state even when Resend actually failed; scheduler result counts record attempted calls, not confirmed delivery.
+`EmailService` catches and logs all send exceptions rather than rethrowing. Consequently, support replies and digest runs can persist their “sent/replied/notified” state even when Resend actually failed; scheduler result counts record attempted calls, not confirmed delivery.
 
 The public contact endpoint first calls the same non-throwing mail helper, then persists the submission and returns 201. Admin replies update the submission after that helper returns.
 

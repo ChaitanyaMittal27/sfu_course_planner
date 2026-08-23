@@ -242,7 +242,6 @@ The generated interactive reference is available at [`/api-docs`](https://api.sf
 | GET | `/api/admin/users` | User list with stats (signup provider, opt-in, activity) |
 | GET | `/api/admin/users/{id}` | Single user detail + their bookmarks |
 | GET | `/api/admin/bookmarks` | Bookmark analytics (top courses, dept rankings, monthly growth) |
-| POST | `/api/admin/test/trigger-notifications` | Manually run the daily notification job |
 
 ## Architecture Notes
 
@@ -263,7 +262,6 @@ SFU semester codes encode year + term as a single number: `(year - 1900) * 10 + 
 3. Builds a per-user HTML digest table and sends it via `EmailService`/Resend.
 4. Updates `last_notified_at` for all notified users.
 
-It can also be triggered manually via `POST /api/admin/test/trigger-notifications`.
 
 ### Frontend API Client Pattern
 All API calls go through `lib/api.ts`:

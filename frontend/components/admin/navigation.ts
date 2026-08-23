@@ -2,14 +2,13 @@ import {
   Activity,
   Calendar,
   Eye,
-  FlaskConical,
   MessageSquare,
   Users,
   type LucideIcon,
 } from "lucide-react";
 
 export type AdminNavigationItem = {
-  id: "overview" | "health" | "support" | "terms" | "users" | "bookmarks" | "diagnostics";
+  id: "overview" | "health" | "support" | "terms" | "users" | "bookmarks";
   label: string;
   href: string;
   icon: LucideIcon;
@@ -52,12 +51,5 @@ export const adminNavigationItems = [
     href: "/admin/bookmarks",
     icon: Eye,
     description: "Inspect bookmarked offerings, popular courses, and department rankings.",
-  },
-  {
-    id: "diagnostics",
-    label: "Diagnostics",
-    href: "/admin/test",
-    icon: FlaskConical,
-    description: "Run manual notification and endpoint checks in a controlled environment.",
   },
 ] as const satisfies readonly AdminNavigationItem[];

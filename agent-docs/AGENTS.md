@@ -16,7 +16,7 @@
 - Protected endpoints receive a Supabase access token in `Authorization: Bearer ...`. Use `JwtService` to verify it against Supabase and derive the user ID; do not parse JWTs locally or trust client-supplied user IDs. Admin routes require `app_metadata.role == "admin"` via `verifyAdmin`.
 - Keep authorization checks server-side on every mutation. Bookmarks are scoped to the authenticated UUID and their DB uniqueness is `(dept_id, user_id, course_id, semester_code, section)`.
 - Terms drive the current/enrolling semester and CourseSys history. Use `SemesterUtil` rather than duplicating SFU semester-code arithmetic (spring/summer/fall digits 1/4/7).
-- The scheduled digest runs at 00:05 `America/Vancouver` and can also be triggered by an admin endpoint. It fetches external CourseSys data and sends Resend email, so treat changes there and to the admin test endpoint as production-affecting.
+- The scheduled digest runs at 00:05 `America/Vancouver`. It fetches external CourseSys data and sends Resend email, so treat scheduler changes as production-affecting.
 - Admin health checks are authenticated reachability checks for the database and external services; keep their outbound requests bounded with explicit timeouts. They are not delivery verification for Resend.
 - Backend configuration is environment-only: `DB_URL_NEW`, `DB_USER_NEW`, `DB_PASS_NEW`, `SUPABASE_URL_NEW`, `SUPABASE_KEY_NEW`, and `RESEND_API_KEY`; `SERVER_PORT` defaults to 5000. Never commit values.
 - `backend/.env.local` is an ignored Docker/runtime environment file, not an automatic Spring Boot configuration source. Load its values into the shell for manual Gradle/JAR runs.
@@ -29,7 +29,7 @@
 ## Frontend
 
 - Routes live in `frontend/app/`; interactive pages/components are client components. Root layout provides `AuthProvider`, `NuqsAdapter`, navigation, footer, and analytics.
-- Keep normal backend calls in `lib/api.ts` and add matching interfaces to `lib/types.ts`. `fetchAuthAPI` obtains the Supabase session token and attaches it. The public contact form and the admin API-test page are intentional direct-fetch exceptions.
+- Keep normal backend calls in `lib/api.ts` and add matching interfaces to `lib/types.ts`. `fetchAuthAPI` obtains the Supabase session token and attaches it. The public contact form is the intentional direct-fetch exception.
 - Supabase owns browser auth. `proxy.ts` refreshes sessions and protects `/dashboard` and `/admin`; it also gates admin UI by `app_metadata.role`. Backend authorization remains mandatory.
 - Keep frontend auth responsibilities separate: `proxy.ts` is the route guard and session-refresh boundary; `AuthContext` mirrors browser-session state for UI only; login, signup, and callback handlers navigate only after their own successful action. Do not add client-side route guards that compete with the proxy.
 - `AppShell` renders the public navigation on every route but keeps `/admin/**` outside the public footer. `AdminSidebar` owns desktop and mobile admin navigation below that header; add admin destinations once in `components/admin/navigation.ts` so its sidebar and overview card stay consistent. Use `AuthContext` only to conditionally render the existing Admin entry for `app_metadata.role === "admin"`; keep `proxy.ts` and backend `verifyAdmin` as the authorization boundaries. Build future admin pages with the shared `components/admin/AdminPage.tsx` primitives.

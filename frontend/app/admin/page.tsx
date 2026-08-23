@@ -56,7 +56,6 @@ const dashboardPresentation = {
   terms: { iconClass: "border-accent/20 bg-accent/10 text-accent", defaultMeta: "Loading terms" },
   users: { iconClass: "border-accent/20 bg-accent/10 text-accent", defaultMeta: "Loading users" },
   bookmarks: { iconClass: "border-accent/20 bg-accent/10 text-accent", defaultMeta: "Loading bookmarks" },
-  diagnostics: { iconClass: "border-text-muted/20 bg-text-muted/10 text-text-muted", defaultMeta: "Manual checks" },
 } as const;
 
 function capitalize(value: string) {
@@ -271,10 +270,10 @@ export default function AdminDashboardPage() {
       <div ref={cardsRef} className="grid grid-cols-1 gap-3.5 md:grid-cols-2 xl:grid-cols-3">
         {adminNavigationItems.filter((section) => section.id !== "overview").map((section) => {
           const Icon = section.icon;
-          const dataKey = section.id === "diagnostics" ? undefined : section.id;
-          const sectionData = dataKey ? data[dataKey] : null;
-          const failure = dataKey ? failures[dataKey] : false;
-          const isRetrying = dataKey ? retrying[dataKey] : false;
+          const dataKey = section.id;
+          const sectionData = data[dataKey];
+          const failure = failures[dataKey];
+          const isRetrying = retrying[dataKey];
           const badge = badgeFrom(sectionData);
           const presentation = dashboardPresentation[section.id];
           const meta = failure ? "Unable to load" : sectionData?.meta ?? presentation.defaultMeta;
@@ -295,7 +294,7 @@ export default function AdminDashboardPage() {
                 <div className="flex items-center justify-between border-t border-border pt-3">
                   <span className={`${labelStyles.sm} font-mono ${failure ? "text-destructive" : "text-text-subtle"}`}>{meta}</span>
                   <div className="flex items-center gap-2">
-                    {dataKey && failure && (
+                    {failure && (
                       <Button type="button" variant="link" size="xs" onClick={() => retrySection(dataKey)} disabled={isRetrying} className="px-0 text-text-muted">
                         <RefreshCw className={isRetrying ? "animate-spin" : ""} />
                         Retry
