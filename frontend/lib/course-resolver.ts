@@ -10,30 +10,23 @@ export interface ResolvedCourseRoute extends CourseRouteReference {
 const departmentsPromise = new Map<string, Promise<Department[]>>();
 const coursesPromise = new Map<number, Promise<Course[]>>();
 
-function getCachedRequest<Key, Value>(
-  cache: Map<Key, Promise<Value>>,
-  key: Key,
-  createRequest: () => Promise<Value>,
-) {
-  const existing = cache.get(key);
+function loadDepartments() {
+  const cacheKey = "all";
+  const existing = departmentsPromise.get(cacheKey);
   if (existing) return existing;
 
-  const request = createRequest();
-  const cachedRequest = request.catch((error: unknown) => {
-    if (cache.get(key) === cachedRequest) cache.delete(key);
-    throw error;
-  });
-
-  cache.set(key, cachedRequest);
-  return cachedRequest;
-}
-
-function loadDepartments() {
-  return getCachedRequest(departmentsPromise, "all", api.getDepartments);
+  const request = api.getDepartments();
+  departmentsPromise.set(cacheKey, request);
+  return request;
 }
 
 function loadCourses(deptId: number) {
-  return getCachedRequest(coursesPromise, deptId, () => api.getCourses(deptId));
+  const existing = coursesPromise.get(deptId);
+  if (existing) return existing;
+
+  const request = api.getCourses(deptId);
+  coursesPromise.set(deptId, request);
+  return request;
 }
 
 export async function resolveCourseIdentity(identity: CourseRouteIdentity): Promise<ResolvedCourseRoute | null> {
