@@ -1,218 +1,162 @@
 "use client";
 
-import { useEffect, useState, useCallback } from "react";
-import { useParams, useRouter } from "next/navigation";
-import { ArrowLeft, Mail, Shield, Calendar, Eye, Bell, Bookmark } from "lucide-react";
+import { useCallback, useEffect, useState } from "react";
+import Link from "next/link";
+import { useParams } from "next/navigation";
+import { ArrowLeft, Bookmark, Calendar, Mail, ShieldCheck, User } from "lucide-react";
 import { api, AdminUserDetailResponse } from "@/lib/api";
-import { Card, CardContent } from "@/components/ui/card";
-import { Button } from "@/components/ui/button";
-import { Badge } from "@/components/ui/badge";
-import { Skeleton } from "@/components/ui/skeleton";
+import { bodyStyles, headerStyles, labelStyles } from "@/app/fonts";
+import { formatSemesterCode } from "@/lib/semester";
+import { AdminPage, AdminPageHeader, AdminTable } from "@/components/admin/AdminPage";
+import AdminPageSkeleton from "@/components/admin/AdminPageSkeleton";
 import ErrorMessage from "@/components/ErrorMessage";
-import { displayStyles, headerStyles, bodyStyles, labelStyles } from "@/app/fonts";
+import { Badge } from "@/components/ui/badge";
+import { Card, CardContent } from "@/components/ui/card";
 
-function formatDate(iso: string | null) {
-  if (!iso) return "—";
-  return new Date(iso).toLocaleDateString("en-US", {
-    month: "short", day: "numeric", year: "numeric", hour: "2-digit", minute: "2-digit",
+function errorMessage(error: unknown, fallback: string) {
+  return error instanceof Error ? error.message : fallback;
+}
+
+function formatDate(value: string | null) {
+  if (!value) return "Never";
+  return new Date(value).toLocaleString("en-CA", {
+    month: "short",
+    day: "numeric",
+    year: "numeric",
+    hour: "numeric",
+    minute: "2-digit",
   });
 }
 
-function decodeSemester(code: number) {
-  const year = Math.floor(code / 10) + 1900;
-  const digit = code % 10;
-  const term = digit === 1 ? "Spring" : digit === 4 ? "Summer" : digit === 7 ? "Fall" : "Unknown";
-  return `${term} ${year}`;
-}
-
 export default function AdminUserDetailPage() {
-  const params = useParams();
-  const router = useRouter();
-  const userId = params.id as string;
-
+  const params = useParams<{ id: string }>();
   const [data, setData] = useState<AdminUserDetailResponse | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
 
+  useEffect(() => {
+    let active = true;
+
+    async function loadUser() {
+      try {
+        const result = await api.getAdminUser(params.id);
+        if (active) {
+          setError(null);
+          setData(result);
+        }
+      } catch (requestError: unknown) {
+        if (active) setError(errorMessage(requestError, "Failed to load this user."));
+      } finally {
+        if (active) setLoading(false);
+      }
+    }
+
+    loadUser();
+    return () => { active = false; };
+  }, [params.id]);
+
   const fetchUser = useCallback(async () => {
     try {
       setError(null);
-      const result = await api.getAdminUser(userId);
-      setData(result);
-    } catch (err: unknown) {
-      const message = err instanceof Error ? err.message : "Failed to load user";
-      setError(message);
+      setData(await api.getAdminUser(params.id));
+    } catch (requestError: unknown) {
+      setError(errorMessage(requestError, "Failed to load this user."));
     }
-  }, [userId]);
+  }, [params.id]);
 
-  useEffect(() => {
-    fetchUser().finally(() => setLoading(false));
-  }, [fetchUser]);
+  if (loading) return <AdminPageSkeleton hasTable tableRows={5} />;
 
-  if (loading) {
-    return (
-      <div className="flex-1 p-8 max-w-[1180px]">
-        <Skeleton className="h-8 w-24 mb-6" />
-        <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
-          <Skeleton className="h-64 rounded-xl" />
-          <Skeleton className="h-64 rounded-xl" />
-        </div>
-        <Skeleton className="h-48 rounded-xl mt-4" />
-      </div>
-    );
-  }
+  const backLink = (
+    <Link href="/admin/users" className={`${labelStyles.md} inline-flex items-center gap-1.5 text-text-muted hover:text-text-primary focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring`}>
+      <ArrowLeft className="size-4" />
+      Back to users
+    </Link>
+  );
 
   if (error || !data) {
     return (
-      <div className="flex-1 p-8 max-w-[1180px]">
-        <Button variant="outline" onClick={() => router.push("/admin/users")} className="gap-2 mb-6">
-          <ArrowLeft className="w-4 h-4" />
-          Back to users
-        </Button>
-        <ErrorMessage message={error || "User not found"} onRetry={fetchUser} />
-      </div>
+      <AdminPage>
+        <div className="mb-4">{backLink}</div>
+        <ErrorMessage message={error ?? "User not found."} onRetry={fetchUser} />
+      </AdminPage>
     );
   }
 
   const { user, bookmarks } = data;
+  const details = [
+    { label: "Email", value: user.email, icon: Mail },
+    { label: "Provider", value: user.provider || "email", icon: User },
+    { label: "Joined", value: formatDate(user.createdAt), icon: Calendar },
+    { label: "Last sign-in", value: formatDate(user.lastSignInAt), icon: Calendar },
+  ];
 
   return (
-    <div className="flex-1 p-8 max-w-[1180px]">
-      {/* Back button */}
-      <Button variant="outline" onClick={() => router.push("/admin/users")} className="gap-2 mb-6">
-        <ArrowLeft className="w-4 h-4" />
-        Back to users
-      </Button>
+    <AdminPage>
+      <div className="mb-4">{backLink}</div>
+      <AdminPageHeader title={user.displayName || user.email} description="Account information and saved course offerings." />
 
-      {/* Heading */}
-      <div className="mb-6">
-        <h1 className={`${displayStyles.sm} text-text-primary mb-1`}>{user.email}</h1>
-        <p className={`${bodyStyles.md} text-text-muted`}>
-          {user.displayName ? `${user.displayName} — ` : ""}User detail and activity
-        </p>
+      <div className="mb-8 grid gap-3.5 md:grid-cols-2">
+        {details.map(({ label, value, icon: Icon }) => (
+          <Card key={label} className="p-5">
+            <CardContent className="p-0">
+              <div className="mb-2 flex items-center gap-2 text-text-muted"><Icon className="size-4" /><span className={labelStyles.md}>{label}</span></div>
+              <p className={`${bodyStyles.md} break-words text-text-primary`}>{value}</p>
+            </CardContent>
+          </Card>
+        ))}
       </div>
 
-      {/* Identity + Notifications cards */}
-      <div className="grid grid-cols-1 lg:grid-cols-2 gap-4 mb-4">
-        {/* Identity card */}
-        <Card className="p-5">
-          <CardContent className="p-0">
-            <div className="flex items-center gap-2 mb-4">
-              <Shield className="w-4 h-4 text-text-muted" />
-              <h2 className={`${headerStyles.xs} text-text-primary`}>Identity</h2>
-            </div>
-            <div className="space-y-3">
-              <DetailRow label="Email" value={user.email} />
-              <DetailRow label="Display Name" value={user.displayName || "—"} />
-              <div className="flex items-center justify-between">
-                <span className={`${labelStyles.md} text-text-muted`}>Provider</span>
-                <span className={`text-[11px] font-semibold px-2 py-0.5 rounded-full ${
-                  user.provider === "google"
-                    ? "bg-accent/15 text-accent"
-                    : "bg-text-muted/15 text-text-muted"
-                }`}>
-                  {user.provider === "google" ? "Google" : "Email"}
-                </span>
-              </div>
-              <div className="flex items-center justify-between">
-                <span className={`${labelStyles.md} text-text-muted`}>Email Verified</span>
-                <Badge className={user.emailVerified
-                  ? "bg-success/15 text-success border-transparent"
-                  : "bg-destructive/15 text-destructive border-transparent"
-                }>
-                  {user.emailVerified ? "Verified" : "Unverified"}
-                </Badge>
-              </div>
-              <DetailRow label="Joined" value={formatDate(user.createdAt)} />
-              <DetailRow label="Last Sign In" value={formatDate(user.lastSignInAt)} />
-              {user.isAnonymous && (
-                <div className="flex items-center justify-between">
-                  <span className={`${labelStyles.md} text-text-muted`}>Anonymous</span>
-                  <Badge className="bg-warning/15 text-warning border-transparent">Yes</Badge>
-                </div>
-              )}
-            </div>
-          </CardContent>
-        </Card>
-
-        {/* Notifications card */}
-        <Card className="p-5">
-          <CardContent className="p-0">
-            <div className="flex items-center gap-2 mb-4">
-              <Bell className="w-4 h-4 text-text-muted" />
-              <h2 className={`${headerStyles.xs} text-text-primary`}>Notification Preferences</h2>
-            </div>
-            <div className="space-y-3">
-              <div className="flex items-center justify-between">
-                <span className={`${labelStyles.md} text-text-muted`}>Email Notifications</span>
-                <Badge className={user.emailNotificationsEnabled
-                  ? "bg-success/15 text-success border-transparent"
-                  : "bg-text-muted/15 text-text-muted border-transparent"
-                }>
-                  {user.emailNotificationsEnabled ? "Enabled" : "Disabled"}
-                </Badge>
-              </div>
-              <DetailRow label="Preferred Email" value={user.preferredEmail || "—"} />
-              <DetailRow label="Last Notified" value={user.lastNotifiedAt ? formatDate(user.lastNotifiedAt) : "Never"} />
-            </div>
-          </CardContent>
-        </Card>
-      </div>
-
-      {/* Bookmarks */}
-      <Card className="overflow-hidden">
+      <Card className="mb-8 p-5">
         <CardContent className="p-0">
-          <div className="flex items-center justify-between px-5 py-4 border-b border-border">
-            <div className="flex items-center gap-2">
-              <Bookmark className="w-4 h-4 text-text-muted" />
-              <h2 className={`${headerStyles.xs} text-text-primary`}>Bookmarks</h2>
-            </div>
-            <span className={`${labelStyles.sm} font-mono text-text-subtle`}>{bookmarks.length} bookmarks</span>
+          <h2 className={`${headerStyles.xs} mb-4 text-text-primary`}>Account status</h2>
+          <div className="flex flex-wrap gap-2">
+            <Badge className={user.emailVerified ? "border-transparent bg-success/15 text-success" : "border-transparent bg-warning/15 text-warning"}>
+              <ShieldCheck className="mr-1 size-3" />
+              {user.emailVerified ? "Email verified" : "Email unverified"}
+            </Badge>
+            <Badge variant="secondary">{user.emailNotificationsEnabled ? "Notifications enabled" : "Notifications disabled"}</Badge>
+            {user.isAnonymous && <Badge variant="secondary">Anonymous account</Badge>}
           </div>
-
-          {bookmarks.length > 0 ? (
-            <>
-              <div className="grid grid-cols-[1fr_100px_120px] px-5 py-2.5 bg-surface-raised border-b border-border">
-                <span className={`${labelStyles.sm} uppercase tracking-wider text-text-subtle`}>Course</span>
-                <span className={`${labelStyles.sm} uppercase tracking-wider text-text-subtle text-center`}>Section</span>
-                <span className={`${labelStyles.sm} uppercase tracking-wider text-text-subtle text-center`}>Semester</span>
-              </div>
-              {bookmarks.map((b, i) => (
-                <div
-                  key={b.bookmarkId}
-                  className={`grid grid-cols-[1fr_100px_120px] px-5 py-3 items-center hover:bg-surface-raised transition-colors ${
-                    i < bookmarks.length - 1 ? "border-b border-border" : ""
-                  }`}
-                >
-                  <div>
-                    <span className={`${labelStyles.lg} text-text-primary`}>
-                      {b.deptCode} {b.courseNumber}
-                    </span>
-                    {b.title && (
-                      <span className={`${bodyStyles.sm} text-text-muted block truncate max-w-xs mt-0.5`}>
-                        {b.title}
-                      </span>
-                    )}
-                  </div>
-                  <div className={`${labelStyles.md} font-mono text-text-primary text-center`}>{b.section}</div>
-                  <div className={`${labelStyles.sm} font-mono text-text-subtle text-center`}>{decodeSemester(b.semesterCode)}</div>
-                </div>
-              ))}
-            </>
-          ) : (
-            <div className={`${bodyStyles.md} text-text-muted text-center py-8`}>No bookmarks</div>
-          )}
+          {user.preferredEmail && <p className={`${bodyStyles.sm} mt-3 text-text-muted`}>Notification email: {user.preferredEmail}</p>}
         </CardContent>
       </Card>
-    </div>
-  );
-}
 
-function DetailRow({ label, value }: { label: string; value: string }) {
-  return (
-    <div className="flex items-center justify-between">
-      <span className={`${labelStyles.md} text-text-muted`}>{label}</span>
-      <span className={`${labelStyles.md} font-mono text-text-primary`}>{value}</span>
-    </div>
+      <div className="mb-3 flex items-center justify-between gap-4">
+        <h2 className={`${headerStyles.xs} text-text-primary`}>Saved offerings</h2>
+        <span className={`${labelStyles.sm} font-mono text-text-subtle`}>{bookmarks.length} saved</span>
+      </div>
+      <AdminTable>
+        <div className="overflow-x-auto">
+          <table className="w-full min-w-[620px] text-left">
+            <thead className="border-b border-border bg-surface-raised">
+              <tr className={`${labelStyles.sm} uppercase tracking-wider text-text-subtle`}>
+                <th className="px-4 py-3 font-medium">Course</th>
+                <th className="px-4 py-3 font-medium">Title</th>
+                <th className="px-4 py-3 font-medium">Term</th>
+                <th className="px-4 py-3 font-medium">Section</th>
+              </tr>
+            </thead>
+            <tbody>
+              {bookmarks.map((bookmark) => (
+                <tr key={bookmark.bookmarkId} className="border-b border-border last:border-0">
+                  <td className={`${labelStyles.lg} whitespace-nowrap px-4 py-3 text-text-primary`}>{bookmark.deptCode} {bookmark.courseNumber}</td>
+                  <td className={`${bodyStyles.sm} max-w-80 truncate px-4 py-3 text-text-muted`}>{bookmark.title || "—"}</td>
+                  <td className={`${bodyStyles.sm} whitespace-nowrap px-4 py-3 text-text-muted`}>{formatSemesterCode(bookmark.semesterCode)}</td>
+                  <td className={`${labelStyles.md} whitespace-nowrap px-4 py-3 font-mono text-text-primary`}>{bookmark.section}</td>
+                </tr>
+              ))}
+              {bookmarks.length === 0 && (
+                <tr><td colSpan={4} className={`${bodyStyles.md} px-4 py-10 text-center text-text-muted`}>This user has no saved offerings.</td></tr>
+              )}
+            </tbody>
+          </table>
+        </div>
+      </AdminTable>
+
+      <div className="mt-8 flex items-center gap-2 text-text-muted">
+        <Bookmark className="size-4" />
+        <p className={bodyStyles.sm}>Bookmark data is read-only in the admin console.</p>
+      </div>
+    </AdminPage>
   );
 }

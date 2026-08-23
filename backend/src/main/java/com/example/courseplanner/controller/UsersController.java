@@ -21,6 +21,7 @@ import java.time.LocalDate;
 import java.time.YearMonth;
 import java.time.ZoneOffset;
 import java.util.List;
+import java.util.UUID;
 
 @RestController
 @RequestMapping("/api/admin/users")
@@ -39,7 +40,7 @@ public class UsersController {
           u.last_sign_in_at,
           u.raw_app_meta_data->>'provider' AS provider,
           u.raw_user_meta_data->>'display_name' AS display_name,
-          (u.raw_user_meta_data->>'email_verified')::boolean AS email_verified,
+          (u.email_confirmed_at IS NOT NULL) AS email_verified,
           COALESCE(u.is_anonymous, false) AS is_anonymous,
           COALESCE(p.email_notifications_enabled, false) AS email_notifications_enabled,
           p.user_email AS preferred_email,
@@ -81,6 +82,12 @@ public class UsersController {
         @PathVariable String id
     ) {
         jwtService.verifyAdmin(authHeader);
+
+        try {
+            UUID.fromString(id);
+        } catch (IllegalArgumentException e) {
+            throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "Invalid user ID");
+        }
 
         List<AdminUserDTO> results = jdbcTemplate.query(
             USERS_QUERY + " WHERE u.id = ?::uuid",
