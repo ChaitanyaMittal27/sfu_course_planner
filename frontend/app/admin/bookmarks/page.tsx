@@ -1,231 +1,232 @@
 "use client";
 
-import { useEffect, useState, useCallback, useMemo } from "react";
-import { Bookmark, Users, Trophy, GraduationCap } from "lucide-react";
+import { useCallback, useEffect, useMemo, useState } from "react";
+import Link from "next/link";
+import { Bookmark, GraduationCap, RefreshCw, Trophy, Users } from "lucide-react";
+import {
+  CartesianGrid,
+  Line,
+  LineChart,
+  ResponsiveContainer,
+  Tooltip,
+  XAxis,
+  YAxis,
+} from "recharts";
 import { api, AdminBookmarksResponse } from "@/lib/api";
-import { Card, CardContent } from "@/components/ui/card";
+import { courseHref } from "@/lib/course-routes";
+import { bodyStyles, headerStyles, labelStyles } from "@/app/fonts";
+import { AdminPage, AdminPageHeader, AdminStatGrid, AdminTable } from "@/components/admin/AdminPage";
 import AdminPageSkeleton from "@/components/admin/AdminPageSkeleton";
 import ErrorMessage from "@/components/ErrorMessage";
-import { displayStyles, headerStyles, bodyStyles, labelStyles } from "@/app/fonts";
-import {
-  LineChart, Line, XAxis, YAxis, Tooltip, ResponsiveContainer, CartesianGrid,
-} from "recharts";
+import { Button } from "@/components/ui/button";
+import { Card, CardContent } from "@/components/ui/card";
+
+function errorMessage(error: unknown, fallback: string) {
+  return error instanceof Error ? error.message : fallback;
+}
+
+function formatMonth(month: string) {
+  return new Date(`${month}-01T00:00:00Z`).toLocaleDateString("en-CA", { month: "short", year: "2-digit" });
+}
 
 export default function AdminBookmarksPage() {
   const [data, setData] = useState<AdminBookmarksResponse | null>(null);
   const [loading, setLoading] = useState(true);
+  const [refreshing, setRefreshing] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
-  const fetchData = useCallback(async () => {
+  useEffect(() => {
+    let active = true;
+
+    async function loadBookmarks() {
+      try {
+        const result = await api.getAdminBookmarks();
+        if (active) {
+          setError(null);
+          setData(result);
+        }
+      } catch (requestError: unknown) {
+        if (active) setError(errorMessage(requestError, "Failed to load bookmark analytics."));
+      } finally {
+        if (active) setLoading(false);
+      }
+    }
+
+    loadBookmarks();
+    return () => { active = false; };
+  }, []);
+
+  const fetchBookmarks = useCallback(async () => {
     try {
       setError(null);
-      const result = await api.getAdminBookmarks();
-      setData(result);
-    } catch (err: unknown) {
-      const message = err instanceof Error ? err.message : "Failed to load bookmark analytics";
-      setError(message);
+      setData(await api.getAdminBookmarks());
+    } catch (requestError: unknown) {
+      setError(errorMessage(requestError, "Failed to load bookmark analytics."));
     }
   }, []);
 
-  useEffect(() => {
-    fetchData().finally(() => setLoading(false));
-  }, [fetchData]);
+  const handleRefresh = async () => {
+    setRefreshing(true);
+    await fetchBookmarks();
+    setRefreshing(false);
+  };
 
-  const chartData = useMemo(() => {
-    if (!data) return [];
-    return data.monthlyGrowth.map((m) => {
-      const [y, mo] = m.month.split("-");
-      const label = new Date(parseInt(y), parseInt(mo) - 1).toLocaleDateString("en-US", { month: "short", year: "2-digit" });
-      return { month: label, bookmarks: m.count };
-    });
-  }, [data]);
+  const chartData = useMemo(
+    () => data?.monthlyGrowth.map((month) => ({ month: formatMonth(month.month), bookmarks: month.count })) ?? [],
+    [data],
+  );
 
-  if (loading) {
-    return <AdminPageSkeleton statCards={4} hasChart hasTable tableRows={10} />;
-  }
+  if (loading) return <AdminPageSkeleton statCards={4} hasChart hasTable tableRows={10} hasSecondTable />;
+
+  const actions = (
+    <Button type="button" onClick={handleRefresh} disabled={refreshing} className="gap-2">
+      <RefreshCw className={refreshing ? "animate-spin" : ""} />
+      Refresh
+    </Button>
+  );
 
   if (error && !data) {
     return (
-      <div className="flex-1 p-8 max-w-[1180px]">
-        <ErrorMessage message={error} onRetry={fetchData} />
-      </div>
+      <AdminPage>
+        <AdminPageHeader title="Bookmark analytics" description="Platform-wide bookmark trends, popular courses, and department rankings." actions={actions} />
+        <ErrorMessage message={error} onRetry={handleRefresh} />
+      </AdminPage>
     );
   }
 
   if (!data) return null;
 
   const { stats, topCourses, departmentRankings } = data;
-  const maxDeptCount = departmentRankings.length > 0 ? departmentRankings[0].bookmarkCount : 1;
-
+  const maxDeptCount = Math.max(...departmentRankings.map((department) => department.bookmarkCount), 1);
   const statCards = [
-    { label: "Total Bookmarks", value: stats.totalBookmarks.toLocaleString(), icon: Bookmark, color: "text-accent" },
-    { label: "Avg per User", value: String(stats.avgPerUser), icon: Users, color: "text-accent" },
-    {
-      label: "Top Department",
-      value: stats.topDepartment.toUpperCase(),
-      subtitle: stats.topDepartmentName,
-      icon: Trophy,
-      color: "text-warning",
-    },
-    { label: "Unique Courses", value: String(stats.uniqueCourses), icon: GraduationCap, color: "text-success" },
+    { label: "Total bookmarks", value: stats.totalBookmarks, icon: Bookmark, iconClass: "text-accent" },
+    { label: "Avg bookmarks per user", value: stats.avgPerUser, icon: Users, iconClass: "text-accent" },
+    { label: "Top department", value: stats.topDepartment.toUpperCase(), subtitle: stats.topDepartmentName, icon: Trophy, iconClass: "text-warning" },
+    { label: "Unique courses", value: stats.uniqueCourses, icon: GraduationCap, iconClass: "text-success" },
   ];
 
   return (
-    <div className="flex-1 p-8 max-w-[1180px]">
-      {/* Heading */}
-      <div className="mb-6">
-        <h1 className={`${displayStyles.sm} text-text-primary mb-1`}>Bookmark Analytics</h1>
-        <p className={`${bodyStyles.md} text-text-muted`}>
-          Platform-wide bookmark data — most watched courses, department trends and growth.
-        </p>
-      </div>
+    <AdminPage>
+      <AdminPageHeader title="Bookmark analytics" description="Platform-wide bookmark trends, popular courses, and department rankings." actions={actions} />
 
-      {/* Stat cards */}
-      <div className="grid grid-cols-2 lg:grid-cols-4 gap-3.5 mb-8">
-        {statCards.map((stat) => (
-          <Card key={stat.label} className="p-4">
+      {error && <div className="mb-6"><ErrorMessage message={error} onRetry={handleRefresh} /></div>}
+
+      <AdminStatGrid>
+        {statCards.map(({ label, value, subtitle, icon: Icon, iconClass }) => (
+          <Card key={label} className="p-4">
             <CardContent className="p-0">
-              <div className="flex items-center gap-2.5 mb-2">
-                <div className={`w-8 h-8 rounded-lg bg-surface-raised flex items-center justify-center ${stat.color}`}>
-                  <stat.icon className="w-4 h-4" />
+              <div className="mb-2 flex items-center gap-2.5">
+                <div className={`flex size-8 items-center justify-center rounded-lg bg-surface-raised ${iconClass}`}>
+                  <Icon className="size-4" />
                 </div>
-                <span className={`${labelStyles.md} text-text-muted`}>{stat.label}</span>
+                <span className={`${labelStyles.md} text-text-muted`}>{label}</span>
               </div>
-              <span className="font-mono font-semibold text-[20px] tracking-tight text-text-primary">
-                {stat.value}
-              </span>
-              {"subtitle" in stat && stat.subtitle && (
-                <span className={`${bodyStyles.sm} text-text-muted block mt-0.5`}>{stat.subtitle}</span>
-              )}
+              <p className="font-mono text-xl font-semibold tracking-tight text-text-primary">{value.toLocaleString()}</p>
+              {subtitle && <p className={`${bodyStyles.sm} mt-0.5 truncate text-text-muted`}>{subtitle}</p>}
             </CardContent>
           </Card>
         ))}
-      </div>
+      </AdminStatGrid>
 
-      {/* Growth chart */}
-      {chartData.length > 1 && (
-        <Card className="p-5 mb-8">
-          <CardContent className="p-0">
-            <h2 className={`${headerStyles.xs} text-text-primary mb-4`}>Bookmarks over time</h2>
+      <Card className="mb-8 p-5">
+        <CardContent className="p-0">
+          <h2 className={`${headerStyles.xs} mb-4 text-text-primary`}>Bookmarks added by month</h2>
+          {chartData.length > 1 ? (
             <div className="h-56">
               <ResponsiveContainer width="100%" height="100%">
                 <LineChart data={chartData}>
                   <CartesianGrid strokeDasharray="3 3" stroke="var(--border)" />
-                  <XAxis
-                    dataKey="month"
-                    tick={{ fontSize: 11, fill: "var(--text-muted)" }}
-                    axisLine={{ stroke: "var(--border)" }}
-                    tickLine={false}
-                  />
-                  <YAxis
-                    tick={{ fontSize: 11, fill: "var(--text-muted)" }}
-                    axisLine={{ stroke: "var(--border)" }}
-                    tickLine={false}
-                    allowDecimals={false}
-                  />
-                  <Tooltip
-                    contentStyle={{
-                      backgroundColor: "var(--surface)",
-                      border: "1px solid var(--border)",
-                      borderRadius: 8,
-                      fontSize: 12,
-                    }}
-                    labelStyle={{ color: "var(--text-primary)", fontWeight: 600 }}
-                  />
-                  <Line
-                    type="monotone"
-                    dataKey="bookmarks"
-                    stroke="var(--accent)"
-                    strokeWidth={2}
-                    dot={{ r: 3, fill: "var(--accent)" }}
-                    activeDot={{ r: 5 }}
-                  />
+                  <XAxis dataKey="month" tick={{ fontSize: 11, fill: "var(--text-muted)" }} axisLine={{ stroke: "var(--border)" }} tickLine={false} />
+                  <YAxis allowDecimals={false} tick={{ fontSize: 11, fill: "var(--text-muted)" }} axisLine={{ stroke: "var(--border)" }} tickLine={false} />
+                  <Tooltip contentStyle={{ backgroundColor: "var(--surface)", border: "1px solid var(--border)", borderRadius: 8, fontSize: 12 }} labelStyle={{ color: "var(--text-primary)", fontWeight: 600 }} />
+                  <Line type="monotone" dataKey="bookmarks" stroke="var(--accent)" strokeWidth={2} dot={{ r: 3, fill: "var(--accent)" }} activeDot={{ r: 5 }} />
                 </LineChart>
               </ResponsiveContainer>
             </div>
-          </CardContent>
-        </Card>
-      )}
+          ) : (
+            <p className={`${bodyStyles.md} py-12 text-center text-text-muted`}>Not enough bookmark history yet.</p>
+          )}
+        </CardContent>
+      </Card>
 
-      {/* Most bookmarked courses */}
-      <div className="flex items-center justify-between mb-3">
+      <div className="mb-3 flex items-center justify-between gap-4">
         <h2 className={`${headerStyles.xs} text-text-primary`}>Most bookmarked courses</h2>
         <span className={`${labelStyles.sm} font-mono text-text-subtle`}>Top {topCourses.length}</span>
       </div>
+      <AdminTable className="mb-8">
+        <div className="overflow-x-auto">
+          <table className="w-full min-w-[760px] text-left">
+            <thead className="border-b border-border bg-surface-raised">
+              <tr className={`${labelStyles.sm} uppercase tracking-wider text-text-subtle`}>
+                <th className="px-4 py-3 font-medium">#</th>
+                <th className="px-4 py-3 font-medium">Course</th>
+                <th className="px-4 py-3 font-medium">Department</th>
+                <th className="px-4 py-3 font-medium">Title</th>
+                <th className="px-4 py-3 text-right font-medium">Bookmarks</th>
+              </tr>
+            </thead>
+            <tbody>
+              {topCourses.map((course, index) => (
+                <tr key={`${course.deptCode}-${course.courseNumber}`} className="border-b border-border last:border-0 hover:bg-surface-raised">
+                  <td className={`${labelStyles.md} px-4 py-3 font-mono text-text-subtle`}>{index + 1}</td>
+                  <td className="px-4 py-3">
+                    <Link href={courseHref(course.deptCode, course.courseNumber)} className={`${labelStyles.lg} text-text-primary hover:text-accent focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring`}>
+                      {course.deptCode.toUpperCase()} {course.courseNumber}
+                    </Link>
+                  </td>
+                  <td className={`${bodyStyles.sm} max-w-56 truncate px-4 py-3 text-text-muted`}>{course.departmentName}</td>
+                  <td className={`${bodyStyles.sm} max-w-80 truncate px-4 py-3 text-text-muted`}>{course.title || "—"}</td>
+                  <td className={`${labelStyles.md} px-4 py-3 text-right font-mono text-text-primary`}>{course.bookmarkCount}</td>
+                </tr>
+              ))}
+              {topCourses.length === 0 && (
+                <tr><td colSpan={5} className={`${bodyStyles.md} px-4 py-10 text-center text-text-muted`}>No bookmarks found.</td></tr>
+              )}
+            </tbody>
+          </table>
+        </div>
+      </AdminTable>
 
-      <Card className="overflow-hidden mb-8">
-        <CardContent className="p-0">
-          <div className="grid grid-cols-[40px_1fr_1fr_100px_80px] px-[18px] py-2.5 bg-surface-raised border-b border-border">
-            <span className={`${labelStyles.sm} uppercase tracking-wider text-text-subtle`}>#</span>
-            <span className={`${labelStyles.sm} uppercase tracking-wider text-text-subtle`}>Course</span>
-            <span className={`${labelStyles.sm} uppercase tracking-wider text-text-subtle`}>Department</span>
-            <span className={`${labelStyles.sm} uppercase tracking-wider text-text-subtle text-center`}>Title</span>
-            <span className={`${labelStyles.sm} uppercase tracking-wider text-text-subtle text-center`}>Marks</span>
-          </div>
-          {topCourses.map((course, i) => (
-            <div
-              key={`${course.deptCode}-${course.courseNumber}`}
-              className={`grid grid-cols-[40px_1fr_1fr_100px_80px] px-[18px] py-3 items-center hover:bg-surface-raised transition-colors ${
-                i < topCourses.length - 1 ? "border-b border-border" : ""
-              }`}
-            >
-              <span className={`${labelStyles.md} font-mono text-text-subtle`}>{i + 1}</span>
-              <span className={`${labelStyles.lg} text-text-primary`}>
-                {course.deptCode.toUpperCase()} {course.courseNumber}
-              </span>
-              <span className={`${bodyStyles.sm} text-text-muted truncate`}>{course.departmentName}</span>
-              <span className={`${bodyStyles.sm} text-text-muted text-center truncate`}>{course.title || "—"}</span>
-              <span className={`${labelStyles.md} font-mono text-text-primary text-center`}>{course.bookmarkCount}</span>
-            </div>
-          ))}
-          {topCourses.length === 0 && (
-            <div className={`${bodyStyles.md} text-text-muted text-center py-8`}>No bookmarks found</div>
-          )}
-        </CardContent>
-      </Card>
-
-      {/* Department rankings */}
-      <div className="flex items-center justify-between mb-3">
+      <div className="mb-3 flex items-center justify-between gap-4">
         <h2 className={`${headerStyles.xs} text-text-primary`}>Department rankings</h2>
         <span className={`${labelStyles.sm} font-mono text-text-subtle`}>{departmentRankings.length} departments</span>
       </div>
-
-      <Card className="overflow-hidden">
-        <CardContent className="p-0">
-          <div className="grid grid-cols-[40px_80px_1fr_80px_1fr] px-[18px] py-2.5 bg-surface-raised border-b border-border">
-            <span className={`${labelStyles.sm} uppercase tracking-wider text-text-subtle`}>#</span>
-            <span className={`${labelStyles.sm} uppercase tracking-wider text-text-subtle`}>Code</span>
-            <span className={`${labelStyles.sm} uppercase tracking-wider text-text-subtle`}>Name</span>
-            <span className={`${labelStyles.sm} uppercase tracking-wider text-text-subtle text-center`}>Marks</span>
-            <span className={`${labelStyles.sm} uppercase tracking-wider text-text-subtle`}>% of Total</span>
-          </div>
-          {departmentRankings.map((dept, i) => (
-            <div
-              key={dept.deptCode}
-              className={`grid grid-cols-[40px_80px_1fr_80px_1fr] px-[18px] py-3 items-center hover:bg-surface-raised transition-colors ${
-                i < departmentRankings.length - 1 ? "border-b border-border" : ""
-              }`}
-            >
-              <span className={`${labelStyles.md} font-mono text-text-subtle`}>{i + 1}</span>
-              <span className={`${labelStyles.lg} text-text-primary`}>{dept.deptCode.toUpperCase()}</span>
-              <span className={`${bodyStyles.sm} text-text-muted truncate`}>{dept.departmentName}</span>
-              <span className={`${labelStyles.md} font-mono text-text-primary text-center`}>{dept.bookmarkCount}</span>
-              <div className="flex items-center gap-2">
-                <div className="flex-1 h-2 rounded-full bg-surface-raised overflow-hidden">
-                  <div
-                    className="h-full rounded-full bg-accent"
-                    style={{ width: `${(dept.bookmarkCount / maxDeptCount) * 100}%` }}
-                  />
-                </div>
-                <span className={`${labelStyles.sm} font-mono text-text-subtle w-12 text-right`}>{dept.percentage}%</span>
-              </div>
-            </div>
-          ))}
-          {departmentRankings.length === 0 && (
-            <div className={`${bodyStyles.md} text-text-muted text-center py-8`}>No data</div>
-          )}
-        </CardContent>
-      </Card>
-    </div>
+      <AdminTable>
+        <div className="overflow-x-auto">
+          <table className="w-full min-w-[720px] text-left">
+            <thead className="border-b border-border bg-surface-raised">
+              <tr className={`${labelStyles.sm} uppercase tracking-wider text-text-subtle`}>
+                <th className="px-4 py-3 font-medium">#</th>
+                <th className="px-4 py-3 font-medium">Code</th>
+                <th className="px-4 py-3 font-medium">Department</th>
+                <th className="px-4 py-3 text-right font-medium">Bookmarks</th>
+                <th className="px-4 py-3 font-medium">Share</th>
+              </tr>
+            </thead>
+            <tbody>
+              {departmentRankings.map((department, index) => (
+                <tr key={department.deptCode} className="border-b border-border last:border-0">
+                  <td className={`${labelStyles.md} px-4 py-3 font-mono text-text-subtle`}>{index + 1}</td>
+                  <td className={`${labelStyles.lg} px-4 py-3 text-text-primary`}>{department.deptCode.toUpperCase()}</td>
+                  <td className={`${bodyStyles.sm} max-w-80 truncate px-4 py-3 text-text-muted`}>{department.departmentName}</td>
+                  <td className={`${labelStyles.md} px-4 py-3 text-right font-mono text-text-primary`}>{department.bookmarkCount}</td>
+                  <td className="min-w-44 px-4 py-3">
+                    <div className="flex items-center gap-2">
+                      <div className="h-2 flex-1 overflow-hidden rounded-full bg-surface-raised">
+                        <div className="h-full rounded-full bg-accent" style={{ width: `${(department.bookmarkCount / maxDeptCount) * 100}%` }} />
+                      </div>
+                      <span className={`${labelStyles.sm} w-12 text-right font-mono text-text-subtle`}>{department.percentage}%</span>
+                    </div>
+                  </td>
+                </tr>
+              ))}
+              {departmentRankings.length === 0 && (
+                <tr><td colSpan={5} className={`${bodyStyles.md} px-4 py-10 text-center text-text-muted`}>No department ranking data found.</td></tr>
+              )}
+            </tbody>
+          </table>
+        </div>
+      </AdminTable>
+    </AdminPage>
   );
 }
