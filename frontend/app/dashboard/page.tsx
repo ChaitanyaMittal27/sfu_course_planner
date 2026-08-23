@@ -4,7 +4,7 @@ import { Suspense, useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
 import { offeringHref } from "@/lib/course-routes";
 import { Plus, Eye, TrendingUp, BarChart3, Bell, X, ChevronDown, ChevronUp, Check, Pencil } from "lucide-react";
-import { api, CourseOffering, Bookmark, Course, Department } from "@/lib/api";
+import { api, BookmarkOffering, Bookmark, Course, Department } from "@/lib/api";
 import { supabase } from "@/lib/supabase/client";
 import { useAuth } from "@/contexts/AuthContext";
 import LoadingSpinner from "@/components/LoadingSpinner";
@@ -34,7 +34,7 @@ function DashboardPageContent() {
   const { user, isAuthenticated, isLoading: authLoading } = useAuth();
   const [dataLoading, setDataLoading] = useState(true);
   const [bookmarks, setBookmarks] = useState<Bookmark[]>([]);
-  const [offerings, setOfferings] = useState<CourseOffering[]>([]);
+  const [offerings, setOfferings] = useState<BookmarkOffering[]>([]);
   const [courses, setCourses] = useState<Map<number, Course>>(new Map());
   const [departments, setDepartments] = useState<Map<number, Department>>(new Map());
   const [error, setError] = useState<string | null>(null);
@@ -116,12 +116,9 @@ function DashboardPageContent() {
     try {
       await api.deleteBookmark(bookmarkId);
       setBookmarks((prev) => prev.filter((b) => b.bookmarkId !== bookmarkId));
-      const deleted = bookmarks.find((b) => b.bookmarkId === bookmarkId);
-      if (deleted) {
-        setOfferings((prev) =>
-          prev.filter((o) => !(o.semesterCode === deleted.semesterCode && o.section === deleted.section)),
-        );
-      }
+      setOfferings((prev) =>
+        prev.filter((offering) => offering.bookmarkId !== bookmarkId),
+      );
     } catch (err: unknown) {
       console.error("Failed to delete bookmark:", err);
       alert(`Failed to remove bookmark: ${err instanceof Error ? err.message : "Unknown error"}`);
@@ -199,7 +196,7 @@ function DashboardPageContent() {
   };
 
   const getOffering = (bookmark: Bookmark) => {
-    return offerings.find((o) => o.semesterCode === bookmark.semesterCode && o.section === bookmark.section);
+    return offerings.find((offering) => offering.bookmarkId === bookmark.bookmarkId);
   };
 
   const fillingFast = offerings.filter((o) => o.loadPercent >= 90).length;

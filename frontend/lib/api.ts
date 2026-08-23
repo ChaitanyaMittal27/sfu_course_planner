@@ -3,6 +3,7 @@ import {
   Course,
   AboutInfo,
   Bookmark,
+  BookmarkOffering,
   CourseOffering,
   OfferingDetail,
   GradeDistribution,
@@ -164,7 +165,7 @@ export const api = {
    *
    * @returns List of watched course offerings with enrollment data
    */
-  getBookmarkOfferings: () => fetchAuthAPI<CourseOffering[]>("/api/bookmarks/offerings"),
+  getBookmarkOfferings: () => fetchAuthAPI<BookmarkOffering[]>("/api/bookmarks/offerings"),
 
   /**
    * Create a new bookmark for authenticated user
@@ -314,6 +315,7 @@ export type {
   CourseOffering,
   AboutInfo,
   Bookmark,
+  BookmarkOffering,
   GradeDistribution,
   OfferingDetail,
   EnrollmentDataPoint,
