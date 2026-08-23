@@ -60,7 +60,13 @@ function CourseComparisonContent() {
   };
 
   const loadFromURL = async () => {
-    if (!coursesParam) return;
+    if (!coursesParam) {
+      setSelectedCourses([]);
+      setComparisonData([]);
+      setError(null);
+      return;
+    }
+
     try {
       const readableCourses = parseComparedCourses(coursesParam);
       const parsed = readableCourses.length > 0
@@ -74,7 +80,7 @@ function CourseComparisonContent() {
 
       if (parsed.some((course) => course === null)) throw new Error("Invalid course reference");
       const resolved = parsed.filter((course): course is NonNullable<typeof course> => course !== null);
-      if (resolved.length < 2 || resolved.length > 3) throw new Error("Invalid course count");
+      if (resolved.length > 3) throw new Error("Invalid course count");
 
       const selected = resolved.map((course) => ({
         deptId: course.deptId,
@@ -85,7 +91,9 @@ function CourseComparisonContent() {
 
       if (readableCourses.length === 0) updateURL(selected);
       setSelectedCourses(selected);
-      fetchComparisonData(selected);
+      setComparisonData([]);
+      setError(null);
+      if (selected.length >= 2) void fetchComparisonData(selected);
     } catch {
       setError("Invalid URL parameters");
     }
@@ -146,22 +154,25 @@ function CourseComparisonContent() {
     setSelectedCourses(updated);
     updateURL(updated);
     setComparisonData([]);
+    setError(null);
   };
 
   const fetchComparisonData = async (courses: SelectedCourse[]) => {
     if (courses.length < 2) {
-      setError("Select at least 2 courses to compare");
+      setComparisonData([]);
       return;
     }
     setLoading(true);
     setError(null);
     try {
-      const latestSemester = 1267;
-      const promises = courses.map((c) => api.getOfferingDetail(c.deptId, c.courseId, latestSemester));
+      const enrollingTerm = await api.getEnrollingTerm();
+      const promises = courses.map((course) =>
+        api.getOfferingDetail(course.deptId, course.courseId, enrollingTerm.semesterCode),
+      );
       const results = await Promise.all(promises);
       setComparisonData(results);
     } catch {
-      setError("Failed to fetch course data. Some courses may not be offered this semester.");
+      setError("Failed to fetch course data for the enrolling term. Some courses may not be offered this semester.");
       setComparisonData([]);
     } finally {
       setLoading(false);
@@ -409,11 +420,15 @@ function CourseComparisonContent() {
           </div>
         )}
 
-        {!loading && comparisonData.length === 0 && selectedCourses.length === 0 && (
+        {!loading && comparisonData.length === 0 && selectedCourses.length < 2 && (
           <TaskEmptyState
             icon={ClipboardList}
-            title="Choose courses to compare"
-            description="Add two or three courses above to compare their details side by side."
+            title={selectedCourses.length === 1 ? "Add one more course" : "Choose courses to compare"}
+            description={
+              selectedCourses.length === 1
+                ? "Add another course above to compare their details side by side."
+                : "Add two or three courses above to compare their details side by side."
+            }
           />
         )}
       </div>
