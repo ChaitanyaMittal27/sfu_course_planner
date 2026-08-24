@@ -5,8 +5,8 @@ import com.example.courseplanner.service.JwtService;
 
 import io.swagger.v3.oas.annotations.Hidden;
 import org.springframework.beans.factory.annotation.Value;
+import org.springframework.beans.factory.annotation.Qualifier;
 import org.springframework.http.*;
-import org.springframework.http.client.SimpleClientHttpRequestFactory;
 import org.springframework.web.bind.annotation.*;
 import org.springframework.web.client.HttpClientErrorException;
 import org.springframework.web.client.RestTemplate;
@@ -29,13 +29,14 @@ public class HealthController {
     @Value("${RESEND_API_KEY}")
     private String resendApiKey;
 
-    public HealthController(JwtService jwtService, DataSource dataSource) {
+    public HealthController(
+        JwtService jwtService,
+        DataSource dataSource,
+        @Qualifier("healthRestTemplate") RestTemplate restTemplate
+    ) {
         this.jwtService = jwtService;
         this.dataSource = dataSource;
-        SimpleClientHttpRequestFactory requestFactory = new SimpleClientHttpRequestFactory();
-        requestFactory.setConnectTimeout(5000);
-        requestFactory.setReadTimeout(5000);
-        this.restTemplate = new RestTemplate(requestFactory);
+        this.restTemplate = restTemplate;
     }
 
     @GetMapping

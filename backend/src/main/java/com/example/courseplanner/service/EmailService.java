@@ -1,11 +1,7 @@
 package com.example.courseplanner.service;
 
-import com.resend.Resend;
-import com.resend.services.emails.model.CreateEmailOptions;
-import com.resend.services.emails.model.CreateEmailResponse;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Service;
 
 @Service
@@ -18,25 +14,16 @@ public class EmailService {
     private static final String FROM_SUPPORT = "SFU Course Planner Support <support@sfucourseplanner.com>";
     private static final String SUPPORT_EMAIL = "support@sfucourseplanner.com";
 
-    @Value("${RESEND_API_KEY}")
-    private String resendApiKey;
+    private final EmailTransport emailTransport;
+
+    public EmailService(EmailTransport emailTransport) {
+        this.emailTransport = emailTransport;
+    }
 
     private void send(String to, String from, String subject, String htmlBody, String replyTo) {
         try {
-            Resend resend = new Resend(resendApiKey);
-
-            CreateEmailOptions.Builder builder = CreateEmailOptions.builder()
-                    .from(from)
-                    .to(to)
-                    .subject(subject)
-                    .html(htmlBody);
-
-            if (replyTo != null) {
-                builder.replyTo(replyTo);
-            }
-
-            CreateEmailResponse response = resend.emails().send(builder.build());
-            log.info("Email sent successfully [id={}, to={}, subject={}]", response.getId(), to, subject);
+            emailTransport.send(new EmailTransport.EmailMessage(to, from, subject, htmlBody, replyTo));
+            log.info("Email submitted [to={}, subject={}]", to, subject);
         } catch (Exception e) {
             log.error("Failed to send email [to={}, subject={}]: {}", to, subject, e.getMessage(), e);
         }

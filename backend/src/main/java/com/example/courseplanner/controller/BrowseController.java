@@ -94,6 +94,10 @@ public class BrowseController {
                 .orElseThrow(() ->
                         new ResponseStatusException(HttpStatus.NOT_FOUND, "Course not found"));
 
+        if (!course.getDepartment().getDeptId().equals(deptId)) {
+            throw new ResponseStatusException(HttpStatus.NOT_FOUND, "Course not found");
+        }
+
         String dept = course.getDepartment().getDeptCode();   // CMPT
         String number = course.getCourseNumber();             // 276
 
@@ -167,13 +171,17 @@ public class BrowseController {
     ) {
 
         // 1. Validate DB entities
-        Course course = courseRepository.findById(courseId)
+        Course course = courseRepository.findByIdWithDepartment(courseId)
                 .orElseThrow(() -> new ResponseStatusException(
                         HttpStatus.NOT_FOUND, "Course not found"));
 
         Department dept = departmentRepository.findById(deptId)
                 .orElseThrow(() -> new ResponseStatusException(
                         HttpStatus.NOT_FOUND, "Department not found"));
+
+        if (!course.getDepartment().getDeptId().equals(deptId)) {
+            throw new ResponseStatusException(HttpStatus.NOT_FOUND, "Course not found");
+        }
 
         // 2. Fetch CourseSys data for this semester
         CourseSysBrowseResult csResult =

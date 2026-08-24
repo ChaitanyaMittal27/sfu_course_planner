@@ -4,6 +4,7 @@ import org.springframework.beans.factory.annotation.Value;
 import org.springframework.http.*;
 import org.springframework.stereotype.Service;
 import org.springframework.web.client.HttpClientErrorException;
+import org.springframework.web.client.HttpStatusCodeException;
 import org.springframework.web.client.RestTemplate;
 
 import com.example.courseplanner.exception.ForbiddenException;
@@ -39,16 +40,18 @@ import java.util.Map;
 @Service
 public class JwtService {
 
-    @Value("${supabase.project.url}")
-    private String supabaseProjectUrl;
-
-    @Value("${supabase.anon.key}")
-    private String supabaseAnonKey;
-
     private final RestTemplate restTemplate;
+    private final String supabaseProjectUrl;
+    private final String supabaseAnonKey;
 
-    public JwtService() {
-        this.restTemplate = new RestTemplate();
+    public JwtService(
+            RestTemplate restTemplate,
+            @Value("${supabase.project.url}") String supabaseProjectUrl,
+            @Value("${supabase.anon.key}") String supabaseAnonKey
+    ) {
+        this.restTemplate = restTemplate;
+        this.supabaseProjectUrl = supabaseProjectUrl;
+        this.supabaseAnonKey = supabaseAnonKey;
     }
 
     /**
@@ -152,7 +155,7 @@ public class JwtService {
             
         } catch (HttpClientErrorException.Unauthorized e) {
             throw new RuntimeException("JWT token is invalid or expired", e);
-        } catch (HttpClientErrorException e) {
+        } catch (HttpStatusCodeException e) {
             throw new RuntimeException("JWT verification failed: " + e.getStatusCode(), e);
         } catch (Exception e) {
             throw new RuntimeException("Failed to verify JWT with Supabase: " + e.getMessage(), e);

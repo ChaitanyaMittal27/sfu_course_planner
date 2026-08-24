@@ -14,6 +14,7 @@ import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.stereotype.Service;
 import org.springframework.web.client.RestTemplate;
+import org.springframework.web.client.RestClientException;
 import org.springframework.web.util.UriComponentsBuilder;
 
 import java.net.URI;
@@ -27,7 +28,11 @@ public class CourseSysClient {
     private static final String COURSESYS_BROWSE =
             "https://coursys.sfu.ca/browse/";
 
-    private final RestTemplate restTemplate = new RestTemplate();
+    private final RestTemplate restTemplate;
+
+    public CourseSysClient(RestTemplate restTemplate) {
+        this.restTemplate = restTemplate;
+    }
 
     /**
      * Fetches all course sections for a specific course in a specific semester.
@@ -59,17 +64,27 @@ public class CourseSysClient {
         // and pass URI to RestTemplate to avoid double-encoding.
         URI uri = builder.build(false).encode().toUri();
 
-        ResponseEntity<Map> response =
-                restTemplate.getForEntity(uri, Map.class);
+        ResponseEntity<Map> response;
+        try {
+            response = restTemplate.getForEntity(uri, Map.class);
+        } catch (RestClientException exception) {
+            return emptyResult(dept, courseNumber, semesterCode);
+        }
 
         if (response.getStatusCode() != HttpStatus.OK || response.getBody() == null) {
             return emptyResult(dept, courseNumber, semesterCode);
         }
 
-        List<List<String>> rows =
-                (List<List<String>>) response.getBody().get("data");
+        Object data = response.getBody().get("data");
+        if (!(data instanceof List<?> rows)) {
+            return emptyResult(dept, courseNumber, semesterCode);
+        }
 
-        return parseResult(rows, dept, courseNumber, semesterCode);
+        try {
+            return parseResult(rows, dept, courseNumber, semesterCode);
+        } catch (IllegalArgumentException exception) {
+            return emptyResult(dept, courseNumber, semesterCode);
+        }
     }
 
     // -----------------------------
@@ -86,7 +101,7 @@ public class CourseSysClient {
      * @return Populated CourseSysBrowseResult with all offerings
      */
     private CourseSysBrowseResult parseResult(
-            List<List<String>> rows,
+            List<?> rows,
             String dept,
             String courseNumber,
             long semesterCode
@@ -102,22 +117,30 @@ public class CourseSysClient {
 
         List<CourseSysOffering> offerings = new ArrayList<>();
 
-        for (List<String> row : rows) {
+        for (Object rawRow : rows) {
+            if (!(rawRow instanceof List<?> row) || row.size() < 6
+                    || row.stream().anyMatch(value -> !(value instanceof String))) {
+                throw new IllegalArgumentException("Invalid CourseSys response row");
+            }
+
             // row format:
             // [0]=term, [1]=html link, [2]=title,
             // [3]=enrollment, [4]=instructor, [5]=campus
 
-            String title = row.get(2);
+            String title = (String) row.get(2);
             result.setTitle(title);
 
-            String enrollmentRaw = row.get(3); // "96/100"
+            String enrollmentRaw = (String) row.get(3); // "96/100"
             String[] parts = enrollmentRaw.split("/");
+            if (parts.length != 2) {
+                throw new IllegalArgumentException("Invalid CourseSys enrollment data");
+            }
 
             CourseSysOffering offering = new CourseSysOffering();
-            offering.setSection(extractSection(row.get(1)));
-            offering.setInfoUrl(extractInfoUrl(row.get(1)));
-            offering.setInstructor(row.get(4));
-            offering.setCampus(row.get(5));
+            offering.setSection(extractSection((String) row.get(1)));
+            offering.setInfoUrl(extractInfoUrl((String) row.get(1)));
+            offering.setInstructor((String) row.get(4));
+            offering.setCampus((String) row.get(5));
             offering.setEnrolled(parts[0].trim());   // "115 (+31)"
             offering.setCapacity(parts[1].trim());   // "100"
             offerings.add(offering);
@@ -142,6 +165,8 @@ public class CourseSysClient {
         r.setDept(dept);
         r.setCourseNumber(courseNumber);
         r.setSemesterCode(semesterCode);
+        r.setYear(1900 + semesterCode / 10);
+        r.setSemester(parseSemester(semesterCode));
         r.setOfferings(List.of());
         return r;
     }
@@ -178,9 +203,15 @@ public class CourseSysClient {
         // "<a ...>CMPT 276 D100</a>" → "D100"
         int start = html.indexOf('>') + 1;
         int end = html.indexOf("</");
+        if (start == 0 || end <= start) {
+            throw new IllegalArgumentException("Invalid CourseSys section link");
+        }
         String innerText = html.substring(start, end).trim(); // "CMPT 276 D100"
 
         String[] tokens = innerText.split("\\s+");
+        if (tokens.length == 0 || tokens[0].isBlank()) {
+            throw new IllegalArgumentException("Invalid CourseSys section label");
+        }
         return tokens[tokens.length - 1];
     }
 
@@ -195,6 +226,9 @@ public class CourseSysClient {
         // href="/browse/info/..."
         long start = html.indexOf("href=\"") + 6;
         long end = html.indexOf("\"", (int)start);
+        if (start == 5 || end <= start) {
+            throw new IllegalArgumentException("Invalid CourseSys information link");
+        }
         return html.substring((int)start, (int)end);
     }
 }

@@ -17,6 +17,7 @@ import org.springframework.web.server.ResponseStatusException;
 
 import java.util.Comparator;
 import java.util.List;
+import java.util.Locale;
 import java.util.Map;
 
 @RestController
@@ -53,6 +54,8 @@ public class TermsController {
         jwtService.verifyAdmin(authHeader);
 
         validate(request);
+        String currentTerm = normalizeTerm(request.getCurrentTerm());
+        String enrollingTerm = normalizeTerm(request.getEnrollingTerm());
 
         List<Term> allTerms = termRepository.findAll();
         for (Term t : allTerms) {
@@ -61,19 +64,13 @@ public class TermsController {
         }
         termRepository.saveAll(allTerms);
 
-        Term current = termRepository.findByYearAndTerm(request.getCurrentYear(), request.getCurrentTerm())
-            .orElseGet(() -> {
-                Term t = new Term(request.getCurrentYear(), request.getCurrentTerm());
-                return termRepository.save(t);
-            });
+        Term current = termRepository.findByYearAndTerm(request.getCurrentYear(), currentTerm)
+            .orElseGet(() -> new Term(request.getCurrentYear(), currentTerm));
         current.setIsCurrent(true);
         termRepository.save(current);
 
-        Term enrolling = termRepository.findByYearAndTerm(request.getEnrollingYear(), request.getEnrollingTerm())
-            .orElseGet(() -> {
-                Term t = new Term(request.getEnrollingYear(), request.getEnrollingTerm());
-                return termRepository.save(t);
-            });
+        Term enrolling = termRepository.findByYearAndTerm(request.getEnrollingYear(), enrollingTerm)
+            .orElseGet(() -> new Term(request.getEnrollingYear(), enrollingTerm));
         enrolling.setIsEnrolling(true);
         termRepository.save(enrolling);
 
@@ -86,8 +83,8 @@ public class TermsController {
             throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "All fields are required");
         }
 
-        String ct = req.getCurrentTerm().toLowerCase();
-        String et = req.getEnrollingTerm().toLowerCase();
+        String ct = normalizeTerm(req.getCurrentTerm());
+        String et = normalizeTerm(req.getEnrollingTerm());
 
         if (!TERM_ORDER.containsKey(ct) || !TERM_ORDER.containsKey(et)) {
             throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "Term must be spring, summer, or fall");
@@ -102,6 +99,10 @@ public class TermsController {
         if (enrollingCode <= currentCode) {
             throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "Enrolling term must be after current term");
         }
+    }
+
+    private String normalizeTerm(String term) {
+        return term.trim().toLowerCase(Locale.ROOT);
     }
 
     private List<AdminTermDTO> getAllTermsSorted() {
