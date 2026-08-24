@@ -1,96 +1,80 @@
 # SFU Course Planner
 
-SFU Course Planner helps Simon Fraser University students research courses, inspect current and historical offerings, compare options, bookmark sections, and receive daily enrollment updates.
+SFU Course Planner helps Simon Fraser University students research courses, inspect current and historical offerings, compare options, bookmark sections, and receive enrollment updates.
 
 - Live site: [sfucourseplanner.com](https://sfucourseplanner.com)
 - Public API reference: [api.sfucourseplanner.com/api-docs](https://api.sfucourseplanner.com/api-docs)
 - License: MIT
 
-## What it does
+## Product overview
 
-- Browse SFU departments, courses, and term-specific offerings.
-- Fetch current enrollment, capacity, instructors, and locations from SFU CourseSys when requested.
-- Show stored CourseDiggers grade distributions and enrollment/load history.
-- Compare courses and sections using readable, shareable URLs.
-- Let authenticated users bookmark offerings and receive daily Resend digest emails.
-- Provide a role-gated admin console for health checks, terms, users, bookmarks, and support submissions.
+The application supports browsing SFU courses and offerings, live CourseSys enrollment data, CourseDiggers grade/enrollment history, readable shareable URLs, Supabase authentication, bookmarks with Resend digests, and a role-gated admin console.
 
 ## Architecture
 
 | Area | Technology | Responsibility |
 | --- | --- | --- |
-| Frontend | Next.js App Router, React, TypeScript, Tailwind | Public UI, Supabase Auth UI, canonical readable routes |
-| Backend | Java 17, Spring Boot 3.0, Gradle | ID-based REST API, authorization, CourseSys integration, email jobs |
-| Database and Auth | Supabase PostgreSQL and Auth | Persisted catalog, terms, preferences, bookmarks, support data, and email/password, Google, or Microsoft sessions |
+| Frontend | Next.js App Router, React, TypeScript, Tailwind | Browser UI, readable routes, Supabase Auth UI |
+| Backend | Java 17, Spring Boot 3.0, Gradle | REST API, authorization, CourseSys integration, scheduled email |
+| Database and Auth | Supabase PostgreSQL and Auth | Catalog, terms, bookmarks, preferences, support data, sessions |
 | External data | SFU CourseSys and CourseDiggers | Live offerings/enrollment and historical grade data |
-| Email | Resend | Support replies and daily bookmark digests |
+| Email | Resend | Support replies and bookmark digests |
 
-The frontend and backend are independently deployed. The browser calls the backend through `NEXT_PUBLIC_API_URL`; Spring Boot does not serve the Next.js app.
+The Next.js frontend and Spring Boot backend deploy independently. The browser calls the backend through `NEXT_PUBLIC_API_URL`; Spring Boot does not serve the frontend.
 
-### Data and authorization boundaries
-
-- PostgreSQL/Supabase is the source of truth for catalog metadata, terms, bookmarks, preferences, and support submissions.
-- CourseSys offering data is fetched on demand and is not persisted as normal offering records.
-- Supabase owns authentication. The frontend proxy refreshes sessions and protects UI routes; the backend independently verifies bearer tokens and enforces ownership/admin permissions.
-- Readable frontend routes such as `/browse/cmpt/125` resolve to internal numeric IDs before calling the existing backend APIs.
+PostgreSQL is the source of truth for catalog metadata, terms, preferences, bookmarks, and support submissions. CourseSys data is fetched on demand. Supabase owns authentication; the frontend proxy protects UI routes while the backend independently verifies bearer tokens and enforces ownership and admin authorization.
 
 ## Repository layout
 
 ```text
-backend/                         Spring Boot API
+frontend/                  Next.js application
+  app/                     App Router pages
+  components/              Shared UI by responsibility
+  contexts/, hooks/, lib/  Auth UI state, reusable hooks, API and route helpers
+  proxy.ts                 Session refresh and dashboard/admin route gates
+  Dockerfile               dev, test, build, runtime targets
+
+backend/                   Spring Boot API
   src/main/java/.../
-    controller/                  Public, protected, and admin REST controllers
-    dto/                         API DTOs; controllers do not expose entities
-    entity/, repository/         JPA model and repositories
-    service/                     JWT, CourseSys, and email integrations
-    scheduler/                   Daily bookmark digest
-    utils/                       Semester utilities
-  Dockerfile                     dev, builder, and runtime targets
+    controller/            Public, protected, and admin endpoints
+    dto/                   API DTOs
+    entity/, repository/   JPA model and persistence
+    service/               JWT, CourseSys, and email integrations
+    scheduler/             Daily bookmark digest
+  Dockerfile               dev, test, builder, runtime targets
 
-frontend/                        Next.js application
-  app/                           App Router pages and layouts
-  components/
-    layout/, course/, feedback/  Shared UI by responsibility
-    dashboard/, analytics/       Feature-specific display components
-    landing/, admin/, ui/        Landing, admin, and shadcn components
-  contexts/                      UI-only auth context
-  hooks/                         Route, retry, theme, and animation hooks
-  lib/                           API client, types, auth, course-route helpers
-  proxy.ts                       Session refresh and route/admin UI gates
-  Dockerfile                     dev, build, and runtime targets
-
-supabase/                        Local Supabase configuration, migrations, and seed data
-scripts/                         Windows development start/stop helpers
-agent-docs/                      Persistent project guidance and engineering backlog
-docker-compose.yaml              Development frontend and backend only
+supabase/                  Local configuration, migrations, and catalog seed data
+agent-docs/                Persistent project guidance and engineering backlog
+.github/workflows/ci.yml   Frontend and backend CI checks
+docker-compose.yaml         Local frontend/backend development environment
 ```
 
 ## Local development
 
 ### Prerequisites
 
-- Docker Desktop running
+- Docker Desktop
 - Node.js 22+ and npm
-- Java 17+ only if running the backend outside Docker
-- Supabase CLI available through `npx supabase@latest`
+- Java 17+ for non-Docker backend work
+- Supabase CLI, available through `npx supabase@latest`
 
-### 1. Create local environment files
+### Configure local environment files
 
-Copy the examples and fill them with local Supabase values:
+Create ignored local configuration files from the examples:
 
 ```powershell
 Copy-Item frontend/.env.example frontend/.env.local
 Copy-Item backend/.env.example backend/.env.local
 ```
 
-Start Supabase once to obtain the local URL, anon key, database user, and password:
+Start Supabase and use its local connection details to fill the placeholder values:
 
 ```powershell
 npx supabase@latest start
 npx supabase@latest status
 ```
 
-Set these values in `frontend/.env.local`:
+Use these frontend values for local development:
 
 ```dotenv
 NEXT_PUBLIC_API_URL=http://localhost:5000
@@ -99,19 +83,13 @@ NEXT_PUBLIC_SUPABASE_ANON_KEY=<local-anon-key>
 NEXT_PUBLIC_SITE_URL=http://localhost:3000
 ```
 
-Set `backend/.env.local` with the local database credentials shown by `supabase status`. Use the JDBC URL `jdbc:postgresql://host.docker.internal:54322/postgres` when running through Compose. `docker-compose.yaml` supplies the local Supabase URL override automatically.
+Set the backend database and Supabase values in `backend/.env.local` from the local CLI status. Compose overrides the database and Supabase hostnames needed from inside containers. `backend/.env.local` is read by Compose; Spring Boot does not automatically load it when run directly from Gradle or a JAR.
 
-`backend/.env.local` is read by Docker Compose; Spring Boot does not automatically load it for manual Gradle/JAR commands. Load those variables into your shell first when running the backend outside Docker.
+Never commit `.env.local` files, Resend keys, service-role keys, or production connection strings. `NEXT_PUBLIC_*` variables are browser-visible configuration and must not contain privileged secrets.
 
-### 2. Start the complete development environment
+### Run the full local stack
 
-From the repository root, the helper starts Supabase first and then the frontend and backend containers:
-
-```powershell
-.\scripts\dev.ps1
-```
-
-Equivalent manual commands:
+From the repository root:
 
 ```powershell
 npx supabase@latest start
@@ -126,93 +104,110 @@ Open:
 - Supabase Studio: <http://127.0.0.1:54323>
 - Mailpit inbox: <http://127.0.0.1:54324>
 
-Stop everything with:
+Stop the application containers and local Supabase separately:
 
 ```powershell
-.\scripts\dev-down.ps1
+docker compose down
+npx supabase@latest stop
 ```
 
-This Docker setup is for development only. It does not deploy the frontend, backend, or database.
+Compose is for local development only. It does not deploy the Vercel frontend, Elastic Beanstalk backend, or Supabase project.
 
-### Run applications outside Docker
+### Run without Docker
 
 Frontend:
 
 ```powershell
 Set-Location frontend
-npm install
+npm ci
 npm run dev
 ```
 
-Backend, after loading the required environment variables into the current shell:
+Backend, after loading `backend/.env.local` values into the current shell:
 
 ```powershell
 Set-Location backend
-.\gradlew.bat bootRun
+./gradlew bootRun
 ```
 
-## Environment variables
+## Testing and builds
 
-Never commit `.env.local` files or service-role/Resend secrets.
-
-| File | Variable | Purpose |
-| --- | --- | --- |
-| `frontend/.env.local` | `NEXT_PUBLIC_API_URL` | Browser-visible backend base URL |
-| | `NEXT_PUBLIC_SUPABASE_URL` | Browser-visible Supabase URL |
-| | `NEXT_PUBLIC_SUPABASE_ANON_KEY` | Browser-visible Supabase anon key |
-| | `NEXT_PUBLIC_SITE_URL` | Auth callback origin |
-| `backend/.env.local` | `DB_URL_NEW`, `DB_USER_NEW`, `DB_PASS_NEW` | PostgreSQL connection |
-| | `SUPABASE_URL_NEW`, `SUPABASE_KEY_NEW` | Backend Supabase JWT verification |
-| | `RESEND_API_KEY` | Server-only email credential |
-| | `SERVER_PORT` | Optional backend port; defaults to `5000` |
-
-`NEXT_PUBLIC_*` values are intentionally exposed to the browser; they must never contain service-role credentials.
-
-## Validation and builds
+Run the normal checks before opening a pull request or deploying:
 
 ```powershell
 # Frontend
 Set-Location frontend
 npm run lint
+npm run test
 npm run build
 
 # Backend
 Set-Location ../backend
-.\gradlew test
-.\gradlew bootJar
+./gradlew test
+./gradlew bootJar
 ```
 
-The backend has JUnit 5/Mockito/MockMvc coverage under `backend/src/test/java`. Tests mock external boundaries, so they do not require live Supabase, CourseSys, or Resend credentials. View the generated HTML report at `backend/build/reports/tests/test/index.html`.
+Frontend tests use Vitest and React Testing Library with mocked external boundaries. Backend tests use JUnit 5, Mockito, and MockMvc; they do not call live Supabase, CourseSys, or Resend. The backend HTML report is written to `backend/build/reports/tests/test/index.html`.
 
-## Local Supabase workflow
-
-The local schema is in `supabase/migrations/`; `supabase/seed.sql` seeds catalog data after a local reset.
+To run either suite through Docker:
 
 ```powershell
-# Rebuild the local database from migrations and seed data
+docker build --target test --tag sfucourseplanner-frontend:test ./frontend
+docker build --target test --tag sfucourseplanner-backend:test ./backend
+```
+
+Generated local reports in `test-logs/` are ignored and should not be committed.
+
+## Local database workflow
+
+The local schema is defined in `supabase/migrations/`; `supabase/seed.sql` supplies catalog data after a reset.
+
+```powershell
+# Recreate only the local database from migrations and seed data
 npx supabase@latest db reset
 
-# Create a new reviewed migration for a schema change
+# Start a reviewed schema migration
 npx supabase@latest migration new <descriptive_name>
 ```
 
-Test migrations locally before a reviewed `db push`. Never run `db reset --linked` against production.
+Test migrations locally before a reviewed `db push`. The linked Supabase project is production: never run `db reset --linked`, and review a `db push` before applying it.
 
-Local auth emails are captured by Mailpit rather than sent externally. Use its inbox to verify signup-confirmation and password-reset flows.
+Local confirmation and password-reset messages arrive in Mailpit instead of being sent externally.
 
-## API and deployment
+## API documentation
 
-Springdoc generates the public API specification:
+Springdoc generates the public API reference:
 
 - Swagger UI: `/api-docs`
 - OpenAPI JSON: `/v3/api-docs`
 
-Internal `/api/admin/**` operations are intentionally excluded from the generated public reference.
+Admin operations under `/api/admin/**` are intentionally absent from the public reference. They still require both a valid Supabase bearer token and the `app_metadata.role == "admin"` claim.
 
-Production deployment is split:
+## CI and contribution flow
 
-- Frontend: Vercel, served from the custom domain.
-- Backend: a Spring Boot JAR on AWS Elastic Beanstalk.
+GitHub Actions runs two checks on pushes and pull requests targeting `dev` or `main`:
+
+- `Frontend`: install, lint, test, and production build;
+- `Backend`: test and JAR build.
+
+`main` requires a pull request and both checks before merging. Direct pushes to `dev` are currently permitted as the integration workflow. Keep the `Frontend` and `Backend` check names stable unless branch protection is updated at the same time.
+
+For deeper project conventions, architecture details, and the hardening backlog, see [agent-docs/](agent-docs/).
+
+## Deployment
+
+- Frontend: Vercel, served at the custom domain.
+- Backend: Spring Boot JAR deployed to AWS Elastic Beanstalk.
 - Database and Auth: hosted Supabase.
 
-See [`agent-docs/AGENTS.md`](agent-docs/AGENTS.md) for persistent engineering conventions and [`agent-docs/to-do.md`](agent-docs/to-do.md) for the prioritized hardening backlog.
+Docker validates and runs the local development environment. It is not currently the production deployment mechanism; deployment changes should be made deliberately, including the relevant Vercel or Elastic Beanstalk configuration.
+
+## Troubleshooting
+
+| Symptom | What to check |
+| --- | --- |
+| Supabase client reports a missing URL or key | Ensure all four frontend variables are present in `frontend/.env.local`, then restart the frontend. |
+| Backend cannot connect locally | Start Supabase first and confirm the database credentials in `backend/.env.local`; Compose uses `host.docker.internal` for the local stack. |
+| A newly added dynamic route returns an old 404 in Compose | The disposable `frontend_next` cache may be stale. Run `docker compose down -v`, then `docker compose up --build`. This removes Compose caches only; it does not remove Supabase CLI data. |
+| No password-reset or confirmation email appears | Check Mailpit at <http://127.0.0.1:54324>. |
+| Local Gradle uses an old JVM | Confirm `java -version` reports Java 17 or newer before running Gradle. |
