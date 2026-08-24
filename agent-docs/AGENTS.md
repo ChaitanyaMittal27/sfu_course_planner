@@ -17,6 +17,7 @@
 - Keep authorization checks server-side on every mutation. Bookmarks are scoped to the authenticated UUID and their DB uniqueness is `(dept_id, user_id, course_id, semester_code, section)`.
 - Terms drive the current/enrolling semester and CourseSys history. Use `SemesterUtil` rather than duplicating SFU semester-code arithmetic (spring/summer/fall digits 1/4/7).
 - The scheduled digest runs at 00:05 `America/Vancouver`. It fetches external CourseSys data and sends Resend email, so treat scheduler changes as production-affecting.
+- `EmailService` delegates provider calls through the injected `EmailTransport`; `ResendEmailTransport` is the production adapter. Preserve this boundary so email behavior can be tested without sending mail.
 - Admin health checks are authenticated reachability checks for the database and external services; keep their outbound requests bounded with explicit timeouts. They are not delivery verification for Resend.
 - Backend configuration is environment-only: `DB_URL_NEW`, `DB_USER_NEW`, `DB_PASS_NEW`, `SUPABASE_URL_NEW`, `SUPABASE_KEY_NEW`, and `RESEND_API_KEY`; `SERVER_PORT` defaults to 5000. Never commit values.
 - `backend/.env.local` is an ignored Docker/runtime environment file, not an automatic Spring Boot configuration source. Load its values into the shell for manual Gradle/JAR runs.
@@ -56,4 +57,5 @@
 ## Documentation hygiene and validation
 
 - Treat implementation, `README.md`, and this guidance as the current references. Parts of `scripts_README.md` contain historical material (for example a nonexistent `populate_courses_deep_first.py`); verify any claim from them against code before acting on it.
-- There is currently no `src/test` suite. At minimum, run frontend lint for frontend changes and the relevant Gradle task for backend changes; the backend requires Java 17+ even if the host default JVM is older.
+- Backend behavior is covered by JUnit 5/Mockito/MockMvc tests under `backend/src/test/java`. Add or update focused tests with every backend feature or bug fix; mock external boundaries rather than calling live Supabase, CourseSys, or Resend. Run `./gradlew test` before handoff and `./gradlew bootJar` when production packaging is affected. The HTML report is `backend/build/reports/tests/test/index.html`.
+- The local Supabase stack remains the test boundary for migrations, RLS, constraints, and native SQL; mocked Java tests do not establish database compatibility. At minimum, run frontend lint for frontend changes and the relevant Gradle task for backend changes; the backend requires Java 17+ even if the host default JVM is older.

@@ -10,6 +10,7 @@ Read the document that matches the change:
 | API contract, authentication, dashboard, or admin UI | [Frontend, API, and access control](frontend-api-and-access.md) |
 | Courses, terms, graphs, or external data | [Course data and semesters](course-data-and-semesters.md) |
 | Email, admin actions, database ingestion, or validation | [Operations and maintenance](operations-and-maintenance.md) |
+| Project-specific implementation and test conventions | [Coding standards](coding-standards.md) |
 | Conflicting documentation or known implementation hazards | [Discrepancies and hazards](discrepancies-and-hazards.md) |
 
 These documents describe verified implementation behavior as of their creation. They deliberately omit endpoint-by-endpoint and field-by-field reference material; source and DTOs remain the authority for exact shapes.
