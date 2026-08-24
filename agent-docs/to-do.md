@@ -3,7 +3,7 @@
 This is a product-hardening backlog derived from the repository audit. It is ordered by expected risk reduction and enabling value; it is not a release plan.
 
 0. ratemyprof integration
-1. Add frontend component tests and a small end-to-end suite for critical user flows: auth, canonical routes, bookmarks, and dashboard states.
+1. Add a small browser-level end-to-end suite for critical user flows: auth, canonical routes, bookmarks, and dashboard states. The Vitest unit/component suite already covers these flows with mocked boundaries.
 2. Add local Supabase/pgTAP tests for migrations, RLS, constraints, native repository SQL, and the `auth.users` dependency used by admin reporting.
 3. Build a complete support-ticket lifecycle: persisted threads and replies, clear owner/status state, outbound delivery outcomes, and an inbound-email/webhook or managed-mailbox strategy that attaches replies to the correct ticket.
 4. Upgrade the backend to Java 21 LTS and Spring Boot 3.5.x; align local, Docker, and Elastic Beanstalk runtimes.
@@ -18,4 +18,4 @@ This is a product-hardening backlog derived from the repository audit. It is ord
 13. Improve observability for CourseSys and email: structured failures, latency visibility, and meaningful health checks.
 14. Review CORS and production security configuration, especially allowed origins and environment-secret handling.
 
-Backend Java unit/MVC coverage is complete for the current implementation. The next test layers are frontend behavior and local Supabase database behavior; neither is replaced by the existing mocked backend suite.
+Backend Java unit/MVC coverage and frontend Vitest unit/component coverage are complete for the current implementation. The next test layers are browser-level E2E and local Supabase database behavior; neither is replaced by mocked unit/component suites.
