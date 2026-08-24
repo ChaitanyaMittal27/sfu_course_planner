@@ -60,3 +60,9 @@ ignore/
 local_docs/
 
 .idea/
+
+# Local test reports are generated artifacts, not source files.
+/test-logs/
+
+test-docs/backend/
+test-docs/frontend/

@@ -11,6 +11,11 @@ COPY . .
 EXPOSE 3000
 CMD ["npm", "run", "dev", "--", "-H", "0.0.0.0"]
 
+# test stage
+FROM dependencies AS test
+COPY . .
+RUN npm run test
+
 # build stage
 FROM dependencies AS build
 COPY . .

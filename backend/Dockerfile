@@ -11,6 +11,10 @@ COPY src src
 EXPOSE 5000
 CMD ["./gradlew", "--no-daemon", "bootRun"]
 
+# test stage
+FROM dev AS test
+RUN ./gradlew --no-daemon test
+
 # builder stage
 FROM eclipse-temurin:17-jdk-jammy AS builder
 WORKDIR /workspace
