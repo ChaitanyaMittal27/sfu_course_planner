@@ -178,11 +178,11 @@ npm run build
 
 # Backend
 Set-Location ../backend
-.\gradlew.bat test
-.\gradlew.bat bootJar
+.\gradlew test
+.\gradlew bootJar
 ```
 
-The backend currently has no `src/test` suite, so `test` verifies the configured Gradle test task but does not yet provide behavioral coverage.
+The backend has JUnit 5/Mockito/MockMvc coverage under `backend/src/test/java`. Tests mock external boundaries, so they do not require live Supabase, CourseSys, or Resend credentials. View the generated HTML report at `backend/build/reports/tests/test/index.html`.
 
 ## Local Supabase workflow
 

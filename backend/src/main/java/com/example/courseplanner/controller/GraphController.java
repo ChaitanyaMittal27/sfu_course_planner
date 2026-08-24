@@ -149,10 +149,16 @@ public class GraphController {
         @Parameter(description = "Database course ID", example = "42") @RequestParam Long courseId,
         @Parameter(description = "History range", example = "5yr") @RequestParam(defaultValue = "5yr") String range
     ) {
+        int numSemesters = parseSemesterRange(range);
+
         // 1. Validate course
         Course course = courseRepository.findByIdWithDepartment(courseId)
                 .orElseThrow(() ->
                         new ResponseStatusException(HttpStatus.NOT_FOUND, "Course not found"));
+
+        if (!course.getDepartment().getDeptId().equals(deptId)) {
+            throw new ResponseStatusException(HttpStatus.NOT_FOUND, "Course not found");
+        }
 
         String dept = course.getDepartment().getDeptCode();   // CMPT
         String number = course.getCourseNumber();             // 276
@@ -181,7 +187,6 @@ public class GraphController {
         }
 
         List<ApiEnrollmentDataPointDTO> results = new ArrayList<>();
-        int numSemesters = parseSemesterRange(range);
 
         // 3. Iterate backwards for num_semesters based on range
         for (int i = 0; i < numSemesters; i++) {
@@ -223,15 +228,15 @@ public class GraphController {
 
     // Helper to parse range string into number of semesters
     private int parseSemesterRange(String range) {
-        switch (range) {
-            case "1yr":
-                return 3;   
-            case "3yr":
-                return 9;   
-            case "5yr":
-            default:
-                return 15; 
-        }
+        return switch (range) {
+            case "1yr" -> 3;
+            case "3yr" -> 9;
+            case "5yr" -> 15;
+            default -> throw new ResponseStatusException(
+                    HttpStatus.BAD_REQUEST,
+                    "Range must be 1yr, 3yr, or 5yr"
+            );
+        };
     }
 
     // Helper to capitalize first letter

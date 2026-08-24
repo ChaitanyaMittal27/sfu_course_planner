@@ -11,7 +11,7 @@ For each opted-in `UserPreference`, a run:
 3. builds an HTML digest per user using the matching saved section;
 4. calls Resend and records `last_notified_at` for all opted-in users after the loop.
 
-`EmailService` catches and logs all send exceptions rather than rethrowing. Consequently, support replies and digest runs can persist their “sent/replied/notified” state even when Resend actually failed; scheduler result counts record attempted calls, not confirmed delivery.
+`EmailService` sends through the injected `EmailTransport`; `ResendEmailTransport` is the production adapter. `EmailService` catches and logs all transport exceptions rather than rethrowing. Consequently, support replies and digest runs can persist their “sent/replied/notified” state even when Resend actually failed; scheduler result counts record attempted calls, not confirmed delivery.
 
 The public contact endpoint first calls the same non-throwing mail helper, then persists the submission and returns 201. Admin replies update the submission after that helper returns.
 
@@ -37,7 +37,7 @@ Several scripts use insert-on-conflict/upsert or only fill null/missing values, 
 - Backend: Gradle wrapper, Spring Boot 3.0.0, Java 17 source compatibility. From `backend/`, `bootRun`, `test`, and `bootJar` are the relevant tasks.
 - Springdoc 2.1.0 is pinned for Spring Boot 3.0 compatibility. It exposes Swagger UI at `/api-docs` and JSON/YAML specifications at `/v3/api-docs` and `/v3/api-docs.yaml`; validate that internal admin paths remain absent when changing controller visibility.
 - Frontend: npm lockfile, Next.js 16/React 19, with `dev`, `lint`, `build`, and `start` scripts. ESLint is the only verified automated frontend check.
-- There is no `src/test` directory or repository CI/deployment configuration (GitHub Actions or platform manifests). README names Vercel, Elastic Beanstalk, and Supabase, but deployment setup itself is external to this repository.
+- Backend behavior has a JUnit 5/Mockito/MockMvc suite under `backend/src/test/java`; it is isolated from live Supabase, CourseSys, and Resend. Run `./gradlew test` and `./gradlew bootJar` for backend validation. There is still no repository CI/deployment configuration (GitHub Actions or platform manifests). README names Vercel, Elastic Beanstalk, and Supabase, but deployment setup itself is external to this repository.
 - Dockerfiles are present for both apps. Their verified targets are `dev`/`builder`/`runtime` for the backend and `dev`/`build`/`runtime` for the frontend. `docker-compose.yaml` runs their development targets only; it does not participate in Vercel or Elastic Beanstalk deployment.
 - On Windows, `scripts/dev.ps1` starts the Supabase CLI and then Compose; `scripts/dev-down.ps1` stops both. Compose containers reach Supabase through `host.docker.internal`, while browser-visible Supabase URLs remain `127.0.0.1`/`localhost`.
 - Backend environment is supplied through `application.properties` placeholders; its `.env.local` is for Docker or manual shell loading, not auto-loaded by Spring. Frontend variables are `.env.local`. Keep credentials outside source control.
