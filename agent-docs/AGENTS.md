@@ -47,7 +47,7 @@
 - Local Supabase schema and catalog seed data live in `supabase/migrations/` and `supabase/seed.sql`. Use the CLI to test migrations locally before a reviewed `db push`; never use `db reset --linked` against production.
 - `supabase/snippets/` contains manual SQL Editor helpers for assigning and verifying an admin role. They never run automatically; confirm the target Supabase project and account email before using them, then obtain a fresh session so the updated claims take effect.
 - `npx supabase start` also runs the local Mailpit inbox at `http://127.0.0.1:54324`; use it to verify password-reset and confirmation-email flows without sending real mail.
-- From `frontend/`, use `npm install`, `npm run dev`, `npm run lint`, and `npm run build`.
+- Frontend automated tests use Vitest, React Testing Library, user-event, jsdom, and `@testing-library/jest-dom`. Tests are colocated beside the hook, component, or route they exercise; `frontend/test/setup.ts` is only for global test setup/mocks. Mock Supabase, Next navigation, and API boundaries—do not use live credentials or services. Cover a changed frontend behavior’s successful path, controlled error/empty state, and canonical navigation where relevant. From `frontend/`, run `npm run test`, `npm run lint`, and `npm run build` before handoff.
 
 ## Data scripts and maintenance
 

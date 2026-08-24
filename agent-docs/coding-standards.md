@@ -27,3 +27,4 @@ These are project conventions that prevent regressions across the Spring API, Ne
 
 - Keep API access in `lib/api.ts`, route construction in `lib/course-routes.ts`, and auth ownership split between `proxy.ts` (guard/refresh) and `AuthContext` (UI state).
 - Reuse semantic UI tokens from `app/globals.css`, typography from `app/fonts.ts`, and components from the responsibility-based `components/` folders. Do not introduce page-local color or typography systems.
+- Add or update colocated Vitest/React Testing Library tests for changed frontend behavior. Mock Supabase, navigation, and API boundaries; cover the successful flow plus relevant loading, error, empty, authorization, or canonical-route behavior. Run `npm run test`, `npm run lint`, and `npm run build` before handoff.
