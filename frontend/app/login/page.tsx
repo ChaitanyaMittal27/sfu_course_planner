@@ -44,6 +44,10 @@ function LoginPageContent() {
   useEffect(() => {
     const tab = searchParams.get("tab");
     if (tab === "signup") setActiveTab("signup");
+
+    if (searchParams.get("error") === "oauth_callback_failed") {
+      setError("We couldn't complete sign in. Please try again.");
+    }
   }, [searchParams]);
 
   const handleSignIn = async (e: React.FormEvent) => {
