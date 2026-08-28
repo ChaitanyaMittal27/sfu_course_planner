@@ -280,10 +280,12 @@ function LoginPageContent() {
               <Image src="/auth/google.svg" alt="" width={20} height={20} aria-hidden="true" />
               <span className={`${labelStyles.lg} text-text-primary`}>Sign in with Google</span>
             </Button>
+            {/* comment out microsoft login for now since we don't have it sfu permissions yet
             <Button variant="outline" onClick={() => handleOAuthSignIn("azure")} disabled={isLoading} className="w-full gap-2">
               <Image src="/auth/microsoft.svg" alt="" width={20} height={20} aria-hidden="true" />
               <span className={`${labelStyles.lg} text-text-primary`}>Sign in with Microsoft</span>
             </Button>
+            */}
           </div>
         </CardContent>
       </Card>
