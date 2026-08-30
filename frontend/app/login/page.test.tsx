@@ -82,6 +82,13 @@ describe("login page", () => {
     expect(mocks.replace).not.toHaveBeenCalled();
   });
 
+  it("shows a generic callback error without exposing provider details", async () => {
+    mocks.search = new URLSearchParams("error=oauth_callback_failed");
+    render(<LoginPage />);
+
+    expect(await screen.findByRole("alert")).toHaveTextContent("We couldn't complete sign in. Please try again.");
+  });
+
   it("validates sign-up locally before contacting Supabase", async () => {
     const user = userEvent.setup();
     render(<LoginPage />);
